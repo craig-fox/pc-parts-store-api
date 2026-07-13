@@ -1,7 +1,6 @@
 package nz.fox.craig.customer.exception;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -19,14 +18,14 @@ public class CustomerExceptionHandler {
 
 	@ExceptionHandler(CustomerNotFoundException.class)
 	public ResponseEntity<ApiError> handleCustomerNotFound(CustomerNotFoundException ex, HttpServletRequest request) {
-		Map<String, String> validationErrors = new HashMap<>();
-		validationErrors.put("message", ex.getMessage());
+		String message = ex.getMessage();
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
         .body(new ApiError(
                 Instant.now(),
                 HttpStatus.NOT_FOUND.value(),
-                HttpStatus.NOT_FOUND.getReasonPhrase(),
-                validationErrors,
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
+                message,
+                Map.of(),
                 request.getRequestURI()
         ));
 	}
@@ -48,6 +47,7 @@ public class CustomerExceptionHandler {
 			Instant.now(),
 			HttpStatus.BAD_REQUEST.value(),
 			HttpStatus.BAD_REQUEST.getReasonPhrase(),
+			"Validation failed",
 			validationErrors,
 			request.getRequestURI()
 		));

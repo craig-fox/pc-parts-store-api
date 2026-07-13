@@ -13,6 +13,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -22,10 +23,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import nz.fox.craig.customer.controller.CustomerController;
 import nz.fox.craig.customer.dto.CustomerRequest;
 import nz.fox.craig.customer.dto.CustomerResponse;
+import nz.fox.craig.customer.exception.CustomerExceptionHandler;
 import nz.fox.craig.customer.exception.CustomerNotFoundException;
 import nz.fox.craig.customer.service.CustomerService;
 
 @WebMvcTest(CustomerController.class)
+@Import(CustomerExceptionHandler.class)
 class CustomerControllerTest {
 
 	@Autowired
@@ -62,7 +65,8 @@ class CustomerControllerTest {
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(request)))
 				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.message").value("email: Email must be a valid email address"));
+				.andExpect(jsonPath("$.message").value("Validation failed"))
+				.andExpect(jsonPath("$.validationErrors.email").value("Email must be a valid email address"));
 	}
 
 	@Test
