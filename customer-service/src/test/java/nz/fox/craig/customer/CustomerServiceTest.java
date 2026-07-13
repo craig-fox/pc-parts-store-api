@@ -16,6 +16,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import nz.fox.craig.customer.dto.CustomerRequest;
 import nz.fox.craig.customer.dto.CustomerResponse;
+import nz.fox.craig.customer.exception.CustomerNotFoundException;
+import nz.fox.craig.customer.model.Customer;
+import nz.fox.craig.customer.repository.CustomerRepository;
+import nz.fox.craig.customer.service.CustomerService;
 
 @ExtendWith(MockitoExtension.class)
 class CustomerServiceTest {
@@ -64,7 +68,7 @@ class CustomerServiceTest {
 
 		when(customerRepository.findAll()).thenReturn(List.of(customer1, customer2));
 
-		List<CustomerResponse> responses = customerService.getAllCustomers();
+		List<CustomerResponse> responses = customerService.getCustomers(null);
 
 		assertThat(responses).hasSize(2);
 		assertThat(responses.get(0).name()).isEqualTo("Jane Doe");

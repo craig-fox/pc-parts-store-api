@@ -1,6 +1,6 @@
 package nz.fox.craig.customer.dto;
 
-import nz.fox.craig.customer.Customer;
+import nz.fox.craig.customer.model.Customer;
 
 public record CustomerResponse(
 		Long id,

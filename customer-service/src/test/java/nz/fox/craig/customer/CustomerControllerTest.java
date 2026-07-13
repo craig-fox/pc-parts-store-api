@@ -19,8 +19,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import nz.fox.craig.customer.controller.CustomerController;
 import nz.fox.craig.customer.dto.CustomerRequest;
 import nz.fox.craig.customer.dto.CustomerResponse;
+import nz.fox.craig.customer.exception.CustomerNotFoundException;
+import nz.fox.craig.customer.service.CustomerService;
 
 @WebMvcTest(CustomerController.class)
 class CustomerControllerTest {
@@ -77,7 +80,7 @@ class CustomerControllerTest {
 				new CustomerResponse(2L, "John Doe", "john@example.com", "456 Oak Ave")
 		);
 
-		when(customerService.getAllCustomers()).thenReturn(responses);
+		when(customerService.getCustomers(null)).thenReturn(responses);
 
 		mockMvc.perform(get("/api/customers"))
 				.andExpect(status().isOk())
