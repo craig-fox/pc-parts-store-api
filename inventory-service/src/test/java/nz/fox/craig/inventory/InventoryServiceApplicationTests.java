@@ -1,10 +1,10 @@
-package nz.fox.craig.payment_service;
+package nz.fox.craig.inventory;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class PaymentServiceApplicationTests {
+class InventoryServiceApplicationTests {
 
 	@Test
 	void contextLoads() {
