@@ -10,8 +10,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "products")
 public class Product {
 
@@ -45,7 +49,7 @@ public class Product {
     private String imageUrl;
 
     @Column(nullable = false)
-    private Boolean active = true;
+    private boolean active = true;
 
     @Column(nullable = false)
     private Instant createdAt;
