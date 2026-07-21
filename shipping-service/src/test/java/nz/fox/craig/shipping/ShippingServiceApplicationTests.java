@@ -1,10 +1,10 @@
-package nz.fox.craig.notification_service;
+package nz.fox.craig.shipping;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class NotificationServiceApplicationTests {
+class ShippingServiceApplicationTests {
 
 	@Test
 	void contextLoads() {

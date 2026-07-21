@@ -1,4 +1,4 @@
-package nz.fox.craig.notification_service;
+package nz.fox.craig.notification;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
