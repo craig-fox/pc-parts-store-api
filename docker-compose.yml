@@ -1,0 +1,37 @@
+services:
+
+  customer-postgres:
+    image: postgres:17
+    container_name: customer-postgres
+    environment:
+      POSTGRES_DB: customerdb
+      POSTGRES_USER: customer
+      POSTGRES_PASSWORD: customer
+    ports:
+      - "5432:5432"
+    volumes:
+      - customer-data:/var/lib/postgresql/data
+    networks:
+      - backend
+  
+
+  product-postgres:
+    image: postgres:17
+    container_name: product-postgres
+    environment:
+      POSTGRES_DB: productdb
+      POSTGRES_USER: product
+      POSTGRES_PASSWORD: product
+    ports:
+      - "5433:5432"
+    volumes:
+      - product-data:/var/lib/postgresql/data
+    networks:
+      - backend
+  
+volumes:
+  customer-data:
+  product-data:
+
+networks:
+  backend:  

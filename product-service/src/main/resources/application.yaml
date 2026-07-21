@@ -3,13 +3,18 @@ spring:
     name: product-service
 
   datasource:
-      url: jdbc:postgresql://localhost:5434/productdb
-      username: productuser
-      password: productpassword
+      url: jdbc:postgresql://localhost:5433/productdb
+      username: product
+      password: product
 
   jpa:
     hibernate:
       ddl-auto: validate
+    open-in-view: false 
 
   flyway:
-    enabled: true    
+    enabled: true
+
+server:
+    port: 8083
+    
