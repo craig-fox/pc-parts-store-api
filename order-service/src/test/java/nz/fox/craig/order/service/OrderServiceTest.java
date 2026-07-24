@@ -5,18 +5,23 @@ import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Nested;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.Nested;
 
 import nz.fox.craig.order.client.CustomerClient;
-import nz.fox.craig.order.dto.OrderRequest;
+import nz.fox.craig.order.dto.CreateOrderRequest;
 import nz.fox.craig.order.dto.OrderResponse;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
@@ -26,16 +31,10 @@ import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.repository.OrderRepository;
 
 @ExtendWith(MockitoExtension.class)
-@SuppressWarnings("null")
 class OrderServiceTest {
 
-    private static final Long CUSTOMER_ID = 1L;
-    private static final Long PRODUCT_ID = 10L;
-    private static final Long ORDER_ID = 123L;
-    private static final int QUANTITY = 1;
-    private static final Long NEW_CUSTOMER_ID = 2L;
-    private static final Long NEW_PRODUCT_ID = 11L;
-    private static final int NEW_QUANTITY = 2;
+    private static final UUID CUSTOMER_ID = UUID.randomUUID();
+    private static final UUID ORDER_ID = UUID.randomUUID();
 
     @Mock
     private OrderRepository repository;
@@ -46,154 +45,141 @@ class OrderServiceTest {
     @InjectMocks
     private OrderService service;
 
-   // @Nested
+    @Nested
     class CreateOrder {
         @Test
-        public void shouldCreateOrder() {
-            when(repository.save(any(Order.class))).thenReturn(savedOrder());
-    
+        void shouldCreateOrder() {
+            // Arrange
+            when(repository.save(any(Order.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+        
+            // Act
             OrderResponse response = service.createOrder(orderRequest());
-    
+        
+            // Assert - interactions
+            ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
+        
             verify(client).validateCustomerExists(CUSTOMER_ID);
-            verify(repository).save(any(Order.class));
-            assertThat(response.customerId()).isEqualTo(CUSTOMER_ID);
-            assertThat(response.productId()).isEqualTo(PRODUCT_ID);
-            assertThat(response.quantity()).isEqualTo(QUANTITY);
-            assertThat(response.status()).isEqualTo(OrderStatus.PLACED);
+            verify(repository).save(captor.capture());
+            verifyNoMoreInteractions(client, repository);
+        
+            // Assert - order persisted
+            Order saved = captor.getValue();
+        
+            assertThat(saved.getCustomerId()).isEqualTo(CUSTOMER_ID);
+            assertThat(saved.getStatus()).isEqualTo(OrderStatus.PLACED);
+            assertThat(saved.getSubtotal()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(saved.getShipping()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(saved.getTotal()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(saved.getItems()).isEmpty();
+            assertThat(saved.getId()).isNotNull();
+            assertThat(saved.getOrderDate()).isNotNull();
+        
+            // Assert - returned response
+            assertThat(response.id()).isEqualTo(saved.getId());
+            assertThat(response.customerId()).isEqualTo(saved.getCustomerId());
+            assertThat(response.status()).isEqualTo(saved.getStatus().name());
+            assertThat(response.total()).isEqualByComparingTo(saved.getTotal());
+            assertThat(response.items()).isEmpty();
         }
 
+
         @Test
-        public void shouldThrowWhenCustomerDoesNotExist() {
-            OrderRequest request = orderRequest();
+        void shouldThrowWhenCustomerDoesNotExist() {
+            CreateOrderRequest request = orderRequest();
             doThrow(new CustomerNotFoundException(CUSTOMER_ID))
                     .when(client)
                     .validateCustomerExists(CUSTOMER_ID);
-    
+
             assertThrows(CustomerNotFoundException.class, () -> service.createOrder(request));
-    
+
             verify(repository, never()).save(any());
         }
     }
 
-
-    @Test
-    public void getOrder_shouldReturnOrder() {
-        when(repository.findById(ORDER_ID)).thenReturn(Optional.of(savedOrder()));
-
-        OrderResponse response = service.getOrder(ORDER_ID);
-
-        assertThat(response.customerId()).isEqualTo(CUSTOMER_ID);
-        assertThat(response.productId()).isEqualTo(PRODUCT_ID);
-        assertThat(response.quantity()).isEqualTo(QUANTITY);
-        assertThat(response.status()).isEqualTo(OrderStatus.PLACED);
-    }
-
-    @Test
-    public void getOrder_shouldThrowWhenOrderNotFound() {
-        when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
-
-        assertThrows(OrderNotFoundException.class, () -> service.getOrder(ORDER_ID));
-    }
-
-    @Test
-    public void updateOrder_shouldUpdateOrder() {
-        OrderRequest newRequest = new OrderRequest(NEW_CUSTOMER_ID, NEW_PRODUCT_ID, NEW_QUANTITY);
+    @Nested
+    class GetOrder {
+        @Test
+        void shouldReturnOrder() {
+            when(repository.findById(ORDER_ID)).thenReturn(Optional.of(existingOrder()));
     
-        Order existingOrder = savedOrder();
-        when(repository.findById(ORDER_ID)).thenReturn(Optional.of(existingOrder));
-        when(repository.save(existingOrder)).thenReturn(updatedOrder());
+            OrderResponse response = service.getOrder(ORDER_ID);
+
+            assertThat(response.status())
+                .isEqualTo(OrderStatus.PLACED.name());
     
-        OrderResponse response = service.updateOrder(ORDER_ID, newRequest);
+            assertThat(response.customerId()).isEqualTo(CUSTOMER_ID);
     
-        verify(client).validateCustomerExists(NEW_CUSTOMER_ID);
-        verify(repository).save(existingOrder);
-        assertThat(response.customerId()).isEqualTo(NEW_CUSTOMER_ID);
-        assertThat(response.productId()).isEqualTo(NEW_PRODUCT_ID);
-        assertThat(response.quantity()).isEqualTo(NEW_QUANTITY);
-    }
-
-    @Test
-    public void updateOrder_shouldThrowWhenOrderNotFound() {
-        when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
-        assertThrows(OrderNotFoundException.class, () -> service.updateOrder(ORDER_ID, orderRequest()));
-        verify(repository, never()).save(any());
-    }
-
-    @Test
-    public void updateOrder_shouldThrowWhenOrderAlreadyCancelled() {
-        when(repository.findById(ORDER_ID)).thenReturn(Optional.of(cancelledOrder()));
-        verify(client, never()).validateCustomerExists(anyLong());
-        assertThrows(OrderAlreadyCancelledException.class, () -> service.updateOrder(ORDER_ID, orderRequest()));
-    }
-
-    @Test
-    public void updateOrder_shouldThrowWhenCustomerMissing() {
-        when(repository.findById(ORDER_ID)).thenReturn(Optional.of(savedOrder()));
-        doThrow(new CustomerNotFoundException(orderRequest().customerId()))
-                .when(client)
-                .validateCustomerExists(anyLong());
-
-        assertThrows(CustomerNotFoundException.class, () -> service.updateOrder(ORDER_ID, orderRequest()));
-
-        verify(repository, never()).save(any());
-    }
-
-    @Test
-    public void cancelOrder_shouldCancelOrder() {
-        Order existingOrder = savedOrder();
-        when(repository.findById(ORDER_ID)).thenReturn(Optional.of(existingOrder));
-        when(repository.save(existingOrder)).thenReturn(existingOrder);
+            assertThat(response.items()).isEmpty();
     
-        OrderResponse response = service.cancelOrder(ORDER_ID);
+            assertThat(response.total())
+                    .isEqualByComparingTo("0");
+            verify(repository).findById(ORDER_ID);
+            verifyNoMoreInteractions(repository);        
+        }
+
+        @Test
+        void shouldThrowWhenOrderNotFound() {
+            when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
     
-        verify(repository).save(existingOrder);
-        assertThat(response.status()).isEqualTo(OrderStatus.CANCELLED);
+            assertThrows(OrderNotFoundException.class, () -> service.getOrder(ORDER_ID));
+        }
     }
 
-    @Test
-    public void cancelOrder_shouldThrowWhenOrderNotFound() {
-        when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
-        assertThrows(OrderNotFoundException.class, () -> service.cancelOrder(ORDER_ID));
-        verify(client, never()).validateCustomerExists(anyLong());
-        verify(repository, never()).save(any());
+    @Nested
+    class CancelOrder {
+        @Test
+        void shouldCancelOrder() {
+            Order existingOrder = existingOrder();
+            when(repository.findById(ORDER_ID)).thenReturn(Optional.of(existingOrder));
+            when(repository.save(existingOrder)).thenReturn(existingOrder);
+    
+            OrderResponse response = service.cancelOrder(ORDER_ID);
+    
+            verify(repository).save(existingOrder);
+            assertThat(response.status())
+            .isEqualTo(OrderStatus.CANCELLED.name());
+            assertThat(existingOrder.getStatus())
+                .isEqualTo(OrderStatus.CANCELLED);
+        }
+
+        @Test
+        void shouldThrowWhenOrderNotFound() {
+            when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
+            assertThrows(OrderNotFoundException.class, () -> service.cancelOrder(ORDER_ID));
+            verify(repository, never()).save(any());
+        }
+    
+        @Test
+        void shouldThrowWhenOrderAlreadyCancelled() {
+            when(repository.findById(ORDER_ID)).thenReturn(Optional.of(cancelledOrder()));
+            assertThrows(OrderAlreadyCancelledException.class, () -> service.cancelOrder(ORDER_ID));
+            verify(repository, never()).save(any());
+        }
     }
 
-    @Test
-    public void cancelOrder_shouldThrowWhenOrderAlreadyCancelled() {
-        when(repository.findById(ORDER_ID)).thenReturn(Optional.of(cancelledOrder()));
-        assertThrows(OrderAlreadyCancelledException.class, () -> service.cancelOrder(ORDER_ID));
-        verify(client, never()).validateCustomerExists(anyLong());
-        verify(repository, never()).save(any());
-    }
-
-    private OrderRequest orderRequest() {
-        return new OrderRequest(CUSTOMER_ID, PRODUCT_ID, QUANTITY);
-    }
-
-    private Order savedOrder() {
-        return Order.builder()
-                .id(ORDER_ID)
+    private CreateOrderRequest orderRequest() {
+        return CreateOrderRequest.builder()
                 .customerId(CUSTOMER_ID)
-                .productId(PRODUCT_ID)
-                .quantity(QUANTITY)
-                .orderDateTime(LocalDateTime.now())
-                .status(OrderStatus.PLACED)
+                .items(List.of())
                 .build();
     }
 
-    private Order updatedOrder() {
+    private Order existingOrder() {
+
         return Order.builder()
                 .id(ORDER_ID)
-                .customerId(2L)
-                .productId(11L)
-                .quantity(2)
-                .orderDateTime(LocalDateTime.now())
+                .customerId(CUSTOMER_ID)
+                .orderDate(LocalDateTime.now())
                 .status(OrderStatus.PLACED)
+                .subtotal(BigDecimal.ZERO)
+                .shipping(BigDecimal.ZERO)
+                .total(BigDecimal.ZERO)
                 .build();
     }
 
     private Order cancelledOrder() {
-        Order order = savedOrder();
+        Order order = existingOrder();
         order.setStatus(OrderStatus.CANCELLED);
         return order;
     }

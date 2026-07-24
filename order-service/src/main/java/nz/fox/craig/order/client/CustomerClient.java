@@ -1,5 +1,7 @@
 package nz.fox.craig.order.client;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -13,7 +15,7 @@ public class CustomerClient {
 
     private final RestClient restClient;
 
-    public void validateCustomerExists(Long customerId) {
+    public void validateCustomerExists(UUID customerId) {
         try {
             restClient.get()
                     .uri("/api/customers/{id}", customerId)

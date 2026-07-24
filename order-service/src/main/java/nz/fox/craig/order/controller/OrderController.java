@@ -2,16 +2,17 @@ package nz.fox.craig.order.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import nz.fox.craig.order.dto.OrderRequest;
+import nz.fox.craig.order.dto.CreateOrderRequest;
 import nz.fox.craig.order.dto.OrderResponse;
 import nz.fox.craig.order.service.OrderService;
+
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,27 +22,27 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class OrderController {
 
-	private final OrderService orderService;
+    private final OrderService orderService;
 
-	@PostMapping
-	public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody OrderRequest request) {
-		OrderResponse response = orderService.createOrder(request);
-		return ResponseEntity.status(HttpStatus.CREATED).body(response);
-	}
+    @PostMapping
+    public ResponseEntity<OrderResponse> createOrder(
+            @Valid @RequestBody CreateOrderRequest request) {
 
-	@GetMapping("/{id}")
-	public OrderResponse getOrder(@PathVariable Long id) {
-		return orderService.getOrder(id);
-	}
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(orderService.createOrder(request));
+    }
 
-	@PutMapping("/{id}")
-	public OrderResponse updateOrder(@PathVariable Long id, @Valid @RequestBody OrderRequest request) {
-		return orderService.updateOrder(id, request);
-	}
+    @GetMapping("/{id}")
+    public ResponseEntity<OrderResponse> getOrder(
+            @PathVariable UUID id) {
 
-	@PostMapping("/{id}/cancel")
-	public OrderResponse cancelOrder(@PathVariable Long id) {
-		return orderService.cancelOrder(id);
-	}
+        return ResponseEntity.ok(orderService.getOrder(id));
+    }
 
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<OrderResponse> cancelOrder(
+            @PathVariable UUID id) {
+
+        return ResponseEntity.ok(orderService.cancelOrder(id));
+    }
 }

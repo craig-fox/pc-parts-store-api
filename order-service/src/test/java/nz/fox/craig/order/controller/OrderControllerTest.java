@@ -3,8 +3,12 @@ package nz.fox.craig.order.controller;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -14,7 +18,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import nz.fox.craig.order.dto.OrderRequest;
+import nz.fox.craig.order.dto.CreateOrderItemRequest;
+import nz.fox.craig.order.dto.CreateOrderRequest;
 import nz.fox.craig.order.dto.OrderResponse;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
@@ -26,7 +31,6 @@ import nz.fox.craig.order.service.OrderService;
 import org.springframework.http.MediaType;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -34,173 +38,173 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(OrderController.class)
 @Import(OrderExceptionHandler.class)
 class OrderControllerTest {
-    @Autowired
+	@Autowired
 	private MockMvc mockMvc;
 
 	@Autowired
 	private ObjectMapper objectMapper;
 
-    @MockitoBean
-    private OrderService orderService;
+	@MockitoBean
+	private OrderService orderService;
 
-    private OrderResponse sampleResponse() {
-		return new OrderResponse(
-				1L,
-				10L,
-				20L,
-				3,
-				LocalDateTime.of(2026, 7, 14, 10, 0),
-				OrderStatus.PLACED
-		);
+	private static final UUID ORDER_ID = UUID.randomUUID();
+	private static final UUID CUSTOMER_ID = UUID.randomUUID();
+	private static final UUID PRODUCT_ID = UUID.randomUUID();
+
+	@Nested
+	class CreateOrder {
+		@Test
+		void returnsCreatedOrder() throws Exception {
+			CreateOrderRequest request = orderRequest(CUSTOMER_ID, orderItems());
+			OrderResponse response = sampleResponse(OrderStatus.PLACED);
+
+			when(orderService.createOrder(any(CreateOrderRequest.class))).thenReturn(response);
+
+			mockMvc.perform(post("/api/orders")
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(request)))
+					.andExpect(status().isCreated())
+					.andExpect(jsonPath("$.id").value(ORDER_ID.toString()))
+					.andExpect(jsonPath("$.customerId").value(CUSTOMER_ID.toString()))
+					.andExpect(jsonPath("$.status").value("PLACED"))
+					.andExpect(jsonPath("$.items").isArray())
+					.andExpect(jsonPath("$.total").value(0));
+			verify(orderService).createOrder(any(CreateOrderRequest.class));
+		}
+
+		@Test
+		void missingCustomerIdReturnsBadRequest() throws Exception {
+			CreateOrderRequest request = orderRequest(null, orderItems());
+
+			mockMvc.perform(post("/api/orders")
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(request)))
+					.andExpect(status().isBadRequest())
+					.andExpect(jsonPath("$.message")
+							.value("customerId: Customer id is required"));
+		}
+
+		@Test
+		void emptyOrderItemsReturnsBadRequest() throws Exception {
+			CreateOrderRequest request = orderRequest(CUSTOMER_ID, List.of());
+
+			mockMvc.perform(post("/api/orders")
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(request)))
+					.andExpect(status().isBadRequest())
+					.andExpect(jsonPath("$.message")
+							.value("items: Items must not be empty"));
+		}
+
+		@Test
+		void customerNotFoundReturns404() throws Exception {
+			var missingCustomerID = UUID.randomUUID();
+			CreateOrderRequest request = orderRequest(CUSTOMER_ID, orderItems());
+
+			when(orderService.createOrder(any(CreateOrderRequest.class)))
+					.thenThrow(new CustomerNotFoundException(missingCustomerID));
+
+			mockMvc.perform(post("/api/orders")
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(request)))
+					.andExpect(status().isNotFound())
+					.andExpect(jsonPath("$.message").value("Customer not found with id: " + missingCustomerID));
+		}
+
 	}
 
-    @Test
-	void createOrder_returnsCreatedOrder() throws Exception {
-		OrderRequest request = new OrderRequest(10L, 20L, 3);
-		OrderResponse response = sampleResponse();
+	@Nested
+	class GetOrder {
+		@Test
+		void returnsOrder() throws Exception {
+			when(orderService.getOrder(ORDER_ID))
+					.thenReturn(sampleResponse(OrderStatus.PLACED));
 
-		when(orderService.createOrder(any(OrderRequest.class))).thenReturn(response);
+			mockMvc.perform(get("/api/orders/{id}", ORDER_ID))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.id").value(ORDER_ID.toString()))
+					.andExpect(jsonPath("$.status").value("PLACED"));
+			verify(orderService).getOrder(ORDER_ID);
+		}
 
-		mockMvc.perform(post("/api/orders")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.id").value(1L))
-				.andExpect(jsonPath("$.customerId").value(10L))
-				.andExpect(jsonPath("$.productId").value(20L))
-				.andExpect(jsonPath("$.quantity").value(3))
-				.andExpect(jsonPath("$.status").value("PLACED"));
+		@Test
+		void orderNotFoundReturns404() throws Exception {
+			var MISSING_ORDER = UUID.randomUUID();
+
+			when(orderService.getOrder(MISSING_ORDER))
+					.thenThrow(new OrderNotFoundException(MISSING_ORDER));
+
+			mockMvc.perform(get("/api/orders/{id}", MISSING_ORDER))
+					.andExpect(status().isNotFound())
+					.andExpect(jsonPath("$.message").value("Order " + MISSING_ORDER + " not found"));
+			verify(orderService).getOrder(MISSING_ORDER);
+		}
+
 	}
 
-    @Test
-	void createOrder_missingCustomerId_returnsBadRequest() throws Exception {
-		OrderRequest request = new OrderRequest(null, 20L, 3);
+	@Nested
+	class CancelOrder {
+		@Test
+		void returnsCancelledOrder() throws Exception {
+			OrderResponse cancelled = sampleResponse(OrderStatus.CANCELLED);
 
-		mockMvc.perform(post("/api/orders")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.message").value("customerId: Customer id is required"));
+			when(orderService.cancelOrder(CUSTOMER_ID)).thenReturn(cancelled);
+
+			mockMvc.perform(post("/api/orders/{id}/cancel", CUSTOMER_ID))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.status").value("CANCELLED"));
+			verify(orderService).cancelOrder(CUSTOMER_ID);
+		}
+
+		@Test
+		void orderNotFoundReturns404() throws Exception {
+			var missingCustomerID = UUID.randomUUID();
+			when(orderService.cancelOrder(missingCustomerID)).thenThrow(new OrderNotFoundException(missingCustomerID));
+
+			mockMvc.perform(post("/api/orders/{id}/cancel", missingCustomerID))
+					.andExpect(status().isNotFound())
+					.andExpect(jsonPath("$.message").value("Order " + missingCustomerID + " not found"));
+			verify(orderService).cancelOrder(missingCustomerID);
+		}
+
+		@Test
+		void returnsConflictIfOrderCancelled() throws Exception {
+			when(orderService.cancelOrder(CUSTOMER_ID))
+					.thenThrow(new OrderAlreadyCancelledException(CUSTOMER_ID));
+
+			mockMvc.perform(post("/api/orders/{id}/cancel", CUSTOMER_ID))
+					.andExpect(status().isConflict())
+					.andExpect(jsonPath("$.message").value("Order " + CUSTOMER_ID + " is already cancelled"));
+			verify(orderService).cancelOrder(CUSTOMER_ID);
+		}
 	}
 
-    @Test
-    void createOrder_customerNotFound_returns404() throws Exception {
-        OrderRequest request = new OrderRequest(99L, 20L, 3);
-
-        when(orderService.createOrder(any(OrderRequest.class)))
-                .thenThrow(new CustomerNotFoundException(99L));
-
-        mockMvc.perform(post("/api/orders")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Customer not found with id: 99"));
-    }
-
-    @Test
-	void createOrder_quantityBelowMinimum_returnsBadRequest() throws Exception {
-		OrderRequest request = new OrderRequest(10L, 20L, 0);
-
-		mockMvc.perform(post("/api/orders")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.message").value("quantity: Quantity must be at least 1"));
+	private OrderResponse sampleResponse(OrderStatus status) {
+		return OrderResponse.builder()
+				.id(ORDER_ID)
+				.customerId(CUSTOMER_ID)
+				.orderDate(LocalDateTime.of(2026, 7, 14, 10, 0))
+				.status(status.name())
+				.subtotal(BigDecimal.ZERO)
+				.shipping(BigDecimal.ZERO)
+				.total(BigDecimal.ZERO)
+				.items(List.of())
+				.build();
 	}
 
-    // ---- getOrder ----
-
-	@Test
-	void getOrder_returnsOrder() throws Exception {
-		when(orderService.getOrder(1L)).thenReturn(sampleResponse());
-
-		mockMvc.perform(get("/api/orders/{id}", 1L))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.id").value(1L))
-				.andExpect(jsonPath("$.status").value("PLACED"));
+	private CreateOrderRequest orderRequest(UUID customerId, List<CreateOrderItemRequest> items) {
+		return CreateOrderRequest.builder()
+				.customerId(customerId)
+				.items(items)
+				.build();
 	}
 
-	@Test
-	void getOrder_notFound_returns404() throws Exception {
-		when(orderService.getOrder(99L)).thenThrow(new OrderNotFoundException(99L));
-
-		mockMvc.perform(get("/api/orders/{id}", 99L))
-				.andExpect(status().isNotFound())
-				.andExpect(jsonPath("$.message").value("Order 99 not found"));
+	private List<CreateOrderItemRequest> orderItems() {
+		return List.of(
+				CreateOrderItemRequest.builder()
+						.productId(PRODUCT_ID)
+						.quantity(1)
+						.build());
 	}
-
-    // ---- updateOrder ----
-
-	@Test
-	void updateOrder_returnsUpdatedOrder() throws Exception {
-		OrderRequest request = new OrderRequest(10L, 20L, 5);
-		OrderResponse updated = new OrderResponse(1L, 10L, 20L, 5, LocalDateTime.now(), OrderStatus.PENDING);
-
-		when(orderService.updateOrder(eq(1L), any(OrderRequest.class))).thenReturn(updated);
-
-		mockMvc.perform(put("/api/orders/{id}", 1L)
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.quantity").value(5));
-	}
-
-	@Test
-	void updateOrder_notFound_returns404() throws Exception {
-		OrderRequest request = new OrderRequest(10L, 20L, 5);
-
-		when(orderService.updateOrder(eq(99L), any(OrderRequest.class)))
-				.thenThrow(new OrderNotFoundException(99L));
-
-		mockMvc.perform(put("/api/orders/{id}", 99L)
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isNotFound())
-				.andExpect(jsonPath("$.message").value("Order 99 not found"));
-	}
-
-    @Test
-	void updateOrder_invalidRequest_returnsBadRequest() throws Exception {
-		OrderRequest request = new OrderRequest(10L, null, 5);
-
-		mockMvc.perform(put("/api/orders/{id}", 1L)
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.message").value("productId: Product id is required"));
-	}
-
-    // ---- cancelOrder ----
-
-	@Test
-	void cancelOrder_returnsCancelledOrder() throws Exception {
-		OrderResponse cancelled = new OrderResponse(1L, 10L, 20L, 3, LocalDateTime.now(), OrderStatus.CANCELLED);
-
-		when(orderService.cancelOrder(1L)).thenReturn(cancelled);
-
-		mockMvc.perform(post("/api/orders/{id}/cancel", 1L))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.status").value("CANCELLED"));
-	}
-
-	@Test
-	void cancelOrder_notFound_returns404() throws Exception {
-		when(orderService.cancelOrder(99L)).thenThrow(new OrderNotFoundException(99L));
-
-		mockMvc.perform(post("/api/orders/{id}/cancel", 99L))
-				.andExpect(status().isNotFound())
-				.andExpect(jsonPath("$.message").value("Order 99 not found"));
-	}
-
-	@Test
-	void cancelOrder_alreadyCancelled_returnsConflict() throws Exception {
-		when(orderService.cancelOrder(1L))
-				.thenThrow(new OrderAlreadyCancelledException(1L));
-
-		mockMvc.perform(post("/api/orders/{id}/cancel", 1L))
-				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.message").value("Order 1 is already cancelled"));
-	}
-
 
 }

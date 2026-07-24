@@ -1,8 +1,19 @@
 CREATE TABLE orders (
-    id BIGSERIAL PRIMARY KEY,
-    customer_id BIGINT NOT NULL,
-    product_id BIGINT NOT NULL,
-    quantity INTEGER NOT NULL,
-    order_date_time TIMESTAMP NOT NULL,
-    status VARCHAR(30) NOT NULL
+    id UUID,
+    customer_id UUID,
+    status VARCHAR(20),
+    order_date TIMESTAMP,
+    subtotal NUMERIC(10,2),
+    shipping NUMERIC(10,2),
+    total NUMERIC(10,2)
 );
+
+CREATE TABLE order_items (
+    id UUID,
+    order_id UUID,
+    product_id UUID,
+    product_name VARCHAR(255),
+    quantity INTEGER,
+    unit_price NUMERIC(10,2),
+    line_total NUMERIC(10,2)
+)
