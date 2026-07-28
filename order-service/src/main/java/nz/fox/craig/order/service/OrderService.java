@@ -2,12 +2,13 @@ package nz.fox.craig.order.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import lombok.RequiredArgsConstructor;
-import nz.fox.craig.order.client.HttpCustomerClient;
+import nz.fox.craig.order.client.CustomerClient;
+import nz.fox.craig.order.client.ProductClient;
+import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.CreateOrderRequest;
 import nz.fox.craig.order.dto.response.OrderItemResponse;
 import nz.fox.craig.order.dto.response.OrderResponse;
@@ -26,22 +27,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
 
 	private final OrderRepository orderRepository;
-	private final HttpCustomerClient customerClient;
-	//private final ProductClient productClient; -- will be implemented
+	private final CustomerClient customerClient;
+	private final ProductClient productClient;
 
 	@Transactional
 	public OrderResponse createOrder(CreateOrderRequest request) {
 
 		validateCustomer(request.customerId());
-
-		Order order = buildOrder(request);
-
+		Order order = assembleOrder(request);
 		Order savedOrder = orderRepository.save(order);
-
 		return mapToResponse(savedOrder);
 	}
 
-	private Order buildOrder(CreateOrderRequest request) {
+	private Order assembleOrder(CreateOrderRequest request) {
 
 		List<OrderItem> items = buildOrderItems(request);
 	
@@ -67,15 +65,25 @@ public class OrderService {
 	private void validateCustomer(UUID customerId) {
 		customerClient.validateCustomerExists(customerId);
 	}
-
-	private List<OrderItem> buildOrderItems(CreateOrderRequest request) {
-
-		// TODO Phase 2:
-		//  - retrieve each product from product-service
-		//  - copy name and current price
-		//  - calculate line totals
 	
-		return new ArrayList<>();
+	private List<OrderItem> buildOrderItems(CreateOrderRequest request) {
+		return request.items().stream()
+				.map(item -> {
+					ProductSnapshot product =
+							productClient.getProduct(item.productId());
+	
+					BigDecimal unitPrice = product.price();
+					BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(item.quantity()));
+	
+					return OrderItem.builder()
+							.productId(product.id())
+							.productName(product.name())
+							.unitPrice(unitPrice)
+							.quantity(item.quantity())
+							.lineTotal(lineTotal)
+							.build();
+				})
+				.toList();
 	}
 
 	private BigDecimal calculateSubtotal(List<OrderItem> items) {
