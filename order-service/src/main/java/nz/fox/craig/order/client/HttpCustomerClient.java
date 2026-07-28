@@ -18,14 +18,15 @@ public class HttpCustomerClient implements CustomerClient {
     private final RestClient restClient;
 
     public void validateCustomerExists(UUID customerId) {
-        try {
-            restClient.get()
-                    .uri("/api/customers/{id}", customerId)
-                    .retrieve()
-                    .toBodilessEntity();
-        } catch (HttpClientErrorException.NotFound e) {
-            throw new CustomerNotFoundException(customerId);
-        }
+        //TODO: Uncomment when customer-service is ready
+        // try {
+        //     restClient.get()
+        //             .uri("/api/customers/{id}", customerId)
+        //             .retrieve()
+        //             .toBodilessEntity();
+        // } catch (HttpClientErrorException.NotFound e) {
+        //     throw new CustomerNotFoundException(customerId);
+        // }
     }
 
 
