@@ -112,7 +112,6 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
 
     private Order createOrder(UUID customerId) {
         return Order.builder()
-                .id(UUID.randomUUID())
                 .customerId(customerId)
                 .orderDate(LocalDateTime.now())
                 .status(OrderStatus.PLACED)
@@ -127,7 +126,6 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
             int quantity,
             BigDecimal price) {
         return OrderItem.builder()
-                .id(UUID.randomUUID())
                 .productId(productId)
                 .productName(productName)
                 .quantity(quantity)

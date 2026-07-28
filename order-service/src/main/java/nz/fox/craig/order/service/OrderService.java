@@ -48,7 +48,6 @@ public class OrderService {
 		BigDecimal total = calculateTotal(subtotal, shipping);
 	
 		Order order = Order.builder()
-				.id(UUID.randomUUID())
 				.customerId(request.customerId())
 				.orderDate(LocalDateTime.now())
 				.status(OrderStatus.PLACED)

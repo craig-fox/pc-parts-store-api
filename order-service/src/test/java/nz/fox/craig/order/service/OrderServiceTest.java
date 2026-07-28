@@ -39,243 +39,255 @@ import nz.fox.craig.order.repository.OrderRepository;
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
-    private static final UUID CUSTOMER_ID = UUID.randomUUID();
-    private static final UUID ORDER_ID = UUID.randomUUID();
-    private static final UUID PRODUCT_ID = UUID.randomUUID();
+        private static final UUID CUSTOMER_ID = UUID.randomUUID();
+        private static final UUID ORDER_ID = UUID.randomUUID();
+        private static final UUID PRODUCT_ID = UUID.randomUUID();
 
-    @Mock
-    private OrderRepository repository;
+        @Mock
+        private OrderRepository repository;
 
-    @Mock
-    private CustomerClient customerClient;
+        @Mock
+        private CustomerClient customerClient;
 
-    @Mock
-    private ProductClient productClient;
+        @Mock
+        private ProductClient productClient;
 
-    @InjectMocks
-    private OrderService service;
+        @InjectMocks
+        private OrderService service;
 
-    @Nested
-    class CreateOrder {
-        @Test
-        void shouldCreateOrder() {
-            // Arrange
-            doNothing().when(customerClient)
-                    .validateCustomerExists(CUSTOMER_ID);
-            when(repository.save(any(Order.class)))
-                    .thenAnswer(invocation -> invocation.getArgument(0));
-            when(productClient.getProduct(PRODUCT_ID))
-                    .thenReturn(productSnapshot());
+        @Nested
+        class CreateOrder {
+                @Test
+                void shouldCreateOrder() {
+                        // Arrange
+                        doNothing().when(customerClient)
+                                        .validateCustomerExists(CUSTOMER_ID);
 
-            // Act
-            OrderResponse response = service.createOrder(orderRequest());
+                        when(repository.save(any(Order.class)))
+                                .thenAnswer(invocation -> {
+                                        Order order = invocation.getArgument(0);
+                                        if (order.getId() == null) {
+                                                order.setId(UUID.randomUUID());
+                                        }
+                                        order.getItems().forEach(item -> {
+                                                if (item.getId() == null) {
+                                                        item.setId(UUID.randomUUID());
+                                                }
+                                        });
+                                        return order;
+                                });
+                        when(productClient.getProduct(PRODUCT_ID))
+                                        .thenReturn(productSnapshot());
 
-            // Assert - interactions
-            ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
+                        // Act
+                        OrderResponse response = service.createOrder(orderRequest());
 
-            verify(customerClient).validateCustomerExists(CUSTOMER_ID);
-            verify(productClient).getProduct(PRODUCT_ID);
-            verify(repository).save(captor.capture());
-            verifyNoMoreInteractions(
-                    customerClient,
-                    productClient,
-                    repository);
+                        // Assert - interactions
+                        ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
 
-            // Assert - order persisted
-            Order savedOrder = captor.getValue();
-            OrderItem item = savedOrder.getItems().getFirst();
+                        verify(customerClient).validateCustomerExists(CUSTOMER_ID);
+                        verify(productClient).getProduct(PRODUCT_ID);
+                        verify(repository).save(captor.capture());
+                        verifyNoMoreInteractions(
+                                        customerClient,
+                                        productClient,
+                                        repository);
 
-            assertThat(item.getProductId()).isEqualTo(PRODUCT_ID);
-            assertThat(item.getProductName()).isEqualTo("Gaming Mouse");
-            assertThat(item.getUnitPrice())
-                    .isEqualByComparingTo(new BigDecimal("89.99"));
-            assertThat(item.getQuantity()).isEqualTo(2);
-            assertThat(item.getLineTotal())
-                    .isEqualByComparingTo(new BigDecimal("179.98"));
+                        // Assert - order persisted
+                        Order savedOrder = captor.getValue();
+                        OrderItem item = savedOrder.getItems().getFirst();
 
-            assertThat(savedOrder.getCustomerId()).isEqualTo(CUSTOMER_ID);
-            assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PLACED);
-            assertThat(savedOrder.getCustomerId()).isEqualTo(CUSTOMER_ID);
-            assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PLACED);
-            assertThat(savedOrder.getSubtotal())
-                    .isEqualByComparingTo(new BigDecimal("179.98"));
+                        assertThat(item.getProductId()).isEqualTo(PRODUCT_ID);
+                        assertThat(item.getProductName()).isEqualTo("Gaming Mouse");
+                        assertThat(item.getUnitPrice())
+                                        .isEqualByComparingTo(new BigDecimal("89.99"));
+                        assertThat(item.getQuantity()).isEqualTo(2);
+                        assertThat(item.getLineTotal())
+                                        .isEqualByComparingTo(new BigDecimal("179.98"));
 
-            assertThat(savedOrder.getShipping())
-                    .isEqualByComparingTo(new BigDecimal("0"));
+                        assertThat(savedOrder.getCustomerId()).isEqualTo(CUSTOMER_ID);
+                        assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PLACED);
+                        assertThat(savedOrder.getCustomerId()).isEqualTo(CUSTOMER_ID);
+                        assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PLACED);
+                        assertThat(savedOrder.getSubtotal())
+                                        .isEqualByComparingTo(new BigDecimal("179.98"));
 
-            assertThat(savedOrder.getTotal())
-                    .isEqualByComparingTo(new BigDecimal("179.98"));
-            assertThat(savedOrder.getItems())
-                    .hasSize(1);
-            assertThat(savedOrder.getId()).isNotNull();
-            assertThat(savedOrder.getOrderDate()).isNotNull();
+                        assertThat(savedOrder.getShipping())
+                                        .isEqualByComparingTo(new BigDecimal("0"));
 
-            // Assert - returned response
-            assertThat(response.id()).isEqualTo(savedOrder.getId());
-            assertThat(response.customerId()).isEqualTo(savedOrder.getCustomerId());
-            assertThat(response.status()).isEqualTo(savedOrder.getStatus().name());
-            assertThat(response.total()).isEqualByComparingTo(savedOrder.getTotal());
-            assertThat(response.items())
-                    .hasSize(1);
+                        assertThat(savedOrder.getTotal())
+                                        .isEqualByComparingTo(new BigDecimal("179.98"));
+                        assertThat(savedOrder.getItems())
+                                        .hasSize(1);
+                        assertThat(savedOrder.getId()).isNotNull();
+                        assertThat(savedOrder.getOrderDate()).isNotNull();
 
-            OrderItemResponse itemResponse = response.items().getFirst();
+                        // Assert - returned response
+                        assertThat(response.id()).isEqualTo(savedOrder.getId());
+                        assertThat(response.customerId()).isEqualTo(savedOrder.getCustomerId());
+                        assertThat(response.status()).isEqualTo(savedOrder.getStatus().name());
+                        assertThat(response.total()).isEqualByComparingTo(savedOrder.getTotal());
+                        assertThat(response.items())
+                                        .hasSize(1);
 
-            assertThat(itemResponse.productId()).isEqualTo(PRODUCT_ID);
-            assertThat(itemResponse.productName()).isEqualTo("Gaming Mouse");
-            assertThat(itemResponse.quantity()).isEqualTo(2);
-            assertThat(itemResponse.unitPrice())
-                    .isEqualByComparingTo(new BigDecimal("89.99"));
-            assertThat(itemResponse.lineTotal())
-                    .isEqualByComparingTo(new BigDecimal("179.98"));
+                        OrderItemResponse itemResponse = response.items().getFirst();
 
+                        assertThat(itemResponse.productId()).isEqualTo(PRODUCT_ID);
+                        assertThat(itemResponse.productName()).isEqualTo("Gaming Mouse");
+                        assertThat(itemResponse.quantity()).isEqualTo(2);
+                        assertThat(itemResponse.unitPrice())
+                                        .isEqualByComparingTo(new BigDecimal("89.99"));
+                        assertThat(itemResponse.lineTotal())
+                                        .isEqualByComparingTo(new BigDecimal("179.98"));
+
+                }
+
+                @Test
+                void shouldThrowWhenCustomerDoesNotExist() {
+                        CreateOrderRequest request = orderRequest();
+                        doThrow(new CustomerNotFoundException(CUSTOMER_ID))
+                                        .when(customerClient)
+                                        .validateCustomerExists(CUSTOMER_ID);
+
+                        assertThrows(CustomerNotFoundException.class, () -> service.createOrder(request));
+
+                        verify(repository, never()).save(any());
+                }
+
+                @Test
+                void shouldThrowWhenProductDoesNotExist() {
+
+                        when(productClient.getProduct(PRODUCT_ID))
+                                        .thenThrow(new ProductNotFoundException(PRODUCT_ID));
+                        doNothing().when(customerClient)
+                                        .validateCustomerExists(CUSTOMER_ID);
+
+                        assertThatThrownBy(() -> service.createOrder(orderRequest()))
+                                        .isInstanceOf(ProductNotFoundException.class);
+
+                        verify(repository, never()).save(any());
+
+                }
         }
 
-        @Test
-        void shouldThrowWhenCustomerDoesNotExist() {
-            CreateOrderRequest request = orderRequest();
-            doThrow(new CustomerNotFoundException(CUSTOMER_ID))
-                    .when(customerClient)
-                    .validateCustomerExists(CUSTOMER_ID);
+        @Nested
+        class GetOrder {
+                @Test
+                void shouldReturnOrder() {
+                        when(repository.findById(ORDER_ID)).thenReturn(Optional.of(existingOrder()));
 
-            assertThrows(CustomerNotFoundException.class, () -> service.createOrder(request));
+                        OrderResponse response = service.getOrder(ORDER_ID);
 
-            verify(repository, never()).save(any());
+                        assertThat(response.status())
+                                        .isEqualTo(OrderStatus.PLACED.name());
+
+                        assertThat(response.customerId()).isEqualTo(CUSTOMER_ID);
+
+                        assertThat(response.items())
+                                        .hasSize(1);
+
+                        OrderItemResponse itemResponse = response.items().getFirst();
+
+                        assertThat(itemResponse.productId()).isEqualTo(PRODUCT_ID);
+                        assertThat(itemResponse.productName()).isEqualTo("Gaming Mouse");
+                        assertThat(itemResponse.quantity()).isEqualTo(2);
+                        assertThat(itemResponse.unitPrice())
+                                        .isEqualByComparingTo("89.99");
+                        assertThat(itemResponse.lineTotal())
+                                        .isEqualByComparingTo("179.98");
+
+                        assertThat(response.total()).isEqualByComparingTo("179.98");
+                        verify(repository).findById(ORDER_ID);
+                        verifyNoMoreInteractions(repository);
+                }
+
+                @Test
+                void shouldThrowWhenOrderNotFound() {
+                        when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
+
+                        assertThrows(OrderNotFoundException.class, () -> service.getOrder(ORDER_ID));
+                }
         }
 
-        @Test
-        void shouldThrowWhenProductDoesNotExist() {
+        @Nested
+        class CancelOrder {
+                @Test
+                void shouldCancelOrder() {
+                        Order existingOrder = existingOrder();
+                        when(repository.findById(ORDER_ID)).thenReturn(Optional.of(existingOrder));
+                        when(repository.save(existingOrder)).thenReturn(existingOrder);
 
-            when(productClient.getProduct(PRODUCT_ID))
-                    .thenThrow(new ProductNotFoundException(PRODUCT_ID));
-            doNothing().when(customerClient)
-                    .validateCustomerExists(CUSTOMER_ID);
+                        OrderResponse response = service.cancelOrder(ORDER_ID);
 
-            assertThatThrownBy(() -> service.createOrder(orderRequest()))
-                    .isInstanceOf(ProductNotFoundException.class);
+                        verify(repository).save(existingOrder);
+                        assertThat(response.status())
+                                        .isEqualTo(OrderStatus.CANCELLED.name());
+                        assertThat(existingOrder.getStatus())
+                                        .isEqualTo(OrderStatus.CANCELLED);
+                }
 
-            verify(repository, never()).save(any());
+                @Test
+                void shouldThrowWhenOrderNotFound() {
+                        when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
+                        assertThrows(OrderNotFoundException.class, () -> service.cancelOrder(ORDER_ID));
+                        verify(repository, never()).save(any());
+                }
 
-        }
-    }
-
-    @Nested
-    class GetOrder {
-        @Test
-        void shouldReturnOrder() {
-            when(repository.findById(ORDER_ID)).thenReturn(Optional.of(existingOrder()));
-
-            OrderResponse response = service.getOrder(ORDER_ID);
-
-            assertThat(response.status())
-                    .isEqualTo(OrderStatus.PLACED.name());
-
-            assertThat(response.customerId()).isEqualTo(CUSTOMER_ID);
-
-            assertThat(response.items())
-                    .hasSize(1);
-
-            OrderItemResponse itemResponse = response.items().getFirst();
-
-            assertThat(itemResponse.productId()).isEqualTo(PRODUCT_ID);
-            assertThat(itemResponse.productName()).isEqualTo("Gaming Mouse");
-            assertThat(itemResponse.quantity()).isEqualTo(2);
-            assertThat(itemResponse.unitPrice())
-                    .isEqualByComparingTo("89.99");
-            assertThat(itemResponse.lineTotal())
-                    .isEqualByComparingTo("179.98");
-
-            assertThat(response.total()).isEqualByComparingTo("179.98");
-            verify(repository).findById(ORDER_ID);
-            verifyNoMoreInteractions(repository);
+                @Test
+                void shouldThrowWhenOrderAlreadyCancelled() {
+                        when(repository.findById(ORDER_ID)).thenReturn(Optional.of(cancelledOrder()));
+                        assertThrows(OrderAlreadyCancelledException.class, () -> service.cancelOrder(ORDER_ID));
+                        verify(repository, never()).save(any());
+                }
         }
 
-        @Test
-        void shouldThrowWhenOrderNotFound() {
-            when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
-
-            assertThrows(OrderNotFoundException.class, () -> service.getOrder(ORDER_ID));
-        }
-    }
-
-    @Nested
-    class CancelOrder {
-        @Test
-        void shouldCancelOrder() {
-            Order existingOrder = existingOrder();
-            when(repository.findById(ORDER_ID)).thenReturn(Optional.of(existingOrder));
-            when(repository.save(existingOrder)).thenReturn(existingOrder);
-
-            OrderResponse response = service.cancelOrder(ORDER_ID);
-
-            verify(repository).save(existingOrder);
-            assertThat(response.status())
-                    .isEqualTo(OrderStatus.CANCELLED.name());
-            assertThat(existingOrder.getStatus())
-                    .isEqualTo(OrderStatus.CANCELLED);
+        private CreateOrderRequest orderRequest() {
+                return CreateOrderRequest.builder()
+                                .customerId(CUSTOMER_ID)
+                                .items(List.of(
+                                                CreateOrderItemRequest.builder()
+                                                                .productId(PRODUCT_ID)
+                                                                .quantity(2)
+                                                                .build()))
+                                .build();
         }
 
-        @Test
-        void shouldThrowWhenOrderNotFound() {
-            when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
-            assertThrows(OrderNotFoundException.class, () -> service.cancelOrder(ORDER_ID));
-            verify(repository, never()).save(any());
+        private Order existingOrder() {
+
+                Order order = Order.builder()
+                                .id(ORDER_ID)
+                                .customerId(CUSTOMER_ID)
+                                .orderDate(LocalDateTime.now())
+                                .status(OrderStatus.PLACED)
+                                .subtotal(new BigDecimal("179.98"))
+                                .shipping(BigDecimal.ZERO)
+                                .total(new BigDecimal("179.98"))
+                                .build();
+
+                order.addItem(
+                                OrderItem.builder()
+                                                .productId(PRODUCT_ID)
+                                                .productName("Gaming Mouse")
+                                                .quantity(2)
+                                                .unitPrice(new BigDecimal("89.99"))
+                                                .build());
+                return order;
         }
 
-        @Test
-        void shouldThrowWhenOrderAlreadyCancelled() {
-            when(repository.findById(ORDER_ID)).thenReturn(Optional.of(cancelledOrder()));
-            assertThrows(OrderAlreadyCancelledException.class, () -> service.cancelOrder(ORDER_ID));
-            verify(repository, never()).save(any());
+        private Order cancelledOrder() {
+                Order order = existingOrder();
+                order.setStatus(OrderStatus.CANCELLED);
+                return order;
         }
-    }
 
-    private CreateOrderRequest orderRequest() {
-        return CreateOrderRequest.builder()
-                .customerId(CUSTOMER_ID)
-                .items(List.of(
-                        CreateOrderItemRequest.builder()
-                                .productId(PRODUCT_ID)
-                                .quantity(2)
-                                .build()))
-                .build();
-    }
-
-    private Order existingOrder() {
-
-        Order order = Order.builder()
-                .id(ORDER_ID)
-                .customerId(CUSTOMER_ID)
-                .orderDate(LocalDateTime.now())
-                .status(OrderStatus.PLACED)
-                .subtotal(new BigDecimal("179.98"))
-                .shipping(BigDecimal.ZERO)
-                .total(new BigDecimal("179.98"))
-                .build();
-
-        order.addItem(
-                OrderItem.builder()
-                        .productId(PRODUCT_ID)
-                        .productName("Gaming Mouse")
-                        .quantity(2)
-                        .unitPrice(new BigDecimal("89.99"))
-                        .build());
-        return order;
-    }
-
-    private Order cancelledOrder() {
-        Order order = existingOrder();
-        order.setStatus(OrderStatus.CANCELLED);
-        return order;
-    }
-
-    private ProductSnapshot productSnapshot() {
-        return ProductSnapshot.builder()
-                .id(PRODUCT_ID)
-                .name("Gaming Mouse")
-                .price(new BigDecimal("89.99"))
-                .weightKg(new BigDecimal("0.30"))
-                .active(true)
-                .build();
-    }
+        private ProductSnapshot productSnapshot() {
+                return ProductSnapshot.builder()
+                                .id(PRODUCT_ID)
+                                .name("Gaming Mouse")
+                                .price(new BigDecimal("89.99"))
+                                .weightKg(new BigDecimal("0.30"))
+                                .active(true)
+                                .build();
+        }
 
 }
