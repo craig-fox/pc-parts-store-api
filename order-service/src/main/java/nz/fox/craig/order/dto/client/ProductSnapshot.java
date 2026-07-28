@@ -1,4 +1,4 @@
-package nz.fox.craig.order.dto.response;
+package nz.fox.craig.order.dto.client;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -6,7 +6,7 @@ import java.util.UUID;
 import lombok.Builder;
 
 @Builder
-public record ProductResponse(
+public record ProductSnapshot(
         UUID id,
         String name,
         BigDecimal price,

@@ -2,10 +2,10 @@ package nz.fox.craig.order.client;
 
 import java.util.UUID;
 
-import nz.fox.craig.order.dto.response.ProductResponse;
+import nz.fox.craig.order.dto.client.ProductSnapshot;
 
 public interface ProductClient {
 
-    ProductResponse getProduct(UUID productId);
+    ProductSnapshot getProduct(UUID productId);
 
 }

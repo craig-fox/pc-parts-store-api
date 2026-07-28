@@ -8,7 +8,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 import lombok.RequiredArgsConstructor;
-import nz.fox.craig.order.dto.response.ProductResponse;
+import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.exception.ProductNotFoundException;
 
 @Component
@@ -19,13 +19,13 @@ public class HttpProductClient implements ProductClient {
     private final RestClient restClient;
 
     @Override
-    public ProductResponse getProduct(UUID productId) {
+    public ProductSnapshot getProduct(UUID productId) {
 
         try {
             return restClient.get()
                     .uri("/api/products/{id}", productId)
                     .retrieve()
-                    .body(ProductResponse.class);
+                    .body(ProductSnapshot.class);
         } catch (HttpClientErrorException.NotFound ex) {
             throw new ProductNotFoundException(productId);
         }
