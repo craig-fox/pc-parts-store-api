@@ -132,7 +132,6 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
                 .productName(productName)
                 .quantity(quantity)
                 .unitPrice(price)
-                .lineTotal(price.multiply(BigDecimal.valueOf(quantity)))
                 .build();
     }
 

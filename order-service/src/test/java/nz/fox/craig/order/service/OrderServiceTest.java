@@ -258,7 +258,6 @@ class OrderServiceTest {
                         .productName("Gaming Mouse")
                         .quantity(2)
                         .unitPrice(new BigDecimal("89.99"))
-                        .lineTotal(new BigDecimal("179.98"))
                         .build());
         return order;
     }

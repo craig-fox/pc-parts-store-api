@@ -73,14 +73,12 @@ public class OrderService {
 							productClient.getProduct(item.productId());
 	
 					BigDecimal unitPrice = product.price();
-					BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(item.quantity()));
 	
 					return OrderItem.builder()
 							.productId(product.id())
 							.productName(product.name())
 							.unitPrice(unitPrice)
 							.quantity(item.quantity())
-							.lineTotal(lineTotal)
 							.build();
 				})
 				.toList();
