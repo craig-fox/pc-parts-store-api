@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.UUID;
 
 import lombok.RequiredArgsConstructor;
-import nz.fox.craig.order.client.CustomerClient;
-import nz.fox.craig.order.dto.CreateOrderRequest;
-import nz.fox.craig.order.dto.OrderItemResponse;
-import nz.fox.craig.order.dto.OrderResponse;
+import nz.fox.craig.order.client.HttpCustomerClient;
+import nz.fox.craig.order.dto.request.CreateOrderRequest;
+import nz.fox.craig.order.dto.response.OrderItemResponse;
+import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
 import nz.fox.craig.order.model.Order;
@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
 
 	private final OrderRepository orderRepository;
-	private final CustomerClient customerClient;
+	private final HttpCustomerClient customerClient;
 	//private final ProductClient productClient; -- will be implemented
 
 	@Transactional

@@ -20,9 +20,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.Nested;
 
-import nz.fox.craig.order.client.CustomerClient;
-import nz.fox.craig.order.dto.CreateOrderRequest;
-import nz.fox.craig.order.dto.OrderResponse;
+import nz.fox.craig.order.client.HttpCustomerClient;
+import nz.fox.craig.order.dto.request.CreateOrderRequest;
+import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
@@ -40,7 +40,7 @@ class OrderServiceTest {
     private OrderRepository repository;
 
     @Mock
-    private CustomerClient client;
+    private HttpCustomerClient client;
 
     @InjectMocks
     private OrderService service;

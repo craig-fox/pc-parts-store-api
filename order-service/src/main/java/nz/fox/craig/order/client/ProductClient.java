@@ -1,5 +1,11 @@
 package nz.fox.craig.order.client;
 
-public class ProductClient {
+import java.util.UUID;
+
+import nz.fox.craig.order.dto.response.ProductResponse;
+
+public interface ProductClient {
+
+    ProductResponse getProduct(UUID productId);
 
 }
