@@ -14,8 +14,17 @@ spring:
   flyway:
     enabled: true
 
+    
+
 server:
     port: 8082
 
-customer-service:
+services:
+  customer:
     base-url: http://localhost:8081
+
+  product:
+    base-url: http://localhost:8083
+
+ 
+

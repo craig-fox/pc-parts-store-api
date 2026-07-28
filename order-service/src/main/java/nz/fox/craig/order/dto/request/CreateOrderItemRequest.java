@@ -1,4 +1,4 @@
-package nz.fox.craig.order.dto;
+package nz.fox.craig.order.dto.request;
 
 import java.util.UUID;
 

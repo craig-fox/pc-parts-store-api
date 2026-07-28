@@ -2,8 +2,8 @@ package nz.fox.craig.order.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import nz.fox.craig.order.dto.CreateOrderRequest;
-import nz.fox.craig.order.dto.OrderResponse;
+import nz.fox.craig.order.dto.request.CreateOrderRequest;
+import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.service.OrderService;
 
 import java.util.UUID;

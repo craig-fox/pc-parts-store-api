@@ -1,4 +1,4 @@
-package nz.fox.craig.order.dto;
+package nz.fox.craig.order.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

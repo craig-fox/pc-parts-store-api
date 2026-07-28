@@ -18,9 +18,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import nz.fox.craig.order.dto.CreateOrderItemRequest;
-import nz.fox.craig.order.dto.CreateOrderRequest;
-import nz.fox.craig.order.dto.OrderResponse;
+import nz.fox.craig.order.dto.request.CreateOrderItemRequest;
+import nz.fox.craig.order.dto.request.CreateOrderRequest;
+import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderExceptionHandler;

@@ -1,0 +1,33 @@
+package nz.fox.craig.order.client;
+
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClient;
+
+import lombok.RequiredArgsConstructor;
+import nz.fox.craig.order.dto.response.ProductResponse;
+import nz.fox.craig.order.exception.ProductNotFoundException;
+
+@Component
+@RequiredArgsConstructor
+public class HttpProductClient implements ProductClient {
+
+    @Qualifier("productRestClient")
+    private final RestClient restClient;
+
+    @Override
+    public ProductResponse getProduct(UUID productId) {
+
+        try {
+            return restClient.get()
+                    .uri("/api/products/{id}", productId)
+                    .retrieve()
+                    .body(ProductResponse.class);
+        } catch (HttpClientErrorException.NotFound ex) {
+            throw new ProductNotFoundException(productId);
+        }
+    }
+}
