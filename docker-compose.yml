@@ -2,7 +2,6 @@ services:
 
   customer-postgres:
     image: postgres:17
-    container_name: customer-postgres
     environment:
       POSTGRES_DB: customerdb
       POSTGRES_USER: customer
@@ -16,7 +15,6 @@ services:
   
   order-postgres:
     image: postgres:17
-    container_name: order-postgres
     environment:
       POSTGRES_DB: orderdb
       POSTGRES_USER: order
@@ -30,7 +28,6 @@ services:
 
   product-postgres:
     image: postgres:17
-    container_name: product-postgres
     environment:
       POSTGRES_DB: productdb
       POSTGRES_USER: product
@@ -39,6 +36,62 @@ services:
       - "5433:5432"
     volumes:
       - product-data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+
+  customer-service:
+    build:
+      context: ./customer-service
+    depends_on:
+      - customer-postgres
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://customer-postgres:5432/customerdb
+      SPRING_DATASOURCE_USERNAME: customer
+      SPRING_DATASOURCE_PASSWORD: customer
+    ports:
+      - "8081:8080"
+    networks:
+      - backend    
+
+
+  product-service:
+    build:
+      context: ./product-service
+    container_name: product-service
+    depends_on:
+      - product-postgres
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://product-postgres:5432/productdb
+      SPRING_DATASOURCE_USERNAME: product
+      SPRING_DATASOURCE_PASSWORD: product
+    ports:
+      - "8083:8080"
+    networks:
+      - backend    
+
+
+  order-service:
+    build:
+      context: ./order-service
+    container_name: order-service
+    depends_on:
+      - order-postgres
+      - customer-service
+      - product-service
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://order-postgres:5432/orderdb
+      SPRING_DATASOURCE_USERNAME: order
+      SPRING_DATASOURCE_PASSWORD: order
+
+      CUSTOMER_SERVICE_URL: http://customer-service:8080
+      PRODUCT_SERVICE_URL: http://product-service:8080
+
+    ports:
+      - "8082:8080"
     networks:
       - backend
   

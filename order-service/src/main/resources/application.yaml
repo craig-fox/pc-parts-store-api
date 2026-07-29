@@ -14,17 +14,15 @@ spring:
   flyway:
     enabled: true
 
-    
 
 server:
-    port: 8082
+  port: ${SERVER_PORT:8082}
 
 services:
   customer:
-    base-url: http://localhost:8081
+    base-url: ${CUSTOMER_SERVICE_URL:http://localhost:8081}
 
   product:
-    base-url: http://localhost:8083
+    base-url: ${PRODUCT_SERVICE_URL:http://localhost:8083}
 
- 
 
