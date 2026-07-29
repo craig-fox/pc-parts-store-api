@@ -1,6 +1,8 @@
 package nz.fox.craig.customer.service;
 
 import java.util.List;
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import nz.fox.craig.customer.dto.CustomerRequest;
 import nz.fox.craig.customer.dto.CustomerResponse;
@@ -50,14 +52,14 @@ public class CustomerService {
 	}
 
 	@Transactional(readOnly = true)
-	public CustomerResponse getCustomer(Long id) {
+	public CustomerResponse getCustomer(UUID id) {
 		return customerRepository.findById(id)
 				.map(CustomerResponse::from)
 				.orElseThrow(() -> new CustomerNotFoundException(id));
 	}
 
 	@Transactional
-	public CustomerResponse updateCustomer(Long id, CustomerRequest request) {
+	public CustomerResponse updateCustomer(UUID id, CustomerRequest request) {
 		Customer customer = customerRepository.findById(id)
 				.orElseThrow(() -> new CustomerNotFoundException(id));
 		customer.setName(request.name());
@@ -67,7 +69,7 @@ public class CustomerService {
 	}
 
 	@Transactional
-	public void deactivateCustomer(Long id) {
+	public void deactivateCustomer(UUID id) {
 		Customer customer = customerRepository.findById(id)
 
             .orElseThrow(() -> new CustomerNotFoundException(id));
@@ -77,7 +79,7 @@ public class CustomerService {
 	}
 
 	@Transactional
-	public void activateCustomer(Long id) {
+	public void activateCustomer(UUID id) {
 		Customer customer = customerRepository.findById(id)
 				.orElseThrow(() -> new CustomerNotFoundException(id));
 		if(customer.getStatus() == CustomerStatus.ACTIVE) {

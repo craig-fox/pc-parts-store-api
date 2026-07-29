@@ -1,9 +1,11 @@
 package nz.fox.craig.customer.dto;
 
+import java.util.UUID;
+
 import nz.fox.craig.customer.model.Customer;
 
 public record CustomerResponse(
-		Long id,
+		UUID id,
 		String name,
 		String email,
 		String address
