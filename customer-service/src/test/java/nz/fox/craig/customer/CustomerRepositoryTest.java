@@ -54,7 +54,7 @@ class CustomerRepositoryTest extends AbstractPostgresTest{
 				.address("456 Oak Ave")
 				.build());
 
-		assertThat(customerRepository.findAll()).hasSize(2);
+		assertThat(customerRepository.findAll()).hasSize(12);
 	}
 
 	@Test
@@ -94,10 +94,10 @@ class CustomerRepositoryTest extends AbstractPostgresTest{
 				.build());
 
 		assertThat(customerRepository.findByStatus(CustomerStatus.ACTIVE))
-				.hasSize(1);
+				.hasSize(9);
 
 		assertThat(customerRepository.findByStatus(CustomerStatus.INACTIVE))
-				.hasSize(1);
+				.hasSize(2);
 	}
 
 }

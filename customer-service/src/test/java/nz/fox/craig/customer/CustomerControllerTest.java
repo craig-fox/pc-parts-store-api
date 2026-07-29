@@ -10,6 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -40,10 +42,15 @@ class CustomerControllerTest {
 	@MockitoBean
 	private CustomerService customerService;
 
+	private final UUID CUSTOMER_ID = UUID.randomUUID();
+	private final UUID CUSTOMER_ID_2 = UUID.randomUUID();
+	private final UUID UNKNOWN_CUSTOMER = UUID.randomUUID();
+
 	@Test
 	void createCustomer() throws Exception {
+		
 		CustomerRequest request = new CustomerRequest("Jane Doe", "jane@example.com", "123 Main St");
-		CustomerResponse response = new CustomerResponse(1L, "Jane Doe", "jane@example.com", "123 Main St");
+		CustomerResponse response = new CustomerResponse(CUSTOMER_ID, "Jane Doe", "jane@example.com", "123 Main St");
 
 		when(customerService.createCustomer(any(CustomerRequest.class))).thenReturn(response);
 
@@ -51,7 +58,7 @@ class CustomerControllerTest {
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(request)))
 				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.id").value(1))
+				.andExpect(jsonPath("$.id").value(CUSTOMER_ID.toString()))
 				.andExpect(jsonPath("$.name").value("Jane Doe"))
 				.andExpect(jsonPath("$.email").value("jane@example.com"))
 				.andExpect(jsonPath("$.address").value("123 Main St"));
@@ -80,8 +87,8 @@ class CustomerControllerTest {
 	@Test
 	void getAllCustomers() throws Exception {
 		List<CustomerResponse> responses = List.of(
-				new CustomerResponse(1L, "Jane Doe", "jane@example.com", "123 Main St"),
-				new CustomerResponse(2L, "John Doe", "john@example.com", "456 Oak Ave")
+				new CustomerResponse(CUSTOMER_ID, "Jane Doe", "jane@example.com", "123 Main St"),
+				new CustomerResponse(CUSTOMER_ID_2, "John Doe", "john@example.com", "456 Oak Ave")
 		);
 
 		when(customerService.getCustomers(null)).thenReturn(responses);
@@ -95,33 +102,33 @@ class CustomerControllerTest {
 
 	@Test
 	void getCustomer() throws Exception {
-		CustomerResponse response = new CustomerResponse(1L, "Jane Doe", "jane@example.com", "123 Main St");
+		CustomerResponse response = new CustomerResponse(CUSTOMER_ID, "Jane Doe", "jane@example.com", "123 Main St");
 
-		when(customerService.getCustomer(1L)).thenReturn(response);
+		when(customerService.getCustomer(CUSTOMER_ID)).thenReturn(response);
 
-		mockMvc.perform(get("/api/customers/1"))
+		mockMvc.perform(get("/api/customers/" + CUSTOMER_ID))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.id").value(1))
+				.andExpect(jsonPath("$.id").value(CUSTOMER_ID.toString()))
 				.andExpect(jsonPath("$.name").value("Jane Doe"));
 	}
 
 	@Test
 	void getCustomerNotFound() throws Exception {
-		when(customerService.getCustomer(99L)).thenThrow(new CustomerNotFoundException(99L));
+		when(customerService.getCustomer(UNKNOWN_CUSTOMER)).thenThrow(new CustomerNotFoundException(UNKNOWN_CUSTOMER));
 
-		mockMvc.perform(get("/api/customers/99"))
+		mockMvc.perform(get("/api/customers/" + UNKNOWN_CUSTOMER))
 				.andExpect(status().isNotFound())
-				.andExpect(jsonPath("$.message").value("Customer not found with id: 99"));
+				.andExpect(jsonPath("$.message").value("Customer not found with id: " + UNKNOWN_CUSTOMER));
 	}
 
 	@Test
 	void updateCustomer() throws Exception {
 		CustomerRequest request = new CustomerRequest("Jane Smith", "jane.smith@example.com", "456 Oak Ave");
-		CustomerResponse response = new CustomerResponse(1L, "Jane Smith", "jane.smith@example.com", "456 Oak Ave");
+		CustomerResponse response = new CustomerResponse(CUSTOMER_ID, "Jane Smith", "jane.smith@example.com", "456 Oak Ave");
 
-		when(customerService.updateCustomer(eq(1L), any(CustomerRequest.class))).thenReturn(response);
+		when(customerService.updateCustomer(eq(CUSTOMER_ID), any(CustomerRequest.class))).thenReturn(response);
 
-		mockMvc.perform(put("/api/customers/1")
+		mockMvc.perform(put("/api/customers/" + CUSTOMER_ID)
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
