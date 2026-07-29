@@ -1,4 +1,4 @@
-package nz.fox.craig.customer;
+package nz.fox.craig.customer.common;
 
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.PostgreSQLContainer;

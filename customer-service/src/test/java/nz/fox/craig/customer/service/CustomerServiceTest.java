@@ -1,4 +1,4 @@
-package nz.fox.craig.customer;
+package nz.fox.craig.customer.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
