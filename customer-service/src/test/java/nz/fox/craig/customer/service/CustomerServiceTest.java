@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import nz.fox.craig.customer.dto.CustomerRequest;
 import nz.fox.craig.customer.dto.CustomerResponse;
@@ -26,9 +27,14 @@ import nz.fox.craig.customer.repository.CustomerRepository;
 class CustomerServiceTest {
 	private static final String PASSWORD =
         "$2a$10$8xukrp03uk4k91AEt1BFKO.BQLwynIn3oOIn/Dqv4dCNsp6X0foe.";
+	private static final String ENTERED_PASSWORD = "Password123!";
 
 	@Mock
 	private CustomerRepository customerRepository;
+
+	@Mock 
+	private PasswordEncoder passwordEncoder;
+
 
 	@InjectMocks
 	private CustomerService customerService;
@@ -41,7 +47,7 @@ class CustomerServiceTest {
 	@Test
 	void createCustomer() {
 		final CustomerRequest request = new CustomerRequest("Jane", "Doe", "Jo",
-				"jane@example.com", "123 Main St", "Password123!");
+				"jane@example.com", "123 Main St", ENTERED_PASSWORD);
 		final Customer saved = Customer.builder()
 				.id(CUSTOMER_ID)
 				.firstName("Jane")
@@ -53,6 +59,8 @@ class CustomerServiceTest {
 				.build();
 
 		when(customerRepository.save(any(Customer.class))).thenReturn(saved);
+		when(passwordEncoder.encode(ENTERED_PASSWORD))
+    		.thenReturn(PASSWORD);
 
 		final CustomerResponse response = customerService.createCustomer(request);
 
@@ -146,14 +154,14 @@ class CustomerServiceTest {
 	@Test
 	void updateCustomer() {
 		final CustomerRequest request = new CustomerRequest("Jane", "Smith", null,
-				"jane.smith@example.com", "456 Oak Ave", "Password123!");
+				"jane.smith@example.com", "456 Oak Ave", ENTERED_PASSWORD);
 		final Customer existing = Customer.builder()
 				.id(CUSTOMER_ID)
 				.firstName("Jane")
 				.lastName("Doe")
 				.email("jane@example.com")
 				.address("123 Main St")
-				.password("")
+				.password(PASSWORD)
 				.build();
 		final Customer updated = Customer.builder()
 				.id(CUSTOMER_ID)
@@ -161,7 +169,7 @@ class CustomerServiceTest {
 				.lastName("Smith")
 				.email("jane.smith@example.com")
 				.address("456 Oak Ave")
-				.password("")
+				.password(PASSWORD)
 				.build();
 
 		when(customerRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(existing));
