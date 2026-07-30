@@ -16,6 +16,7 @@ import nz.fox.craig.order.dto.response.OrderItemResponse;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
+import nz.fox.craig.order.mapper.OrderMapper;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
@@ -32,6 +33,7 @@ public class OrderService {
 	private final CustomerClient customerClient;
 	private final ProductClient productClient;
 	private final InventoryClient inventoryClient;
+	private final OrderMapper orderMapper;
 
 	@Transactional
 	public OrderResponse createOrder(OrderRequest request) {
@@ -42,7 +44,7 @@ public class OrderService {
 		}
 		Order order = assembleOrder(request);
 		Order savedOrder = orderRepository.save(order);
-		return mapToResponse(savedOrder);
+		return orderMapper.toResponse(savedOrder);
 	}
 
 	private Order assembleOrder(OrderRequest request) {
@@ -107,41 +109,11 @@ public class OrderService {
 		return subtotal.add(shipping);
 	}
 
-	
-	private OrderResponse mapToResponse(Order order) {
-
-		return OrderResponse.builder()
-				.id(order.getId())
-				.customerId(order.getCustomerId())
-				.orderDate(order.getOrderDate())
-				.status(order.getStatus().name())
-				.subtotal(order.getSubtotal())
-				.shipping(order.getShipping())
-				.total(order.getTotal())
-				.items(
-						order.getItems().stream()
-								.map(this::mapToResponse)
-								.toList()
-				)
-				.build();
-	}
-
-	private OrderItemResponse mapToResponse(OrderItem item) {
-
-		return OrderItemResponse.builder()
-				.productId(item.getProductId())
-				.productName(item.getProductName())
-				.quantity(item.getQuantity())
-				.unitPrice(item.getUnitPrice())
-				.lineTotal(item.getLineTotal())
-				.build();
-	}
-
 	@Transactional(readOnly = true)
 	public OrderResponse getOrder(UUID id) {
 
 		Order order = findOrderById(id);
-		return mapToResponse(order);
+		return orderMapper.toResponse(order);
 	}
 
 	private Order findOrderById(UUID id) {
@@ -155,7 +127,7 @@ public class OrderService {
 		validateOrderCanBeCancelled(order);
 		order.setStatus(OrderStatus.CANCELLED);
 		Order savedOrder = orderRepository.save(order);
-		return mapToResponse(savedOrder);
+		return orderMapper.toResponse(savedOrder);
 	}
 
 	private void validateOrderCanBeCancelled(Order order) {
