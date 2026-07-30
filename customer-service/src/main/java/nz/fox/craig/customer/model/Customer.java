@@ -27,17 +27,26 @@ public class Customer {
     private UUID id;
 
     @Column(nullable = false)
-    private String name;
+    private String firstName;
 
     @Column(nullable = false)
+    private String lastName;
+
+    @Builder.Default
+    @Column
+    private String preferredName = "";
+
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false)
     private String address;
+
+    @Column(nullable = false)
+    private String password;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
     private CustomerStatus status = CustomerStatus.ACTIVE;
 }
-
