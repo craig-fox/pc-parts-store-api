@@ -12,6 +12,7 @@ import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
 import nz.fox.craig.customer.repository.CustomerRepository;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomerService {
 
 	private final CustomerRepository customerRepository;
+	private final PasswordEncoder passwordEncoder;
 
 	@Transactional
 	public CustomerResponse createCustomer(CustomerRequest request) {
@@ -34,6 +36,7 @@ public class CustomerService {
 				.preferredName(request.preferredName())
 				.email(request.email())
 				.address(request.address())
+				.password(passwordEncoder.encode(request.password()))
 				.status(CustomerStatus.ACTIVE)
 				.build();
 		return CustomerResponse.from(customerRepository.save(customer));

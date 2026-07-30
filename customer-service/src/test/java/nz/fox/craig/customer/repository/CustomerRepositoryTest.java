@@ -1,35 +1,51 @@
 package nz.fox.craig.customer.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
 
+import org.aspectj.lang.annotation.Before;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 
 import nz.fox.craig.customer.common.AbstractPostgresTest;
+import nz.fox.craig.customer.config.SecurityConfig;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
 
 @DataJpaTest
+@Import(SecurityConfig.class)
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 class CustomerRepositoryTest extends AbstractPostgresTest {
-	private static final String PASSWORD =
-        "$2a$10$8xukrp03uk4k91AEt1BFKO.BQLwynIn3oOIn/Dqv4dCNsp6X0foe.";
+	
+	private static final String ENTERED_PASSWORD =  "Password123!";
+	private String hashed = ""; 
 
 	@Autowired
 	private CustomerRepository customerRepository;
 
+	@Autowired
+	private PasswordEncoder encoder;
+
+	@Before(value = "")
+	void init() {
+        hashed = encoder.encode(ENTERED_PASSWORD);
+	}
+
 	@Test
 	void saveAndFindById() {
+		
 		final Customer customer = Customer.builder()
 				.firstName("Jane")
 				.lastName("Doe")
 				.preferredName("Jenny")
 				.email("jane@example.com")
 				.address("123 Main St")
-				.password(PASSWORD)
+				.password(hashed)
 				.build();
 
 		final Customer saved = customerRepository.save(customer);
@@ -44,6 +60,7 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
 					assertThat(found.getEmail()).isEqualTo("jane@example.com");
 					assertThat(found.getAddress()).isEqualTo("123 Main St");
 					assertThat(found.getStatus()).isEqualTo(CustomerStatus.ACTIVE);
+					assertTrue(encoder.matches(hashed, found.getPassword()));
 				});
 	}
 
@@ -54,14 +71,14 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
 				.lastName("Doe")
 				.email("jane@example.com")
 				.address("123 Main St")
-				.password(PASSWORD)
+				.password(hashed)
 				.build());
 		customerRepository.save(Customer.builder()
 				.firstName("John")
 				.lastName("Doe")
 				.email("john@example.com")
 				.address("456 Oak Ave")
-				.password(PASSWORD)
+				.password(hashed)
 				.build());
 
 		assertThat(customerRepository.findAll()).hasSize(12);
@@ -96,7 +113,7 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
 				.email("jane@example.com")
 				.address("123 Main St")
 				.status(CustomerStatus.ACTIVE)
-				.password(PASSWORD)
+				.password(hashed)
 				.build());
 
 		customerRepository.save(Customer.builder()
@@ -105,7 +122,7 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
 				.email("john@example.com")
 				.address("456 Oak Ave")
 				.status(CustomerStatus.INACTIVE)
-				.password(PASSWORD)
+				.password(hashed)
 				.build());
 
 		assertThat(customerRepository.findByStatus(CustomerStatus.ACTIVE))
