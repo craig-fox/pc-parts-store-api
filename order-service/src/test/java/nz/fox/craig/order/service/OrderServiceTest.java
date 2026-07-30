@@ -34,6 +34,7 @@ import nz.fox.craig.order.exception.InsufficientStockException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
 import nz.fox.craig.order.exception.ProductNotFoundException;
+import nz.fox.craig.order.mapper.OrderMapper;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
@@ -47,7 +48,6 @@ class OrderServiceTest {
         private static final UUID PRODUCT_ID = UUID.randomUUID();
         private static final int QUANTITY = 2;
 
-
         @Mock
         private OrderRepository repository;
 
@@ -59,6 +59,9 @@ class OrderServiceTest {
 
         @Mock
         private InventoryClient inventoryClient;
+
+        @Mock
+        private OrderMapper orderMapper;
 
         @InjectMocks
         private OrderService service;
@@ -86,41 +89,51 @@ class OrderServiceTest {
                                         });
                         when(productClient.getProduct(PRODUCT_ID))
                                         .thenReturn(productSnapshot());
+                        OrderResponse expectedResponse = OrderResponse.builder()
+                                        .id(ORDER_ID)
+                                        .status("PLACED")
+                                        .build();
+
+                        when(orderMapper.toResponse(any(Order.class)))
+                                        .thenReturn(expectedResponse);
 
                         // Act
                         OrderResponse response = service.createOrder(orderRequest());
 
                         // Assert - interactions
                         ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
+                     
 
                         InOrder inOrder = inOrder(
-                                customerClient,
-                                inventoryClient,
-                                productClient,
-                                repository);
+                                        customerClient,
+                                        inventoryClient,
+                                        productClient,
+                                        repository,
+                                        orderMapper);
                         inOrder.verify(customerClient)
-                                .validateCustomerExists(CUSTOMER_ID);
-                        
-                        inOrder.verify(inventoryClient)
-                                .reserveStock(PRODUCT_ID, QUANTITY);
-                        
-                        inOrder.verify(productClient)
-                                .getProduct(PRODUCT_ID);
-                        
-                        inOrder.verify(repository)
-                                .save(captor.capture());        
+                                        .validateCustomerExists(CUSTOMER_ID);
 
-                        verify(repository).save(any(Order.class));
+                        inOrder.verify(inventoryClient)
+                                        .reserveStock(PRODUCT_ID, QUANTITY);
+
+                        inOrder.verify(productClient)
+                                        .getProduct(PRODUCT_ID);
+
+                        inOrder.verify(repository)
+                                        .save(captor.capture());
+                        
+
+                           // Assert - order persisted
+                        Order savedOrder = captor.getValue();
+                        OrderItem item = savedOrder.getItems().getFirst();  
+                        inOrder.verify(orderMapper)
+                                        .toResponse(savedOrder);              
 
                         verifyNoMoreInteractions(
                                         customerClient,
                                         inventoryClient,
                                         productClient,
                                         repository);
-
-                        // Assert - order persisted
-                        Order savedOrder = captor.getValue();
-                        OrderItem item = savedOrder.getItems().getFirst();
 
                         assertThat(item.getProductId()).isEqualTo(PRODUCT_ID);
                         assertThat(item.getProductName()).isEqualTo("Gaming Mouse");
@@ -145,28 +158,11 @@ class OrderServiceTest {
                         assertThat(savedOrder.getOrderDate()).isNotNull();
 
                         // Assert - returned response
-                        assertThat(response.id()).isEqualTo(savedOrder.getId());
-                        assertThat(response.customerId()).isEqualTo(savedOrder.getCustomerId());
-                        assertThat(response.status()).isEqualTo(savedOrder.getStatus().name());
-                        assertThat(response.total()).isEqualByComparingTo(savedOrder.getTotal());
-                        assertThat(response.items())
-                                        .hasSize(1);
-
-                        OrderItemResponse itemResponse = response.items().getFirst();
-
-                        assertThat(itemResponse.productId()).isEqualTo(PRODUCT_ID);
-                        assertThat(itemResponse.productName()).isEqualTo("Gaming Mouse");
-                        assertThat(itemResponse.quantity()).isEqualTo(2);
-                        assertThat(itemResponse.unitPrice())
-                                        .isEqualByComparingTo(new BigDecimal("89.99"));
-                        assertThat(itemResponse.lineTotal())
-                                        .isEqualByComparingTo(new BigDecimal("179.98"));
-
+                        assertThat(response).isSameAs(expectedResponse);
                 }
 
                 @Test
                 void shouldNotCreateOrderWhenInventoryReservationFails() {
-
                         doThrow(new InsufficientStockException(PRODUCT_ID))
                                         .when(inventoryClient)
                                         .reserveStock(PRODUCT_ID, QUANTITY);
@@ -196,7 +192,6 @@ class OrderServiceTest {
 
                 @Test
                 void shouldThrowWhenProductDoesNotExist() {
-
                         when(productClient.getProduct(PRODUCT_ID))
                                         .thenThrow(new ProductNotFoundException(PRODUCT_ID));
                         doNothing().when(customerClient)
@@ -206,7 +201,6 @@ class OrderServiceTest {
                                         .isInstanceOf(ProductNotFoundException.class);
 
                         verify(repository, never()).save(any());
-
                 }
         }
 
@@ -214,31 +208,41 @@ class OrderServiceTest {
         class GetOrder {
                 @Test
                 void shouldReturnOrder() {
-                        when(repository.findById(ORDER_ID)).thenReturn(Optional.of(existingOrder()));
+                        // Arrange
+                        Order order = existingOrder();
 
+                        OrderResponse expectedResponse = OrderResponse.builder()
+                                        .id(ORDER_ID)
+                                        .customerId(CUSTOMER_ID)
+                                        .status(OrderStatus.PLACED.name())
+                                        .subtotal(new BigDecimal("179.98"))
+                                        .shipping(BigDecimal.ZERO)
+                                        .total(new BigDecimal("179.98"))
+                                        .items(List.of(
+                                                        OrderItemResponse.builder()
+                                                                        .productId(PRODUCT_ID)
+                                                                        .productName("Gaming Mouse")
+                                                                        .quantity(QUANTITY)
+                                                                        .unitPrice(new BigDecimal("89.99"))
+                                                                        .lineTotal(new BigDecimal("179.98"))
+                                                                        .build()))
+                                        .build();
+
+                        when(repository.findById(ORDER_ID))
+                                        .thenReturn(Optional.of(order));
+
+                        when(orderMapper.toResponse(order))
+                                        .thenReturn(expectedResponse);
+
+                        // Act
                         OrderResponse response = service.getOrder(ORDER_ID);
 
-                        assertThat(response.status())
-                                        .isEqualTo(OrderStatus.PLACED.name());
+                        // Assert
+                        assertThat(response).isSameAs(expectedResponse);
 
-                        assertThat(response.customerId()).isEqualTo(CUSTOMER_ID);
-
-                        assertThat(response.items())
-                                        .hasSize(1);
-
-                        OrderItemResponse itemResponse = response.items().getFirst();
-
-                        assertThat(itemResponse.productId()).isEqualTo(PRODUCT_ID);
-                        assertThat(itemResponse.productName()).isEqualTo("Gaming Mouse");
-                        assertThat(itemResponse.quantity()).isEqualTo(2);
-                        assertThat(itemResponse.unitPrice())
-                                        .isEqualByComparingTo("89.99");
-                        assertThat(itemResponse.lineTotal())
-                                        .isEqualByComparingTo("179.98");
-
-                        assertThat(response.total()).isEqualByComparingTo("179.98");
                         verify(repository).findById(ORDER_ID);
-                        verifyNoMoreInteractions(repository);
+                        verify(orderMapper).toResponse(order);
+                        verifyNoMoreInteractions(repository, orderMapper);
                 }
 
                 @Test
@@ -253,17 +257,47 @@ class OrderServiceTest {
         class CancelOrder {
                 @Test
                 void shouldCancelOrder() {
+                        // Arrange
                         Order existingOrder = existingOrder();
-                        when(repository.findById(ORDER_ID)).thenReturn(Optional.of(existingOrder));
-                        when(repository.save(existingOrder)).thenReturn(existingOrder);
 
+                        OrderResponse expectedResponse = OrderResponse.builder()
+                                        .id(ORDER_ID)
+                                        .customerId(CUSTOMER_ID)
+                                        .status(OrderStatus.CANCELLED.name())
+                                        .subtotal(new BigDecimal("179.98"))
+                                        .shipping(BigDecimal.ZERO)
+                                        .total(new BigDecimal("179.98"))
+                                        .items(List.of(
+                                                        OrderItemResponse.builder()
+                                                                        .productId(PRODUCT_ID)
+                                                                        .productName("Gaming Mouse")
+                                                                        .quantity(QUANTITY)
+                                                                        .unitPrice(new BigDecimal("89.99"))
+                                                                        .lineTotal(new BigDecimal("179.98"))
+                                                                        .build()))
+                                        .build();
+
+                        when(repository.findById(ORDER_ID))
+                                        .thenReturn(Optional.of(existingOrder));
+                        when(repository.save(existingOrder))
+                                        .thenReturn(existingOrder);
+                        when(orderMapper.toResponse(existingOrder))
+                                        .thenReturn(expectedResponse);
+
+                        // Act
                         OrderResponse response = service.cancelOrder(ORDER_ID);
 
-                        verify(repository).save(existingOrder);
-                        assertThat(response.status())
-                                        .isEqualTo(OrderStatus.CANCELLED.name());
+                        // Assert
                         assertThat(existingOrder.getStatus())
                                         .isEqualTo(OrderStatus.CANCELLED);
+
+                        assertThat(response).isSameAs(expectedResponse);
+
+                        verify(repository).findById(ORDER_ID);
+                        verify(repository).save(existingOrder);
+                        verify(orderMapper).toResponse(existingOrder);
+
+                        verifyNoMoreInteractions(repository, orderMapper);
                 }
 
                 @Test
@@ -293,7 +327,6 @@ class OrderServiceTest {
         }
 
         private Order existingOrder() {
-
                 Order order = Order.builder()
                                 .id(ORDER_ID)
                                 .customerId(CUSTOMER_ID)
@@ -308,7 +341,7 @@ class OrderServiceTest {
                                 OrderItem.builder()
                                                 .productId(PRODUCT_ID)
                                                 .productName("Gaming Mouse")
-                                                .quantity(2)
+                                                .quantity(QUANTITY)
                                                 .unitPrice(new BigDecimal("89.99"))
                                                 .build());
                 return order;
@@ -329,5 +362,4 @@ class OrderServiceTest {
                                 .active(true)
                                 .build();
         }
-
 }
