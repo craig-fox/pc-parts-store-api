@@ -28,7 +28,7 @@ public record CustomerResponse(
 	}
 
 	private static String resolveDisplayName(Customer customer) {
-		String preferredName = customer.getPreferredName();
+		final String preferredName = customer.getPreferredName();
 		return (preferredName != null && !preferredName.isBlank())
 				? preferredName
 				: customer.getFirstName();

@@ -173,14 +173,14 @@
 					<failsOnError>true</failsOnError>
 					<excludes>**/target/generated-sources/**</excludes>
 				</configuration>
-				<!-- <executions>
+				<executions>
 					<execution>
 						<phase>verify</phase>
 						<goals>
 							<goal>check</goal>
 						</goals>
 					</execution>
-				</executions> -->
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

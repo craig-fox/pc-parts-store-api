@@ -2,7 +2,8 @@ package nz.fox.craig.customer.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -54,8 +55,10 @@ class CustomerControllerTest {
 	@Test
 	void createCustomer() throws Exception {
 
-		CustomerRequest request = new CustomerRequest("Jane", "Doe", "Jo", "jane@example.com", "123 Main St", PASSWORD);
-		CustomerResponse response = new CustomerResponse(CUSTOMER_ID, "Jane", "Doe", "Jo", "jane@example.com", "123 Main St", CustomerStatus.ACTIVE);
+		final CustomerRequest request 
+		= new CustomerRequest("Jane", "Doe", "Jo", "jane@example.com", "123 Main St", PASSWORD);
+		final CustomerResponse response 
+		= new CustomerResponse(CUSTOMER_ID, "Jane", "Doe", "Jo", "jane@example.com", "123 Main St", CustomerStatus.ACTIVE);
 
 		when(customerService.createCustomer(any(CustomerRequest.class))).thenReturn(response);
 
@@ -73,7 +76,7 @@ class CustomerControllerTest {
 
 	@Test
 	void createCustomerWithInvalidEmail() throws Exception {
-		CustomerRequest request = new CustomerRequest("Jane", "Doe", null, "not-an-email", "123 Main St", PASSWORD);
+		final CustomerRequest request = new CustomerRequest("Jane", "Doe", null, "not-an-email", "123 Main St", PASSWORD);
 
 		mockMvc.perform(post("/api/customers")
 				.contentType(MediaType.APPLICATION_JSON)
@@ -93,7 +96,7 @@ class CustomerControllerTest {
 
 	@Test
 	void getAllCustomers() throws Exception {
-		List<CustomerResponse> responses = List.of(
+		final List<CustomerResponse> responses = List.of(
 				new CustomerResponse(CUSTOMER_ID, "Jane", "Doe", "Jane", "jane@example.com", "123 Main St", CustomerStatus.ACTIVE),
 				new CustomerResponse(CUSTOMER_ID_2, "John", "Doe", "Jack", "john@example.com", "456 Oak Ave", CustomerStatus.ACTIVE));
 
@@ -112,7 +115,7 @@ class CustomerControllerTest {
 
 	@Test
 	void getCustomer() throws Exception {
-		CustomerResponse response = new CustomerResponse(CUSTOMER_ID, "Jane", "Doe" , "Jane","jane@example.com", "123 Main St",  CustomerStatus.ACTIVE);
+		final CustomerResponse response = new CustomerResponse(CUSTOMER_ID, "Jane", "Doe", "Jane","jane@example.com", "123 Main St",  CustomerStatus.ACTIVE);
 
 		when(customerService.getCustomer(CUSTOMER_ID)).thenReturn(response);
 
@@ -134,8 +137,8 @@ class CustomerControllerTest {
 
 	@Test
 	void updateCustomer() throws Exception {
-		CustomerRequest request = new CustomerRequest("Jane", "Smith", null, "jane.smith@example.com", "456 Oak Ave", PASSWORD);
-		CustomerResponse response = new CustomerResponse(CUSTOMER_ID, "Jane", "Smith", "Jane", "jane.smith@example.com",
+		final CustomerRequest request = new CustomerRequest("Jane", "Smith", null, "jane.smith@example.com", "456 Oak Ave", PASSWORD);
+		final CustomerResponse response = new CustomerResponse(CUSTOMER_ID, "Jane", "Smith", "Jane", "jane.smith@example.com",
 				"456 Oak Ave",  CustomerStatus.ACTIVE);
 
 		when(customerService.updateCustomer(eq(CUSTOMER_ID), any(CustomerRequest.class))).thenReturn(response);
@@ -154,7 +157,7 @@ class CustomerControllerTest {
 
 		@Test
 		void shouldReturnOkWhenCustomerExists() throws Exception {
-			UUID customerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+			final UUID customerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
 			when(customerService.getCustomer(customerId))
 					.thenReturn(new CustomerResponse(
@@ -175,7 +178,7 @@ class CustomerControllerTest {
 
 		@Test
 		void shouldReturnNotFoundWhenCustomerDoesNotExist() throws Exception {
-			UUID customerId = UUID.randomUUID();
+			final UUID customerId = UUID.randomUUID();
 
 			when(customerService.getCustomer(customerId))
 					.thenThrow(new CustomerNotFoundException(customerId));
