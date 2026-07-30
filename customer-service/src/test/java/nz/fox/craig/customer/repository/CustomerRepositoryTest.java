@@ -11,11 +11,12 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import nz.fox.craig.customer.common.AbstractPostgresTest;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
-import nz.fox.craig.customer.repository.CustomerRepository;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
-class CustomerRepositoryTest extends AbstractPostgresTest{
+class CustomerRepositoryTest extends AbstractPostgresTest {
+	private static final String PASSWORD =
+        "$2a$10$8xukrp03uk4k91AEt1BFKO.BQLwynIn3oOIn/Dqv4dCNsp6X0foe.";
 
 	@Autowired
 	private CustomerRepository customerRepository;
@@ -23,11 +24,14 @@ class CustomerRepositoryTest extends AbstractPostgresTest{
 	@Test
 	void saveAndFindById() {
 		Customer customer = Customer.builder()
-        .name("Jane Doe")
-        .email("jane@example.com")
-        .address("123 Main St")
-        .build();
-	
+				.firstName("Jane")
+				.lastName("Doe")
+				.preferredName("Jenny")
+				.email("jane@example.com")
+				.address("123 Main St")
+				.password(PASSWORD)
+				.build();
+
 		Customer saved = customerRepository.save(customer);
 
 		assertThat(saved.getId()).isNotNull();
@@ -35,7 +39,8 @@ class CustomerRepositoryTest extends AbstractPostgresTest{
 				.isPresent()
 				.get()
 				.satisfies(found -> {
-					assertThat(found.getName()).isEqualTo("Jane Doe");
+					assertThat(found.getFirstName()).isEqualTo("Jane");
+					assertThat(found.getLastName()).isEqualTo("Doe");
 					assertThat(found.getEmail()).isEqualTo("jane@example.com");
 					assertThat(found.getAddress()).isEqualTo("123 Main St");
 					assertThat(found.getStatus()).isEqualTo(CustomerStatus.ACTIVE);
@@ -45,14 +50,18 @@ class CustomerRepositoryTest extends AbstractPostgresTest{
 	@Test
 	void findAllCustomers() {
 		customerRepository.save(Customer.builder()
-				.name("Jane Doe")
+				.firstName("Jane")
+				.lastName("Doe")
 				.email("jane@example.com")
 				.address("123 Main St")
+				.password(PASSWORD)
 				.build());
 		customerRepository.save(Customer.builder()
-				.name("John Doe")
+				.firstName("John")
+				.lastName("Doe")
 				.email("john@example.com")
 				.address("456 Oak Ave")
+				.password(PASSWORD)
 				.build());
 
 		assertThat(customerRepository.findAll()).hasSize(12);
@@ -61,18 +70,19 @@ class CustomerRepositoryTest extends AbstractPostgresTest{
 	@Test
 	void updateExistingCustomer() {
 		Customer customer = customerRepository.save(Customer.builder()
-				.name("Jane Doe")
+				.firstName("Jane")
+				.lastName("Doe")
 				.email("jane@example.com")
 				.address("123 Main St")
 				.build());
 
-		customer.setName("Jane Smith");
+		customer.setLastName("Smith");
 		customer.setEmail("jane.smith@example.com");
 		customer.setAddress("456 Oak Ave");
 
 		Customer updated = customerRepository.save(customer);
 
-		assertThat(updated.getName()).isEqualTo("Jane Smith");
+		assertThat(updated.getLastName()).isEqualTo("Smith");
 		assertThat(updated.getEmail()).isEqualTo("jane.smith@example.com");
 		assertThat(updated.getAddress()).isEqualTo("456 Oak Ave");
 	}
@@ -81,17 +91,21 @@ class CustomerRepositoryTest extends AbstractPostgresTest{
 	void findByStatusReturnsOnlyMatchingCustomers() {
 
 		customerRepository.save(Customer.builder()
-				.name("Jane")
+				.firstName("Jane")
+				.lastName("Doe")
 				.email("jane@example.com")
 				.address("123 Main St")
 				.status(CustomerStatus.ACTIVE)
+				.password(PASSWORD)
 				.build());
 
 		customerRepository.save(Customer.builder()
-				.name("John")
+				.firstName("John")
+				.lastName("Doe")
 				.email("john@example.com")
 				.address("456 Oak Ave")
 				.status(CustomerStatus.INACTIVE)
+				.password(PASSWORD)
 				.build());
 
 		assertThat(customerRepository.findByStatus(CustomerStatus.ACTIVE))

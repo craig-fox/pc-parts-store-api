@@ -26,8 +26,12 @@ public class CustomerService {
 		if(customerRepository.findByEmail(request.email()).isPresent()) {
 			throw new CustomerAlreadyExistsException(request.email());
 		}
+
+
 		Customer customer = Customer.builder()
-				.name(request.name())
+				.firstName(request.firstName())
+				.lastName(request.lastName())
+				.preferredName(request.preferredName())
 				.email(request.email())
 				.address(request.address())
 				.status(CustomerStatus.ACTIVE)
@@ -62,7 +66,8 @@ public class CustomerService {
 	public CustomerResponse updateCustomer(UUID id, CustomerRequest request) {
 		Customer customer = customerRepository.findById(id)
 				.orElseThrow(() -> new CustomerNotFoundException(id));
-		customer.setName(request.name());
+		customer.setFirstName(request.firstName());
+		customer.setLastName(request.lastName());
 		customer.setEmail(request.email());
 		customer.setAddress(request.address());
 		return CustomerResponse.from(customerRepository.save(customer));

@@ -7,7 +7,9 @@ import nz.fox.craig.customer.model.CustomerStatus;
 
 public record CustomerResponse(
 		UUID id,
-		String name,
+		String firstName,
+		String lastName,
+		String displayName,
 		String email,
 		String address,
 		CustomerStatus status
@@ -16,11 +18,20 @@ public record CustomerResponse(
 	public static CustomerResponse from(Customer customer) {
 		return new CustomerResponse(
 				customer.getId(),
-				customer.getName(),
+				customer.getFirstName(),
+				customer.getLastName(),
+				resolveDisplayName(customer),
 				customer.getEmail(),
 				customer.getAddress(),
 				customer.getStatus()
 		);
+	}
+
+	private static String resolveDisplayName(Customer customer) {
+		String preferredName = customer.getPreferredName();
+		return (preferredName != null && !preferredName.isBlank())
+				? preferredName
+				: customer.getFirstName();
 	}
 
 }
