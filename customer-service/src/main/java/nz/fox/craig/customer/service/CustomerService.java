@@ -23,12 +23,12 @@ public class CustomerService {
 
 	@Transactional
 	public CustomerResponse createCustomer(CustomerRequest request) {
-		if(customerRepository.findByEmail(request.email()).isPresent()) {
+		if (customerRepository.findByEmail(request.email()).isPresent()) {
 			throw new CustomerAlreadyExistsException(request.email());
 		}
 
 
-		Customer customer = Customer.builder()
+		final Customer customer = Customer.builder()
 				.firstName(request.firstName())
 				.lastName(request.lastName())
 				.preferredName(request.preferredName())
@@ -42,7 +42,7 @@ public class CustomerService {
 
 	public List<CustomerResponse> getCustomers(CustomerStatus status) {
 
-		List<Customer> customers;
+		final List<Customer> customers;
 	
 		if (status == null) {
 			customers = customerRepository.findAll();
@@ -64,7 +64,7 @@ public class CustomerService {
 
 	@Transactional
 	public CustomerResponse updateCustomer(UUID id, CustomerRequest request) {
-		Customer customer = customerRepository.findById(id)
+		final Customer customer = customerRepository.findById(id)
 				.orElseThrow(() -> new CustomerNotFoundException(id));
 		customer.setFirstName(request.firstName());
 		customer.setLastName(request.lastName());
@@ -75,7 +75,7 @@ public class CustomerService {
 
 	@Transactional
 	public void deactivateCustomer(UUID id) {
-		Customer customer = customerRepository.findById(id)
+		final Customer customer = customerRepository.findById(id)
 
             .orElseThrow(() -> new CustomerNotFoundException(id));
 
@@ -85,9 +85,9 @@ public class CustomerService {
 
 	@Transactional
 	public void activateCustomer(UUID id) {
-		Customer customer = customerRepository.findById(id)
+		final Customer customer = customerRepository.findById(id)
 				.orElseThrow(() -> new CustomerNotFoundException(id));
-		if(customer.getStatus() == CustomerStatus.ACTIVE) {
+		if (customer.getStatus() == CustomerStatus.ACTIVE) {
 			throw new CustomerAlreadyExistsException(customer.getEmail());
 		}
 		customer.setStatus(CustomerStatus.ACTIVE);

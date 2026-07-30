@@ -40,9 +40,9 @@ class CustomerServiceTest {
 
 	@Test
 	void createCustomer() {
-		CustomerRequest request = new CustomerRequest("Jane", "Doe", "Jo",
+		final CustomerRequest request = new CustomerRequest("Jane", "Doe", "Jo",
 				"jane@example.com", "123 Main St", "Password123!");
-		Customer saved = Customer.builder()
+		final Customer saved = Customer.builder()
 				.id(CUSTOMER_ID)
 				.firstName("Jane")
 				.lastName("Doe")
@@ -54,7 +54,7 @@ class CustomerServiceTest {
 
 		when(customerRepository.save(any(Customer.class))).thenReturn(saved);
 
-		CustomerResponse response = customerService.createCustomer(request);
+		final CustomerResponse response = customerService.createCustomer(request);
 
 		assertThat(response.id()).isEqualTo(CUSTOMER_ID);
 		assertThat(response.firstName()).isEqualTo("Jane");
@@ -67,9 +67,9 @@ class CustomerServiceTest {
 
 	@Test
 	void createCustomerWithNoPreferredName() {
-		CustomerRequest request = new CustomerRequest("Jane", "Doe", null,
+		final CustomerRequest request = new CustomerRequest("Jane", "Doe", null,
 				"jane@example.com", "123 Main St", "Password123!");
-		Customer saved = Customer.builder()
+		final Customer saved = Customer.builder()
 				.id(CUSTOMER_ID)
 				.firstName("Jane")
 				.lastName("Doe")
@@ -81,14 +81,14 @@ class CustomerServiceTest {
 
 		when(customerRepository.save(any(Customer.class))).thenReturn(saved);
 
-		CustomerResponse response = customerService.createCustomer(request);
+		final CustomerResponse response = customerService.createCustomer(request);
 
 		assertThat(response.displayName()).isEqualTo("Jane");
 	}
 
 	@Test
 	void getAllCustomers() {
-		Customer customer1 = Customer.builder()
+		final Customer customer1 = Customer.builder()
 				.id(CUSTOMER_ID)
 				.firstName("Jane")
 				.lastName("Doe")
@@ -96,7 +96,7 @@ class CustomerServiceTest {
 				.address("123 Main St")
 				.password(PASSWORD)
 				.build();
-		Customer customer2 = Customer.builder()
+		final Customer customer2 = Customer.builder()
 				.id(CUSTOMER_ID_2)
 				.firstName("John")
 				.lastName("Doe")
@@ -107,7 +107,7 @@ class CustomerServiceTest {
 
 		when(customerRepository.findAll()).thenReturn(List.of(customer1, customer2));
 
-		List<CustomerResponse> responses = customerService.getCustomers(null);
+		final List<CustomerResponse> responses = customerService.getCustomers(null);
 
 		assertThat(responses).hasSize(2);
 		assertThat(responses.get(0).firstName()).isEqualTo("Jane");
@@ -116,7 +116,7 @@ class CustomerServiceTest {
 
 	@Test
 	void getCustomer() {
-		Customer customer = Customer.builder()
+		final Customer customer = Customer.builder()
 				.id(CUSTOMER_ID)
 				.firstName("Jane")
 				.lastName("Doe")
@@ -127,7 +127,7 @@ class CustomerServiceTest {
 
 		when(customerRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(customer));
 
-		CustomerResponse response = customerService.getCustomer(CUSTOMER_ID);
+		final CustomerResponse response = customerService.getCustomer(CUSTOMER_ID);
 
 		assertThat(response.id()).isEqualTo(CUSTOMER_ID);
 		assertThat(response.firstName()).isEqualTo("Jane");
@@ -145,9 +145,9 @@ class CustomerServiceTest {
 
 	@Test
 	void updateCustomer() {
-		CustomerRequest request = new CustomerRequest("Jane", "Smith", null,
+		final CustomerRequest request = new CustomerRequest("Jane", "Smith", null,
 				"jane.smith@example.com", "456 Oak Ave", "Password123!");
-		Customer existing = Customer.builder()
+		final Customer existing = Customer.builder()
 				.id(CUSTOMER_ID)
 				.firstName("Jane")
 				.lastName("Doe")
@@ -155,7 +155,7 @@ class CustomerServiceTest {
 				.address("123 Main St")
 				.password("")
 				.build();
-		Customer updated = Customer.builder()
+		final Customer updated = Customer.builder()
 				.id(CUSTOMER_ID)
 				.firstName("Jane Smith")
 				.lastName("Smith")
@@ -167,7 +167,7 @@ class CustomerServiceTest {
 		when(customerRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(existing));
 		when(customerRepository.save(existing)).thenReturn(updated);
 
-		CustomerResponse response = customerService.updateCustomer(CUSTOMER_ID, request);
+		final CustomerResponse response = customerService.updateCustomer(CUSTOMER_ID, request);
 
 		assertThat(response.lastName()).isEqualTo("Smith");
 		assertThat(response.email()).isEqualTo("jane.smith@example.com");
@@ -176,7 +176,7 @@ class CustomerServiceTest {
 
 	@Test
 	void updateCustomerNotFound() {
-		CustomerRequest request = new CustomerRequest("Jane", "Smith", null,
+		final CustomerRequest request = new CustomerRequest("Jane", "Smith", null,
 				"jane.smith@example.com", "456 Oak Ave", "Password123!");
 
 		when(customerRepository.findById(UNKNOWN_CUSTOMER)).thenReturn(Optional.empty());
