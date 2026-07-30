@@ -7,9 +7,11 @@ import java.util.UUID;
 
 import lombok.RequiredArgsConstructor;
 import nz.fox.craig.order.client.CustomerClient;
+import nz.fox.craig.order.client.InventoryClient;
 import nz.fox.craig.order.client.ProductClient;
 import nz.fox.craig.order.dto.client.ProductSnapshot;
-import nz.fox.craig.order.dto.request.CreateOrderRequest;
+import nz.fox.craig.order.dto.request.OrderItemRequest;
+import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.response.OrderItemResponse;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
@@ -29,17 +31,21 @@ public class OrderService {
 	private final OrderRepository orderRepository;
 	private final CustomerClient customerClient;
 	private final ProductClient productClient;
+	private final InventoryClient inventoryClient;
 
 	@Transactional
-	public OrderResponse createOrder(CreateOrderRequest request) {
+	public OrderResponse createOrder(OrderRequest request) {
 
 		validateCustomer(request.customerId());
+		for (OrderItemRequest item : request.items()) {
+			inventoryClient.reserveStock(item.productId(), item.quantity());
+		}
 		Order order = assembleOrder(request);
 		Order savedOrder = orderRepository.save(order);
 		return mapToResponse(savedOrder);
 	}
 
-	private Order assembleOrder(CreateOrderRequest request) {
+	private Order assembleOrder(OrderRequest request) {
 
 		List<OrderItem> items = buildOrderItems(request);
 	
@@ -65,7 +71,7 @@ public class OrderService {
 		customerClient.validateCustomerExists(customerId);
 	}
 	
-	private List<OrderItem> buildOrderItems(CreateOrderRequest request) {
+	private List<OrderItem> buildOrderItems(OrderRequest request) {
 		return request.items().stream()
 				.map(item -> {
 					ProductSnapshot product =

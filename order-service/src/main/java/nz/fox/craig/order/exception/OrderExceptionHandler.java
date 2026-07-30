@@ -35,4 +35,11 @@ public class OrderExceptionHandler {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", message));
 	}
 
+	@ExceptionHandler(InsufficientStockException.class)
+	public ResponseEntity<Map<String, String>> handleInsufficientStock(
+			InsufficientStockException ex) {
+
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
+	}
+
 }

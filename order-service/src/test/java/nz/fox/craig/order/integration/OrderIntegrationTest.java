@@ -21,17 +21,15 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nz.fox.craig.order.dto.client.ProductSnapshot;
-import nz.fox.craig.order.dto.request.CreateOrderItemRequest;
-import nz.fox.craig.order.dto.request.CreateOrderRequest;
+import nz.fox.craig.order.dto.request.OrderItemRequest;
+import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.repository.AbstractPostgresTest;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -45,14 +43,14 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
     static MockWebServer mockWebServer;
 
-    private final UUID productId = UUID.fromString("1b0d0fa6-52e1-4acd-8286-892bc29f8b3a") ;    
+    private final UUID productId = UUID.fromString("1b0d0fa6-52e1-4acd-8286-892bc29f8b3a");
 
     @DynamicPropertySource
     static void overrideProperties(DynamicPropertyRegistry registry) {
         registry.add("services.customer.base-url", () -> mockWebServer.url("/").toString());
         registry.add("services.product.base-url", () -> mockWebServer.url("/").toString());
+        registry.add("services.inventory.base-url", () -> mockWebServer.url("/").toString());
     }
-
 
     @BeforeAll
     static void startServer() throws IOException {
@@ -69,16 +67,24 @@ class OrderIntegrationTest extends AbstractPostgresTest {
     @Timeout(10)
     void shouldCreateOrderForExistingCustomer() throws Exception {
 
+        // Customer validation
         mockWebServer.enqueue(new MockResponse()
-            .setResponseCode(200)
-            .addHeader("Content-Length", "0"));
+                .setResponseCode(200)
+                .addHeader("Content-Length", "0"));
+
+        // Inventory reservation
         mockWebServer.enqueue(new MockResponse()
-            .setResponseCode(200)
-            .setBody(objectMapper.writeValueAsString(productSnapshot()))
-                .addHeader("Content-Type", "application/json")); // product lookup        
-           
-        final List<CreateOrderItemRequest> itemRequests = List.of(new CreateOrderItemRequest(productId, 2));
-        final CreateOrderRequest request = new CreateOrderRequest(UUID.randomUUID(), itemRequests);
+                .setResponseCode(200)
+                .addHeader("Content-Length", "0"));
+
+        // Product lookup
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody(objectMapper.writeValueAsString(productSnapshot()))
+                .addHeader("Content-Type", "application/json"));
+
+        final List<OrderItemRequest> itemRequests = List.of(new OrderItemRequest(productId, 2));
+        final OrderRequest request = new OrderRequest(UUID.randomUUID(), itemRequests);
 
         mockMvc.perform(post("/api/orders")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -93,12 +99,12 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
     private ProductSnapshot productSnapshot() {
         return ProductSnapshot.builder()
-                        .id(productId)
-                        .name("Gaming Mouse")
-                        .price(new BigDecimal("89.99"))
-                        .weightKg(new BigDecimal("0.30"))
-                        .active(true)
-                        .build();
+                .id(productId)
+                .name("Gaming Mouse")
+                .price(new BigDecimal("89.99"))
+                .weightKg(new BigDecimal("0.30"))
+                .active(true)
+                .build();
     }
 
 }
