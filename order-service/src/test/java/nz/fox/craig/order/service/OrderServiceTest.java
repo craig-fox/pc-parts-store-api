@@ -15,19 +15,22 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.Nested;
 
 import nz.fox.craig.order.client.CustomerClient;
+import nz.fox.craig.order.client.InventoryClient;
 import nz.fox.craig.order.client.ProductClient;
 import nz.fox.craig.order.dto.client.ProductSnapshot;
-import nz.fox.craig.order.dto.request.CreateOrderItemRequest;
-import nz.fox.craig.order.dto.request.CreateOrderRequest;
+import nz.fox.craig.order.dto.request.OrderItemRequest;
+import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.response.OrderItemResponse;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
+import nz.fox.craig.order.exception.InsufficientStockException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
 import nz.fox.craig.order.exception.ProductNotFoundException;
@@ -42,6 +45,8 @@ class OrderServiceTest {
         private static final UUID CUSTOMER_ID = UUID.randomUUID();
         private static final UUID ORDER_ID = UUID.randomUUID();
         private static final UUID PRODUCT_ID = UUID.randomUUID();
+        private static final int QUANTITY = 2;
+
 
         @Mock
         private OrderRepository repository;
@@ -51,6 +56,9 @@ class OrderServiceTest {
 
         @Mock
         private ProductClient productClient;
+
+        @Mock
+        private InventoryClient inventoryClient;
 
         @InjectMocks
         private OrderService service;
@@ -64,18 +72,18 @@ class OrderServiceTest {
                                         .validateCustomerExists(CUSTOMER_ID);
 
                         when(repository.save(any(Order.class)))
-                                .thenAnswer(invocation -> {
-                                        Order order = invocation.getArgument(0);
-                                        if (order.getId() == null) {
-                                                order.setId(UUID.randomUUID());
-                                        }
-                                        order.getItems().forEach(item -> {
-                                                if (item.getId() == null) {
-                                                        item.setId(UUID.randomUUID());
+                                        .thenAnswer(invocation -> {
+                                                Order order = invocation.getArgument(0);
+                                                if (order.getId() == null) {
+                                                        order.setId(UUID.randomUUID());
                                                 }
+                                                order.getItems().forEach(item -> {
+                                                        if (item.getId() == null) {
+                                                                item.setId(UUID.randomUUID());
+                                                        }
+                                                });
+                                                return order;
                                         });
-                                        return order;
-                                });
                         when(productClient.getProduct(PRODUCT_ID))
                                         .thenReturn(productSnapshot());
 
@@ -85,11 +93,28 @@ class OrderServiceTest {
                         // Assert - interactions
                         ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
 
-                        verify(customerClient).validateCustomerExists(CUSTOMER_ID);
-                        verify(productClient).getProduct(PRODUCT_ID);
-                        verify(repository).save(captor.capture());
+                        InOrder inOrder = inOrder(
+                                customerClient,
+                                inventoryClient,
+                                productClient,
+                                repository);
+                        inOrder.verify(customerClient)
+                                .validateCustomerExists(CUSTOMER_ID);
+                        
+                        inOrder.verify(inventoryClient)
+                                .reserveStock(PRODUCT_ID, QUANTITY);
+                        
+                        inOrder.verify(productClient)
+                                .getProduct(PRODUCT_ID);
+                        
+                        inOrder.verify(repository)
+                                .save(captor.capture());        
+
+                        verify(repository).save(any(Order.class));
+
                         verifyNoMoreInteractions(
                                         customerClient,
+                                        inventoryClient,
                                         productClient,
                                         repository);
 
@@ -104,9 +129,6 @@ class OrderServiceTest {
                         assertThat(item.getQuantity()).isEqualTo(2);
                         assertThat(item.getLineTotal())
                                         .isEqualByComparingTo(new BigDecimal("179.98"));
-
-                        assertThat(savedOrder.getCustomerId()).isEqualTo(CUSTOMER_ID);
-                        assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PLACED);
                         assertThat(savedOrder.getCustomerId()).isEqualTo(CUSTOMER_ID);
                         assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PLACED);
                         assertThat(savedOrder.getSubtotal())
@@ -143,8 +165,26 @@ class OrderServiceTest {
                 }
 
                 @Test
+                void shouldNotCreateOrderWhenInventoryReservationFails() {
+
+                        doThrow(new InsufficientStockException(PRODUCT_ID))
+                                        .when(inventoryClient)
+                                        .reserveStock(PRODUCT_ID, QUANTITY);
+
+                        assertThatThrownBy(() -> service.createOrder(orderRequest()))
+                                        .isInstanceOf(InsufficientStockException.class);
+
+                        verify(repository, never()).save(any());
+                        verify(inventoryClient)
+                                        .reserveStock(PRODUCT_ID, QUANTITY);
+
+                        verify(repository, never()).save(any());
+                        verify(productClient, never()).getProduct(any());
+                }
+
+                @Test
                 void shouldThrowWhenCustomerDoesNotExist() {
-                        CreateOrderRequest request = orderRequest();
+                        OrderRequest request = orderRequest();
                         doThrow(new CustomerNotFoundException(CUSTOMER_ID))
                                         .when(customerClient)
                                         .validateCustomerExists(CUSTOMER_ID);
@@ -241,11 +281,11 @@ class OrderServiceTest {
                 }
         }
 
-        private CreateOrderRequest orderRequest() {
-                return CreateOrderRequest.builder()
+        private OrderRequest orderRequest() {
+                return OrderRequest.builder()
                                 .customerId(CUSTOMER_ID)
                                 .items(List.of(
-                                                CreateOrderItemRequest.builder()
+                                                OrderItemRequest.builder()
                                                                 .productId(PRODUCT_ID)
                                                                 .quantity(2)
                                                                 .build()))

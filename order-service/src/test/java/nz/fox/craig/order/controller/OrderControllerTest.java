@@ -18,8 +18,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import nz.fox.craig.order.dto.request.CreateOrderItemRequest;
-import nz.fox.craig.order.dto.request.CreateOrderRequest;
+import nz.fox.craig.order.dto.request.OrderItemRequest;
+import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
@@ -55,10 +55,10 @@ class OrderControllerTest {
 	class CreateOrder {
 		@Test
 		void returnsCreatedOrder() throws Exception {
-			CreateOrderRequest request = orderRequest(CUSTOMER_ID, orderItems());
+			OrderRequest request = orderRequest(CUSTOMER_ID, orderItems());
 			OrderResponse response = sampleResponse(OrderStatus.PLACED);
 
-			when(orderService.createOrder(any(CreateOrderRequest.class))).thenReturn(response);
+			when(orderService.createOrder(any(OrderRequest.class))).thenReturn(response);
 
 			mockMvc.perform(post("/api/orders")
 					.contentType(MediaType.APPLICATION_JSON)
@@ -69,12 +69,12 @@ class OrderControllerTest {
 					.andExpect(jsonPath("$.status").value("PLACED"))
 					.andExpect(jsonPath("$.items").isArray())
 					.andExpect(jsonPath("$.total").value(0));
-			verify(orderService).createOrder(any(CreateOrderRequest.class));
+			verify(orderService).createOrder(any(OrderRequest.class));
 		}
 
 		@Test
 		void missingCustomerIdReturnsBadRequest() throws Exception {
-			CreateOrderRequest request = orderRequest(null, orderItems());
+			OrderRequest request = orderRequest(null, orderItems());
 
 			mockMvc.perform(post("/api/orders")
 					.contentType(MediaType.APPLICATION_JSON)
@@ -86,7 +86,7 @@ class OrderControllerTest {
 
 		@Test
 		void emptyOrderItemsReturnsBadRequest() throws Exception {
-			CreateOrderRequest request = orderRequest(CUSTOMER_ID, List.of());
+			OrderRequest request = orderRequest(CUSTOMER_ID, List.of());
 
 			mockMvc.perform(post("/api/orders")
 					.contentType(MediaType.APPLICATION_JSON)
@@ -99,9 +99,9 @@ class OrderControllerTest {
 		@Test
 		void customerNotFoundReturns404() throws Exception {
 			var missingCustomerID = UUID.randomUUID();
-			CreateOrderRequest request = orderRequest(CUSTOMER_ID, orderItems());
+			OrderRequest request = orderRequest(CUSTOMER_ID, orderItems());
 
-			when(orderService.createOrder(any(CreateOrderRequest.class)))
+			when(orderService.createOrder(any(OrderRequest.class)))
 					.thenThrow(new CustomerNotFoundException(missingCustomerID));
 
 			mockMvc.perform(post("/api/orders")
@@ -192,16 +192,16 @@ class OrderControllerTest {
 				.build();
 	}
 
-	private CreateOrderRequest orderRequest(UUID customerId, List<CreateOrderItemRequest> items) {
-		return CreateOrderRequest.builder()
+	private OrderRequest orderRequest(UUID customerId, List<OrderItemRequest> items) {
+		return OrderRequest.builder()
 				.customerId(customerId)
 				.items(items)
 				.build();
 	}
 
-	private List<CreateOrderItemRequest> orderItems() {
+	private List<OrderItemRequest> orderItems() {
 		return List.of(
-				CreateOrderItemRequest.builder()
+				OrderItemRequest.builder()
 						.productId(PRODUCT_ID)
 						.quantity(1)
 						.build());

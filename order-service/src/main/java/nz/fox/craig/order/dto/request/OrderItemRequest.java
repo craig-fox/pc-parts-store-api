@@ -8,7 +8,7 @@ import lombok.Builder;
 
 
 @Builder
-public record CreateOrderItemRequest(
+public record OrderItemRequest(
 
         @NotNull
         UUID productId,

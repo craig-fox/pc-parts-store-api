@@ -25,4 +25,14 @@ public class RestClientConfig {
                 .baseUrl(properties.baseUrl())
                 .build();
     }
+
+    @Bean(name = "inventoryRestClient")
+    RestClient inventoryRestClient(
+            RestClient.Builder builder,
+            ProductServiceProperties properties) {
+
+        return builder
+                .baseUrl(properties.baseUrl())
+                .build();
+    }
 }

@@ -9,13 +9,13 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
 @Builder
-public record CreateOrderRequest(
+public record OrderRequest(
 
         @NotNull(message = "Customer id is required")
         UUID customerId,
 
         @Valid
         @NotEmpty(message = "Items must not be empty")
-        List<CreateOrderItemRequest> items
+        List<OrderItemRequest> items
 ) {
 }
