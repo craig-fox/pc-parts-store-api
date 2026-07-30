@@ -28,7 +28,7 @@ public class OrderExceptionHandler {
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<Map<String, String>> handleValidationErrors(MethodArgumentNotValidException ex) {
-		String message = ex.getBindingResult().getFieldErrors().stream()
+		final String message = ex.getBindingResult().getFieldErrors().stream()
 				.findFirst()
 				.map(error -> error.getField() + ": " + error.getDefaultMessage())
 				.orElse("Validation failed");

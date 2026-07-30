@@ -33,9 +33,9 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldSaveOrder() {
-        Order order = createOrder(UUID.randomUUID());
+        final Order order = createOrder(UUID.randomUUID());
         orderRepository.saveAndFlush(order);
-        Order found = orderRepository.findById(order.getId()).orElseThrow();
+        final Order found = orderRepository.findById(order.getId()).orElseThrow();
 
         assertThat(found.getCustomerId()).isEqualTo(order.getCustomerId());
         assertThat(found.getStatus()).isEqualTo(OrderStatus.PLACED);
@@ -46,17 +46,17 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldSaveOrderWithItems() {
-        Order order = createOrder(UUID.randomUUID());
+        final Order order = createOrder(UUID.randomUUID());
 
         addItemsToOrder(order);
         orderRepository.saveAndFlush(order);
         entityManager.flush();
         entityManager.clear();
 
-        Order found = orderRepository.findById(order.getId()).orElseThrow();
+        final Order found = orderRepository.findById(order.getId()).orElseThrow();
 
         assertThat(found.getItems()).hasSize(2);
-        OrderItem item = found.getItems().getFirst();
+        final OrderItem item = found.getItems().getFirst();
 
         assertThat(item.getProductName())
         .isEqualTo("RTX 5070");
@@ -70,32 +70,32 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldFindOrdersByCustomerId() {
-        UUID customerId = UUID.randomUUID();
+        final UUID customerId = UUID.randomUUID();
 
-        Order order1 = createOrder(customerId);
-        Order order2 = createOrder(customerId);
+        final Order order1 = createOrder(customerId);
+        final Order order2 = createOrder(customerId);
 
         orderRepository.save(order1);
         orderRepository.save(order2);
 
-        List<Order> orders = orderRepository.findByCustomerId(customerId);
+        final List<Order> orders = orderRepository.findByCustomerId(customerId);
         assertThat(orders).hasSize(2);
 
     }
 
     @Test
     void shouldRemoveItemFromOrder() {
-        Order order = createOrder(UUID.randomUUID());
+        final Order order = createOrder(UUID.randomUUID());
         addItemsToOrder(order);
         orderRepository.save(order);
-        Order found = orderRepository.findById(order.getId()).orElseThrow();
+        final Order found = orderRepository.findById(order.getId()).orElseThrow();
         assertThat(found.getItems()).hasSize(2);
         found.getItems().removeFirst();
         orderRepository.save(found);
         entityManager.flush();
         entityManager.clear();
-        Order reloaded = orderRepository.findById(found.getId()).orElseThrow();
-        OrderItem item = reloaded.getItems().getFirst();
+        final Order reloaded = orderRepository.findById(found.getId()).orElseThrow();
+        final OrderItem item = reloaded.getItems().getFirst();
         assertThat(reloaded.getItems()).hasSize(1);
         assertThat(item.getOrder()).isNotNull();
         assertThat(item.getOrder().getId())
@@ -104,7 +104,7 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldReturnEmptyListWhenCustomerHasNoOrders() {
-        List<Order> orders =
+        final List<Order> orders =
                 orderRepository.findByCustomerId(UUID.randomUUID());
         assertThat(orders).isEmpty();
     }

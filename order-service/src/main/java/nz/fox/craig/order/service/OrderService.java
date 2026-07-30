@@ -12,7 +12,6 @@ import nz.fox.craig.order.client.ProductClient;
 import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
-import nz.fox.craig.order.dto.response.OrderItemResponse;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
@@ -42,20 +41,20 @@ public class OrderService {
 		for (OrderItemRequest item : request.items()) {
 			inventoryClient.reserveStock(item.productId(), item.quantity());
 		}
-		Order order = assembleOrder(request);
-		Order savedOrder = orderRepository.save(order);
+		final Order order = assembleOrder(request);
+		final Order savedOrder = orderRepository.save(order);
 		return orderMapper.toResponse(savedOrder);
 	}
 
 	private Order assembleOrder(OrderRequest request) {
 
-		List<OrderItem> items = buildOrderItems(request);
+		final List<OrderItem> items = buildOrderItems(request);
 	
-		BigDecimal subtotal = calculateSubtotal(items);
-		BigDecimal shipping = calculateShipping(subtotal);
-		BigDecimal total = calculateTotal(subtotal, shipping);
+		final BigDecimal subtotal = calculateSubtotal(items);
+		final BigDecimal shipping = calculateShipping(subtotal);
+		final BigDecimal total = calculateTotal(subtotal, shipping);
 	
-		Order order = Order.builder()
+		final Order order = Order.builder()
 				.customerId(request.customerId())
 				.orderDate(LocalDateTime.now())
 				.status(OrderStatus.PLACED)
@@ -76,10 +75,10 @@ public class OrderService {
 	private List<OrderItem> buildOrderItems(OrderRequest request) {
 		return request.items().stream()
 				.map(item -> {
-					ProductSnapshot product =
+					final ProductSnapshot product =
 							productClient.getProduct(item.productId());
 	
-					BigDecimal unitPrice = product.price();
+					final BigDecimal unitPrice = product.price();
 	
 					return OrderItem.builder()
 							.productId(product.id())
@@ -112,7 +111,7 @@ public class OrderService {
 	@Transactional(readOnly = true)
 	public OrderResponse getOrder(UUID id) {
 
-		Order order = findOrderById(id);
+		final Order order = findOrderById(id);
 		return orderMapper.toResponse(order);
 	}
 
@@ -123,10 +122,10 @@ public class OrderService {
 
 	@Transactional
 	public OrderResponse cancelOrder(UUID id) {
-		Order order = findOrderById(id);
+		final Order order = findOrderById(id);
 		validateOrderCanBeCancelled(order);
 		order.setStatus(OrderStatus.CANCELLED);
-		Order savedOrder = orderRepository.save(order);
+		final Order savedOrder = orderRepository.save(order);
 		return orderMapper.toResponse(savedOrder);
 	}
 
