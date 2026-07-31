@@ -3,7 +3,7 @@ package nz.fox.craig.customer.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import org.aspectj.lang.annotation.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -13,12 +13,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 
 import nz.fox.craig.customer.common.AbstractPostgresTest;
-import nz.fox.craig.customer.config.SecurityConfig;
+import nz.fox.craig.customer.config.TestSecurityConfig;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
 
 @DataJpaTest
-@Import(SecurityConfig.class)
+@Import(TestSecurityConfig.class)
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 class CustomerRepositoryTest extends AbstractPostgresTest {
 	
@@ -31,7 +31,7 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
 	@Autowired
 	private PasswordEncoder encoder;
 
-	@Before(value = "")
+	@BeforeEach
 	void init() {
         hashed = encoder.encode(ENTERED_PASSWORD);
 	}
