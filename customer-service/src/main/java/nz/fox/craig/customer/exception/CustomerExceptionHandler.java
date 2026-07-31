@@ -20,37 +20,79 @@ public class CustomerExceptionHandler {
 	public ResponseEntity<ApiError> handleCustomerNotFound(CustomerNotFoundException ex, HttpServletRequest request) {
 		final String message = ex.getMessage();
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
-        .body(new ApiError(
-                Instant.now(),
-                HttpStatus.NOT_FOUND.value(),
-				HttpStatus.NOT_FOUND.getReasonPhrase(),
-                message,
-                Map.of(),
-                request.getRequestURI()
-        ));
+				.body(new ApiError(
+						Instant.now(),
+						HttpStatus.NOT_FOUND.value(),
+						HttpStatus.NOT_FOUND.getReasonPhrase(),
+						message,
+						Map.of(),
+						request.getRequestURI()));
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ResponseEntity<ApiError> handleValidationErrors(MethodArgumentNotValidException ex, HttpServletRequest request) {
-	
-		final Map<String, String> validationErrors =
-		ex.getBindingResult()
-			.getFieldErrors()
-			.stream()
-			.collect(Collectors.toMap(
-					FieldError::getField,
-					FieldError::getDefaultMessage,
-					(first, second) -> first
-			));
+	public ResponseEntity<ApiError> handleValidationErrors(MethodArgumentNotValidException ex,
+			HttpServletRequest request) {
+
+		final Map<String, String> validationErrors = ex.getBindingResult()
+				.getFieldErrors()
+				.stream()
+				.collect(Collectors.toMap(
+						FieldError::getField,
+						FieldError::getDefaultMessage,
+						(first, second) -> first));
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-		.body(new ApiError(
-			Instant.now(),
-			HttpStatus.BAD_REQUEST.value(),
-			HttpStatus.BAD_REQUEST.getReasonPhrase(),
-			"Validation failed",
-			validationErrors,
-			request.getRequestURI()
-		));
+				.body(new ApiError(
+						Instant.now(),
+						HttpStatus.BAD_REQUEST.value(),
+						HttpStatus.BAD_REQUEST.getReasonPhrase(),
+						"Validation failed",
+						validationErrors,
+						request.getRequestURI()));
+	}
+
+	@ExceptionHandler(CustomerAlreadyExistsException.class)
+	public ResponseEntity<ApiError> handleCustomerAlreadyExists(
+			CustomerAlreadyExistsException ex,
+			HttpServletRequest request) {
+
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+				.body(new ApiError(
+						Instant.now(),
+						HttpStatus.CONFLICT.value(),
+						HttpStatus.CONFLICT.getReasonPhrase(),
+						ex.getMessage(),
+						Map.of(),
+						request.getRequestURI()));
+	}
+
+	@ExceptionHandler(CustomerInactiveException.class)
+	public ResponseEntity<ApiError> handleCustomerInactive(
+			CustomerInactiveException ex,
+			HttpServletRequest request) {
+
+		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+				.body(new ApiError(
+						Instant.now(),
+						HttpStatus.FORBIDDEN.value(),
+						HttpStatus.FORBIDDEN.getReasonPhrase(),
+						ex.getMessage(),
+						Map.of(),
+						request.getRequestURI()));
+	}
+
+	@ExceptionHandler(InvalidCredentialsException.class)
+	public ResponseEntity<ApiError> handleInvalidCredentials(
+			InvalidCredentialsException ex,
+			HttpServletRequest request) {
+
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+				.body(new ApiError(
+						Instant.now(),
+						HttpStatus.UNAUTHORIZED.value(),
+						HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+						ex.getMessage(),
+						Map.of(),
+						request.getRequestURI()));
 	}
 
 }
