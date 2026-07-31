@@ -1,9 +1,8 @@
 package nz.fox.craig.customer.controller;
 
-
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -12,25 +11,23 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import nz.fox.craig.customer.config.SecurityConfig;
 import nz.fox.craig.customer.dto.LoginRequest;
 import nz.fox.craig.customer.dto.LoginResponse;
 import nz.fox.craig.customer.exception.CustomerExceptionHandler;
 import nz.fox.craig.customer.exception.InvalidCredentialsException;
 import nz.fox.craig.customer.security.AuthenticationService;
+import nz.fox.craig.customer.security.JwtAuthenticationFilter;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-
 import java.util.UUID;
 
 @WebMvcTest(AuthenticationController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import({
-    SecurityConfig.class,
     CustomerExceptionHandler.class
 })
 class AuthenticationControllerTest {
@@ -47,6 +44,9 @@ class AuthenticationControllerTest {
     @MockitoBean
     private AuthenticationService authenticationService;
 
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
     @Test
     void shouldLoginSuccessfully() throws Exception {
 
@@ -58,7 +58,6 @@ class AuthenticationControllerTest {
                 .thenReturn(response);
 
         mockMvc.perform(post("/api/auth/login")
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())

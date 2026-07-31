@@ -31,6 +31,7 @@ import nz.fox.craig.customer.dto.CustomerResponse;
 import nz.fox.craig.customer.exception.CustomerExceptionHandler;
 import nz.fox.craig.customer.exception.CustomerNotFoundException;
 import nz.fox.craig.customer.model.CustomerStatus;
+import nz.fox.craig.customer.security.JwtAuthenticationFilter;
 import nz.fox.craig.customer.service.CustomerService;
 
 @WebMvcTest(CustomerController.class)
@@ -46,6 +47,9 @@ class CustomerControllerTest {
 
 	@MockitoBean
 	private CustomerService customerService;
+
+	@MockitoBean
+	private JwtAuthenticationFilter jwtAuthenticationFilter;
 
 	private final UUID CUSTOMER_ID = UUID.randomUUID();
 	private final UUID CUSTOMER_ID_2 = UUID.randomUUID();
