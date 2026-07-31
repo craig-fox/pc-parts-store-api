@@ -7,6 +7,7 @@ import io.jsonwebtoken.security.Keys;
 import nz.fox.craig.customer.model.Customer;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -29,7 +30,7 @@ public class JwtService {
         final Instant expiry = now.plusMillis(jwtExpiration);
 
         return Jwts.builder()
-                .subject(customer.getId().toString())
+                .subject(customer.getEmail())
                 .claim("email", customer.getEmail())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
@@ -44,6 +45,15 @@ public class JwtService {
     public boolean isTokenValid(String token, Customer customer) {
         return extractEmail(token).equals(customer.getEmail())
                 && !isTokenExpired(token);
+    }
+
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        return extractUsername(token).equals(userDetails.getUsername())
+                && !isTokenExpired(token);
+    }
+
+    public String extractUsername(String token) {
+        return extractEmail(token);
     }
 
     private boolean isTokenExpired(String token) {

@@ -8,9 +8,17 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import nz.fox.craig.customer.security.JwtAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        System.out.println("Injected filter = " + jwtAuthenticationFilter);
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -18,23 +26,28 @@ public class SecurityConfig {
     }
 
     @Bean
-SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http)
+            throws Exception {
 
-    http
-        .csrf(AbstractHttpConfigurer::disable)
-        .sessionManagement(session ->
-            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .authorizeHttpRequests(auth -> auth
-            .requestMatchers(
-                "/api/auth/**",
-                "/api/customers",
-                "/v3/api-docs/**",
-                "/swagger-ui/**",
-                "/swagger-ui.html")
-            .permitAll()
-            .anyRequest()
-            .authenticated());
+        if (jwtAuthenticationFilter == null) {
+            throw new IllegalStateException("JwtAuthenticationFilter is NULL");
+        }        
 
-    return http.build();
-}
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    "/api/auth/**",
+                    "/api/customers",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html")
+                .permitAll()
+                .anyRequest()
+                .authenticated());
+
+        return http.build();
+    }
 }
