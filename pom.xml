@@ -12,5 +12,6 @@
         <module>order-service</module>
         <module>product-service</module>
         <module>inventory-service</module>
+        <module>security-common</module>
     </modules>
 </project>
