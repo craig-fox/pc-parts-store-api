@@ -20,7 +20,6 @@ import nz.fox.craig.customer.model.CustomerStatus;
 class JwtServiceTest {
 
     private static final UUID CUSTOMER_ID = UUID.randomUUID();
-
     private static final String EMAIL = "jane@example.com";
 
     private static final String PASSWORD =
@@ -80,27 +79,17 @@ class JwtServiceTest {
     @Test
     void shouldValidateToken() {
         Customer customer = customer();
-        CustomerUserDetails userDetails =
-                new CustomerUserDetails(customer);
         String token = jwtService.generateToken(customer);
-        assertThat(jwtService.isTokenValid(token, userDetails))
+        assertThat(jwtService.isTokenValid(token))
                 .isTrue();
     }
 
     @Test
-    void shouldRejectTokenForDifferentCustomer() {
+    void shouldGenerateValidToken() {
         Customer customer = customer();
+
         String token = jwtService.generateToken(customer);
-        Customer differentCustomer =
-                Customer.builder()
-                        .id(UUID.randomUUID())
-                        .email(EMAIL)
-                        .password(PASSWORD)
-                        .status(CustomerStatus.ACTIVE)
-                        .build();
-        CustomerUserDetails userDetails =
-                new CustomerUserDetails(differentCustomer);
-        assertThat(jwtService.isTokenValid(token, userDetails))
-                .isFalse();
+
+        assertThat(jwtService.isTokenValid(token)).isTrue();
     }
 }

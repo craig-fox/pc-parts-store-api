@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -26,9 +27,12 @@ import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderExceptionHandler;
 import nz.fox.craig.order.exception.OrderNotFoundException;
 import nz.fox.craig.order.model.OrderStatus;
+import nz.fox.craig.order.security.JwtAuthenticationFilter;
+import nz.fox.craig.order.security.JwtService;
 import nz.fox.craig.order.service.OrderService;
 
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -36,7 +40,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @WebMvcTest(OrderController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import(OrderExceptionHandler.class)
+@WithMockUser
 class OrderControllerTest {
 	@Autowired
 	private MockMvc mockMvc;
@@ -46,6 +52,12 @@ class OrderControllerTest {
 
 	@MockitoBean
 	private OrderService orderService;
+
+	@MockitoBean
+	private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+	@MockitoBean
+	private JwtService jwtService;
 
 	private static final UUID ORDER_ID = UUID.randomUUID();
 	private static final UUID CUSTOMER_ID = UUID.randomUUID();

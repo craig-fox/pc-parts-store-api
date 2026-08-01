@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -24,6 +26,7 @@ import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.repository.AbstractPostgresTest;
+import nz.fox.craig.order.security.JwtService;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -42,6 +45,9 @@ class OrderIntegrationTest extends AbstractPostgresTest {
     private ObjectMapper objectMapper;
 
     static MockWebServer mockWebServer;
+
+    @Value("${jwt.secret}")
+    private String jwtSecret;
 
     private final UUID productId = UUID.fromString("1b0d0fa6-52e1-4acd-8286-892bc29f8b3a");
 
@@ -67,6 +73,22 @@ class OrderIntegrationTest extends AbstractPostgresTest {
     @Timeout(10)
     void shouldCreateOrderForExistingCustomer() throws Exception {
 
+        UUID customerId = UUID.randomUUID();
+
+        String token = JwtTestFactory.createToken(
+                customerId,
+                "test@example.com",
+                jwtSecret,
+                Duration.ofHours(1));
+
+        final List<OrderItemRequest> itemRequests =
+                List.of(new OrderItemRequest(productId, 2));
+
+        final OrderRequest request =
+            new OrderRequest(customerId, itemRequests);
+
+           
+
         // Customer validation
         mockWebServer.enqueue(new MockResponse()
                 .setResponseCode(200)
@@ -83,13 +105,11 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 .setBody(objectMapper.writeValueAsString(productSnapshot()))
                 .addHeader("Content-Type", "application/json"));
 
-        final List<OrderItemRequest> itemRequests = List.of(new OrderItemRequest(productId, 2));
-        final OrderRequest request = new OrderRequest(UUID.randomUUID(), itemRequests);
-
         mockMvc.perform(post("/api/orders")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated());
+        .header("Authorization", "Bearer " + token)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isCreated());    
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
 

@@ -119,7 +119,7 @@ class JwtAuthenticationFilterTest {
         when(customerDetailsService.loadUserById(CUSTOMER_ID))
                 .thenReturn(userDetails);
 
-        when(jwtService.isTokenValid("jwt-token", userDetails))
+        when(jwtService.isTokenValid("jwt-token"))
                 .thenReturn(true);
 
         jwtAuthenticationFilter.doFilterInternal(
