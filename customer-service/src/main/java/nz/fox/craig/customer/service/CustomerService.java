@@ -26,7 +26,7 @@ public class CustomerService {
 	private final SecurityService securityService;
 
 	@Transactional
-	public CustomerResponse createCustomer(CustomerRequest request) {
+	public CustomerResponse registerCustomer(CustomerRequest request) {
 		if (customerRepository.findByEmail(request.email()).isPresent()) {
 			throw new CustomerAlreadyExistsException(request.email());
 		}

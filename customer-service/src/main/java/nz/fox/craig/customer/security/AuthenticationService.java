@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import nz.fox.craig.customer.dto.LoginRequest;
 import nz.fox.craig.customer.dto.LoginResponse;
+import nz.fox.craig.customer.exception.CustomerInactiveException;
 import nz.fox.craig.customer.exception.InvalidCredentialsException;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
@@ -26,7 +27,7 @@ public class AuthenticationService {
                         new InvalidCredentialsException());
 
         if (customer.getStatus() != CustomerStatus.ACTIVE) {
-            throw new InvalidCredentialsException();
+            throw new CustomerInactiveException();
         }
 
         if (!passwordEncoder.matches(

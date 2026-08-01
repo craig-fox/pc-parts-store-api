@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import nz.fox.craig.customer.dto.LoginRequest;
 import nz.fox.craig.customer.dto.LoginResponse;
+import nz.fox.craig.customer.exception.CustomerInactiveException;
 import nz.fox.craig.customer.exception.InvalidCredentialsException;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
@@ -143,8 +144,8 @@ class AuthenticationServiceTest {
                 .thenReturn(Optional.of(customer));
 
         assertThatThrownBy(() -> authenticationService.login(request))
-                .isInstanceOf(InvalidCredentialsException.class)
-                .hasMessage("Invalid email or password");
+                .isInstanceOf(CustomerInactiveException.class)
+                .hasMessage("Customer account is inactive");
 
         verify(passwordEncoder, never())
                 .matches(anyString(), anyString());
