@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -90,6 +91,21 @@ public class CustomerExceptionHandler {
 						Instant.now(),
 						HttpStatus.UNAUTHORIZED.value(),
 						HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+						ex.getMessage(),
+						Map.of(),
+						request.getRequestURI()));
+	}
+
+	@ExceptionHandler(AccessDeniedException.class)
+	public ResponseEntity<ApiError> handleAccessDenied(
+			AccessDeniedException ex,
+			HttpServletRequest request) {
+
+		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+				.body(new ApiError(
+						Instant.now(),
+						HttpStatus.FORBIDDEN.value(),
+						HttpStatus.FORBIDDEN.getReasonPhrase(),
 						ex.getMessage(),
 						Map.of(),
 						request.getRequestURI()));

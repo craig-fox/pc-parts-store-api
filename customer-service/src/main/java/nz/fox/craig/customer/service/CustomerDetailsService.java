@@ -1,5 +1,7 @@
 package nz.fox.craig.customer.service;
 
+import java.util.UUID;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -23,6 +25,15 @@ public class CustomerDetailsService implements UserDetailsService {
                 .orElseThrow(() ->
                         new UsernameNotFoundException(email));
 
+        return new CustomerUserDetails(customer);
+    }
+
+    public CustomerUserDetails loadUserById(UUID customerId) {
+
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(customerId.toString()));
+    
         return new CustomerUserDetails(customer);
     }
 }

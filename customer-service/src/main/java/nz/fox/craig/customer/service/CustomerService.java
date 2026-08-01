@@ -11,6 +11,7 @@ import nz.fox.craig.customer.exception.CustomerNotFoundException;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
 import nz.fox.craig.customer.repository.CustomerRepository;
+import nz.fox.craig.customer.security.SecurityService;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class CustomerService {
 
 	private final CustomerRepository customerRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final SecurityService securityService;
 
 	@Transactional
 	public CustomerResponse createCustomer(CustomerRequest request) {
@@ -59,16 +61,22 @@ public class CustomerService {
 	}
 
 	@Transactional(readOnly = true)
-	public CustomerResponse getCustomer(UUID id) {
-		return customerRepository.findById(id)
+	public CustomerResponse getCustomer(UUID customerId) {
+	
+		securityService.verifyCurrentCustomer(customerId);
+	
+		return customerRepository.findById(customerId)
 				.map(CustomerResponse::from)
-				.orElseThrow(() -> new CustomerNotFoundException(id));
+				.orElseThrow(() -> new CustomerNotFoundException(customerId));
 	}
 
 	@Transactional
-	public CustomerResponse updateCustomer(UUID id, CustomerRequest request) {
-		Customer customer = customerRepository.findById(id)
-				.orElseThrow(() -> new CustomerNotFoundException(id));
+	public CustomerResponse updateCustomer(UUID customerId, CustomerRequest request) {
+
+		securityService.verifyCurrentCustomer(customerId);
+
+		Customer customer = customerRepository.findById(customerId)
+				.orElseThrow(() -> new CustomerNotFoundException(customerId));
 		customer.setFirstName(request.firstName());
 		customer.setLastName(request.lastName());
 		customer.setEmail(request.email());
@@ -77,19 +85,23 @@ public class CustomerService {
 	}
 
 	@Transactional
-	public void deactivateCustomer(UUID id) {
-		Customer customer = customerRepository.findById(id)
+	public void deactivateCustomer(UUID customerId) {
+		securityService.verifyCurrentCustomer(customerId);
 
-            .orElseThrow(() -> new CustomerNotFoundException(id));
+		Customer customer = customerRepository.findById(customerId)
+
+            .orElseThrow(() -> new CustomerNotFoundException(customerId));
 
 		customer.setStatus(CustomerStatus.INACTIVE);
 		customerRepository.save(customer);
 	}
 
 	@Transactional
-	public void activateCustomer(UUID id) {
-		Customer customer = customerRepository.findById(id)
-				.orElseThrow(() -> new CustomerNotFoundException(id));
+	public void activateCustomer(UUID customerId) {
+		securityService.verifyCurrentCustomer(customerId);
+
+		Customer customer = customerRepository.findById(customerId)
+				.orElseThrow(() -> new CustomerNotFoundException(customerId));
 		if (customer.getStatus() == CustomerStatus.ACTIVE) {
 			throw new CustomerAlreadyExistsException(customer.getEmail());
 		}
