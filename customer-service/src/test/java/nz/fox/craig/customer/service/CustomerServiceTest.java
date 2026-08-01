@@ -22,6 +22,7 @@ import nz.fox.craig.customer.dto.CustomerResponse;
 import nz.fox.craig.customer.exception.CustomerNotFoundException;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.repository.CustomerRepository;
+import nz.fox.craig.customer.security.SecurityService;
 
 @ExtendWith(MockitoExtension.class)
 class CustomerServiceTest {
@@ -34,6 +35,9 @@ class CustomerServiceTest {
 
 	@Mock 
 	private PasswordEncoder passwordEncoder;
+
+	@Mock
+	private SecurityService securityService;
 
 
 	@InjectMocks

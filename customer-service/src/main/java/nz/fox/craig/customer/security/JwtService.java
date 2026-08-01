@@ -7,13 +7,13 @@ import io.jsonwebtoken.security.Keys;
 import nz.fox.craig.customer.model.Customer;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Service
@@ -30,7 +30,7 @@ public class JwtService {
         Instant expiry = now.plusMillis(jwtExpiration);
 
         return Jwts.builder()
-                .subject(customer.getEmail())
+                .subject(customer.getId().toString())
                 .claim("email", customer.getEmail())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
@@ -47,13 +47,18 @@ public class JwtService {
                 && !isTokenExpired(token);
     }
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        return extractUsername(token).equals(userDetails.getUsername())
+    public boolean isTokenValid(String token, CustomerUserDetails userDetails) {
+
+        return extractCustomerId(token).equals(userDetails.getCustomerId())
                 && !isTokenExpired(token);
     }
 
     public String extractUsername(String token) {
         return extractEmail(token);
+    }
+
+    public UUID extractCustomerId(String token) {
+        return UUID.fromString(extractClaim(token, Claims::getSubject));
     }
 
     private boolean isTokenExpired(String token) {
@@ -81,4 +86,6 @@ public class JwtService {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
+   
 }
