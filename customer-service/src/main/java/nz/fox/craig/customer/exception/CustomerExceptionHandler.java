@@ -71,11 +71,11 @@ public class CustomerExceptionHandler {
 			CustomerInactiveException ex,
 			HttpServletRequest request) {
 
-		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
 				.body(new ApiError(
 						Instant.now(),
-						HttpStatus.FORBIDDEN.value(),
-						HttpStatus.FORBIDDEN.getReasonPhrase(),
+						HttpStatus.UNAUTHORIZED.value(),
+						HttpStatus.UNAUTHORIZED.getReasonPhrase(),
 						ex.getMessage(),
 						Map.of(),
 						request.getRequestURI()));

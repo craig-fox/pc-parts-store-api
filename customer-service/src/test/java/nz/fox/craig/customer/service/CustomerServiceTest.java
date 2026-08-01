@@ -66,7 +66,7 @@ class CustomerServiceTest {
 		when(passwordEncoder.encode(ENTERED_PASSWORD))
     		.thenReturn(PASSWORD);
 
-		CustomerResponse response = customerService.createCustomer(request);
+		CustomerResponse response = customerService.registerCustomer(request);
 
 		assertThat(response.id()).isEqualTo(CUSTOMER_ID);
 		assertThat(response.firstName()).isEqualTo("Jane");
@@ -93,7 +93,7 @@ class CustomerServiceTest {
 
 		when(customerRepository.save(any(Customer.class))).thenReturn(saved);
 
-		CustomerResponse response = customerService.createCustomer(request);
+		CustomerResponse response = customerService.registerCustomer(request);
 
 		assertThat(response.displayName()).isEqualTo("Jane");
 	}

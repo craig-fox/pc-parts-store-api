@@ -64,7 +64,7 @@ class CustomerControllerTest {
 		CustomerResponse response 
 		= new CustomerResponse(CUSTOMER_ID, "Jane", "Doe", "Jo", "jane@example.com", "123 Main St", CustomerStatus.ACTIVE);
 
-		when(customerService.createCustomer(any(CustomerRequest.class))).thenReturn(response);
+		when(customerService.registerCustomer(any(CustomerRequest.class))).thenReturn(response);
 
 		mockMvc.perform(post("/api/customers")
 				.contentType(MediaType.APPLICATION_JSON)

@@ -37,14 +37,14 @@ public class CustomerController {
 
 	private final CustomerService customerService;
 
-	@Operation(summary = "Create a new customer")
+	@Operation(summary = "Register a new customer")
 	@ApiResponses({
-		@ApiResponse(responseCode = "201", description = "Customer created"),
+		@ApiResponse(responseCode = "201", description = "Customer registered"),
 		@ApiResponse(responseCode = "400", description = "Validation failed")
 	})
 	@PostMapping
 	public ResponseEntity<CustomerResponse> createCustomer(@Valid @RequestBody CustomerRequest request) {
-		CustomerResponse response = customerService.createCustomer(request);
+		CustomerResponse response = customerService.registerCustomer(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
