@@ -7,18 +7,54 @@
 
     <module name="TreeWalker">
 
-        <module name="UnusedImports"/>
+        <!-- ===== High ROI: things the compiler can't catch ===== -->
 
+        <!-- Equals/hashCode contract consistency -->
+        <module name="EqualsHashCode"/>
+        <module name="EqualsAvoidNull"/>
+
+        <!-- Exception handling: catch empty/overly-broad catch blocks -->
+        <module name="EmptyCatchBlock">
+            <property name="exceptionVariableName" value="expected|ignored"/>
+        </module>
+        <module name="IllegalCatch">
+            <property name="illegalClassNames"
+                      value="java.lang.Exception, java.lang.Throwable, java.lang.RuntimeException"/>
+        </module>
+
+        <!-- Cyclomatic complexity — flag methods above a reasonable threshold -->
+        <module name="CyclomaticComplexity">
+            <property name="max" value="12"/>
+        </module>
+
+        <!-- Missing switch default — a real logic-gap catcher -->
+        <module name="MissingSwitchDefault"/>
+
+        <!-- ===== Dead code / real-mistake detectors ===== -->
+
+        <module name="UnusedImports"/>
         <module name="AvoidStarImport"/>
 
+        <!-- Unused local variables (via UnusedLocalVariable, Checkstyle 10.12+) -->
+        <module name="UnusedLocalVariable"/>
+
+        <!-- ===== Medium ROI: structural / maintainability ===== -->
+
+        <!-- Method and class length limits, loosely correlated with complexity -->
+        <module name="MethodLength">
+            <property name="max" value="60"/>
+        </module>
+        <module name="ClassDataAbstractionCoupling">
+            <property name="max" value="10"/>
+        </module>
+
+        <!-- Braces — cheap, prevents dangling-else style bugs -->
         <module name="NeedBraces"/>
 
-        <module name="FinalLocalVariable"/>
+        <!-- ===== Cheap consistency, kept since near-zero cost ===== -->
 
         <module name="WhitespaceAround"/>
-
         <module name="MethodParamPad"/>
-
         <module name="NoWhitespaceBefore"/>
 
     </module>

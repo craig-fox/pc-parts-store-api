@@ -21,7 +21,7 @@ public class AuthenticationService {
 
     public LoginResponse login(LoginRequest request) {
 
-        final Customer customer = customerRepository.findByEmail(request.email())
+        Customer customer = customerRepository.findByEmail(request.email())
                 .orElseThrow(() ->
                         new InvalidCredentialsException());
 
@@ -36,7 +36,7 @@ public class AuthenticationService {
             throw new InvalidCredentialsException();
         }
 
-        final String token = jwtService.generateToken(customer);
+        String token = jwtService.generateToken(customer);
 
         return new LoginResponse(token, customer.getId(), customer.getFirstName(), customer.getPreferredName());
     }

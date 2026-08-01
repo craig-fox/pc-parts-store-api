@@ -60,11 +60,11 @@ class AuthenticationServiceTest {
 
     @Test
     void shouldLoginSuccessfully() {
-        final LoginRequest request = new LoginRequest(
+        LoginRequest request = new LoginRequest(
                 EMAIL,
                 LOGIN_PASSWORD);
 
-        final Customer customer = activeCustomer();
+        Customer customer = activeCustomer();
 
         when(customerRepository.findByEmail(request.email()))
                 .thenReturn(Optional.of(customer));
@@ -77,7 +77,7 @@ class AuthenticationServiceTest {
         when(jwtService.generateToken(customer))
                 .thenReturn("jwt-token");
 
-        final LoginResponse response = authenticationService.login(request);
+        LoginResponse response = authenticationService.login(request);
 
         assertThat(response.token()).isEqualTo("jwt-token");
 
@@ -90,7 +90,7 @@ class AuthenticationServiceTest {
 
     @Test
     void shouldThrowWhenEmailDoesNotExist() {
-        final LoginRequest request = new LoginRequest(
+        LoginRequest request = new LoginRequest(
                 "unknown@example.com", LOGIN_PASSWORD);
 
         when(customerRepository.findByEmail(request.email()))
@@ -109,10 +109,10 @@ class AuthenticationServiceTest {
 
     @Test
     void shouldThrowWhenPasswordIsIncorrect() {
-        final LoginRequest request = new LoginRequest(
+        LoginRequest request = new LoginRequest(
                 EMAIL, "wrong-password");
 
-        final Customer customer = activeCustomer();
+        Customer customer = activeCustomer();
 
         when(customerRepository.findByEmail(request.email()))
                 .thenReturn(Optional.of(customer));
@@ -132,11 +132,11 @@ class AuthenticationServiceTest {
 
     @Test
     void shouldThrowWhenCustomerIsInactive() {
-        final LoginRequest request = new LoginRequest(
+        LoginRequest request = new LoginRequest(
                 EMAIL,
                 LOGIN_PASSWORD);
 
-        final Customer customer = activeCustomer();
+        Customer customer = activeCustomer();
         customer.setStatus(CustomerStatus.INACTIVE);
 
         when(customerRepository.findByEmail(request.email()))

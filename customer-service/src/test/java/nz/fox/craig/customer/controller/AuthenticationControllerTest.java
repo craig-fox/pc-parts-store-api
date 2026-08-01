@@ -50,9 +50,9 @@ class AuthenticationControllerTest {
     @Test
     void shouldLoginSuccessfully() throws Exception {
 
-        final LoginRequest request = new LoginRequest(USER_EMAIL, LOGIN_PASSWORD);
+        LoginRequest request = new LoginRequest(USER_EMAIL, LOGIN_PASSWORD);
 
-        final LoginResponse response = new LoginResponse("jwt-token", UUID.randomUUID(), "Jane", "Jo");
+        LoginResponse response = new LoginResponse("jwt-token", UUID.randomUUID(), "Jane", "Jo");
 
         when(authenticationService.login(any()))
                 .thenReturn(response);
@@ -67,7 +67,7 @@ class AuthenticationControllerTest {
     @Test
     void shouldRejectMissingEmail() throws Exception {
 
-        final LoginRequest request = new LoginRequest("", LOGIN_PASSWORD);
+        LoginRequest request = new LoginRequest("", LOGIN_PASSWORD);
 
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -78,7 +78,7 @@ class AuthenticationControllerTest {
     @Test
     void shouldRejectMissingPassword() throws Exception {
 
-        final LoginRequest request = new LoginRequest(USER_EMAIL, "");
+        LoginRequest request = new LoginRequest(USER_EMAIL, "");
 
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -89,7 +89,7 @@ class AuthenticationControllerTest {
     @Test
     void shouldReturnUnauthorizedForInvalidCredentials() throws Exception {
 
-        final LoginRequest request = new LoginRequest(USER_EMAIL, "wrong");
+        LoginRequest request = new LoginRequest(USER_EMAIL, "wrong");
 
         when(authenticationService.login(any()))
                 .thenThrow(new InvalidCredentialsException());

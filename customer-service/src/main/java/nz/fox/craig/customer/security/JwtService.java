@@ -26,8 +26,8 @@ public class JwtService {
     private long jwtExpiration;
 
     public String generateToken(Customer customer) {
-        final Instant now = Instant.now();
-        final Instant expiry = now.plusMillis(jwtExpiration);
+        Instant now = Instant.now();
+        Instant expiry = now.plusMillis(jwtExpiration);
 
         return Jwts.builder()
                 .subject(customer.getEmail())
@@ -68,7 +68,7 @@ public class JwtService {
             String token,
             Function<Claims, T> claimsResolver) {
 
-        final Claims claims = Jwts.parser()
+        Claims claims = Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
@@ -78,7 +78,7 @@ public class JwtService {
     }
 
     private SecretKey getSigningKey() {
-        final byte[] keyBytes = Decoders.BASE64.decode(secret);
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
