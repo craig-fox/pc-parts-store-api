@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+ 
+    <!-- Lombok-generated code triggers false positives on equals/hashCode/toString -->
+    <Match>
+        <Class name="~.*\$Lombok.*"/>
+    </Match>
+ 
+    <!-- Exclude generated sources if you have any (e.g. MapStruct, protobuf) -->
+    <Match>
+        <Class name="~.*\.generated\..*"/>
+    </Match>
+ 
+    <!-- Spring Boot's main class often trips a "should be final" style warning; not worth chasing -->
+    <Match>
+        <Class name="~.*Application"/>
+        <Bug pattern="SIC_INNER_SHOULD_BE_STATIC_ANON"/>
+    </Match>
+ 
+    <!-- Test classes: relax null-check strictness since mocks legitimately return null -->
+    <Match>
+        <Class name="~.*Test"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH"/>
+    </Match>
+ 
+    <!-- SecurityConfig stores a Spring-managed singleton filter bean injected once at
+         startup and never mutated externally — the EI_EXPOSE_REP2 concern (external
+         mutation of stored state) doesn't apply in a DI context like this. -->
+    <Match>
+        <Class name="nz.fox.craig.customer.config.SecurityConfig"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+ 
+    <!-- CustomerUserDetails wraps a JPA entity (Customer). Deep-copying it to satisfy
+         EI_EXPOSE_REP/REP2 would break lazy-loading and detach it from the persistence
+         context, causing more problems than it solves — accepted false positive for
+         Spring Data-backed UserDetails implementations. -->
+    <Match>
+        <Class name="nz.fox.craig.customer.security.CustomerUserDetails"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+ 
+    <!-- SE_BAD_FIELD: UserDetails extends Serializable, but Customer may not implement
+         it. Suppressed on the basis that auth is stateless (JWT, SessionCreationPolicy.
+         STATELESS in SecurityConfig) so this object is never actually serialized.
+         Revisit if a distributed session store or caching layer is introduced later. -->
+    <Match>
+        <Class name="nz.fox.craig.customer.security.CustomerUserDetails"/>
+        <Bug pattern="SE_BAD_FIELD"/>
+    </Match>
+ 
+</FindBugsFilter>

@@ -18,7 +18,7 @@ public class CustomerExceptionHandler {
 
 	@ExceptionHandler(CustomerNotFoundException.class)
 	public ResponseEntity<ApiError> handleCustomerNotFound(CustomerNotFoundException ex, HttpServletRequest request) {
-		final String message = ex.getMessage();
+		String message = ex.getMessage();
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
 				.body(new ApiError(
 						Instant.now(),
@@ -33,7 +33,7 @@ public class CustomerExceptionHandler {
 	public ResponseEntity<ApiError> handleValidationErrors(MethodArgumentNotValidException ex,
 			HttpServletRequest request) {
 
-		final Map<String, String> validationErrors = ex.getBindingResult()
+		Map<String, String> validationErrors = ex.getBindingResult()
 				.getFieldErrors()
 				.stream()
 				.collect(Collectors.toMap(

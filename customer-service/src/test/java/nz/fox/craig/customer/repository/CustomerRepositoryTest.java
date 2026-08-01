@@ -39,7 +39,7 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
 	@Test
 	void saveAndFindById() {
 		
-		final Customer customer = Customer.builder()
+		Customer customer = Customer.builder()
 				.firstName("Jane")
 				.lastName("Doe")
 				.preferredName("Jenny")
@@ -48,7 +48,7 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
 				.password(hashed)
 				.build();
 
-		final Customer saved = customerRepository.save(customer);
+		Customer saved = customerRepository.save(customer);
 
 		assertThat(saved.getId()).isNotNull();
 		assertThat(customerRepository.findById(saved.getId()))
@@ -86,7 +86,7 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
 
 	@Test
 	void updateExistingCustomer() {
-		final Customer customer = customerRepository.save(Customer.builder()
+		Customer customer = customerRepository.save(Customer.builder()
 				.firstName("Jane")
 				.lastName("Doe")
 				.email("jane@example.com")
@@ -97,7 +97,7 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
 		customer.setEmail("jane.smith@example.com");
 		customer.setAddress("456 Oak Ave");
 
-		final Customer updated = customerRepository.save(customer);
+		Customer updated = customerRepository.save(customer);
 
 		assertThat(updated.getLastName()).isEqualTo("Smith");
 		assertThat(updated.getEmail()).isEqualTo("jane.smith@example.com");
