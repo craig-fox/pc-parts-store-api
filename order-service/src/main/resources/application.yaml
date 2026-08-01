@@ -14,9 +14,12 @@ spring:
   flyway:
     enabled: true
 
-
 server:
   port: ${SERVER_PORT:8082}
+
+jwt:
+  secret: 7z4rA5L9kP2xQ8mN6vT1sW3yB8cD4eF7hJ9mN2pQ5rS8tV1xY4zA6cE9gH2jK5m
+  expiration: 3600000    
 
 services:
   customer:

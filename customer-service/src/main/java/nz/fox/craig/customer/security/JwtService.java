@@ -1,6 +1,7 @@
 package nz.fox.craig.customer.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -42,15 +43,13 @@ public class JwtService {
         return extractClaim(token, claims -> claims.get("email", String.class));
     }
 
-    public boolean isTokenValid(String token, Customer customer) {
-        return extractEmail(token).equals(customer.getEmail())
-                && !isTokenExpired(token);
-    }
-
-    public boolean isTokenValid(String token, CustomerUserDetails userDetails) {
-
-        return extractCustomerId(token).equals(userDetails.getCustomerId())
-                && !isTokenExpired(token);
+    public boolean isTokenValid(String token) {
+        try {
+            extractCustomerId(token);
+            return !isTokenExpired(token);
+        } catch (JwtException | IllegalArgumentException ex) {
+            return false;
+        }
     }
 
     public String extractUsername(String token) {
