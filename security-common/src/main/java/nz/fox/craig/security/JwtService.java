@@ -1,4 +1,4 @@
-package nz.fox.craig.order.security;
+package nz.fox.craig.security;
 
 import java.util.UUID;
 

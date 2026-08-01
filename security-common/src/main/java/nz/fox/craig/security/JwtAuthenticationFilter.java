@@ -1,7 +1,7 @@
-package nz.fox.craig.order.security;
+package nz.fox.craig.security;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -46,11 +46,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 UUID customerId = jwtService.extractCustomerId(jwt);
 
+                AuthenticatedCustomer principal =
+                    new AuthenticatedCustomer(
+                            customerId,
+                            jwtService.extractEmail(jwt));
+
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                customerId,
-                                null,
-                                Collections.emptyList());
+                    new UsernamePasswordAuthenticationToken(
+                            principal,
+                            null,
+                            List.of());
 
                 authentication.setDetails(
                         new WebAuthenticationDetailsSource()
