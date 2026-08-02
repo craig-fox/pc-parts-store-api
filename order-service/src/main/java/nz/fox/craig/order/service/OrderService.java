@@ -20,7 +20,6 @@ import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.repository.OrderRepository;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

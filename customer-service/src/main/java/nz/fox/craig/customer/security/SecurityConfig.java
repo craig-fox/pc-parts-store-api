@@ -15,12 +15,13 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
+import nz.fox.craig.customer.security.old.OldJwtAuthenticationFilter;
 
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final OldJwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     PasswordEncoder passwordEncoder() {

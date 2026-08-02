@@ -15,6 +15,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
+import nz.fox.craig.customer.security.old.OldJwtService;
 
 @ExtendWith(MockitoExtension.class)
 class JwtServiceTest {
@@ -26,7 +27,7 @@ class JwtServiceTest {
             "$2a$10$8xukrp03uk4k91AEt1BFKO.BQLwynIn3oOIn/Dqv4dCNsp6X0foe.";
 
     @InjectMocks
-    private JwtService jwtService;
+    private OldJwtService jwtService;
 
     @BeforeEach
     void setUp() {

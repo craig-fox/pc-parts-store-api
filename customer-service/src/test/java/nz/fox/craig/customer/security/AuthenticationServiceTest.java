@@ -17,6 +17,7 @@ import nz.fox.craig.customer.exception.InvalidCredentialsException;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
 import nz.fox.craig.customer.repository.CustomerRepository;
+import nz.fox.craig.customer.service.TokenService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -54,7 +55,7 @@ class AuthenticationServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private JwtService jwtService;
+    private TokenService tokenService;
 
     @InjectMocks
     private AuthenticationService authenticationService;
@@ -75,7 +76,7 @@ class AuthenticationServiceTest {
                 customer.getPassword()))
                 .thenReturn(true);
 
-        when(jwtService.generateToken(customer))
+        when(tokenService.generateToken(customer))
                 .thenReturn("jwt-token");
 
         LoginResponse response = authenticationService.login(request);
@@ -86,7 +87,7 @@ class AuthenticationServiceTest {
         verify(passwordEncoder).matches(
                 request.password(),
                 customer.getPassword());
-        verify(jwtService).generateToken(customer);
+        verify(tokenService).generateToken(customer);
     }
 
     @Test
@@ -104,7 +105,7 @@ class AuthenticationServiceTest {
         verify(passwordEncoder, never())
                 .matches(anyString(), anyString());
 
-        verify(jwtService, never())
+        verify(tokenService, never())
                 .generateToken(any());
     }
 
@@ -127,7 +128,7 @@ class AuthenticationServiceTest {
                 .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessage("Invalid email or password");
 
-        verify(jwtService, never())
+        verify(tokenService, never())
                 .generateToken(any());
     }
 
@@ -150,7 +151,7 @@ class AuthenticationServiceTest {
         verify(passwordEncoder, never())
                 .matches(anyString(), anyString());
 
-        verify(jwtService, never())
+        verify(tokenService, never())
                 .generateToken(any());
     }
 

@@ -16,7 +16,7 @@ import nz.fox.craig.customer.dto.LoginResponse;
 import nz.fox.craig.customer.exception.CustomerExceptionHandler;
 import nz.fox.craig.customer.exception.InvalidCredentialsException;
 import nz.fox.craig.customer.security.AuthenticationService;
-import nz.fox.craig.customer.security.JwtAuthenticationFilter;
+import nz.fox.craig.customer.security.old.OldJwtAuthenticationFilter;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -45,7 +45,7 @@ class AuthenticationControllerTest {
     private AuthenticationService authenticationService;
 
     @MockitoBean
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    private OldJwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Test
     void shouldLoginSuccessfully() throws Exception {

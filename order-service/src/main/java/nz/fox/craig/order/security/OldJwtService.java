@@ -13,8 +13,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
-@Service
-public class JwtService {
+//@Service
+public class OldJwtService {
 
     @Value("${jwt.secret}")
     private String secret;

@@ -22,6 +22,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
+import nz.fox.craig.customer.security.old.OldJwtAuthenticationFilter;
+import nz.fox.craig.customer.security.old.OldJwtService;
 import nz.fox.craig.customer.service.CustomerDetailsService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,7 +36,7 @@ class JwtAuthenticationFilterTest {
     private static final UUID CUSTOMER_ID = UUID.randomUUID();
 
     @Mock
-    private JwtService jwtService;
+    private OldJwtService jwtService;
 
     @Mock
     private CustomerDetailsService customerDetailsService;
@@ -49,7 +51,7 @@ class JwtAuthenticationFilterTest {
     private FilterChain filterChain;
 
     @InjectMocks
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    private OldJwtAuthenticationFilter jwtAuthenticationFilter;
 
     private CustomerUserDetails userDetails;
 
