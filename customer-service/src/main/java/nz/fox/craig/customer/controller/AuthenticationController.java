@@ -12,6 +12,7 @@ import nz.fox.craig.customer.dto.LoginRequest;
 import nz.fox.craig.customer.dto.LoginResponse;
 import nz.fox.craig.customer.security.AuthenticationService;
 
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor

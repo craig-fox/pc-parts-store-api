@@ -1,4 +1,4 @@
-package nz.fox.craig.customer.security;
+package nz.fox.craig.customer.security.old;
 
 
 import java.io.IOException;
@@ -16,17 +16,18 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import nz.fox.craig.customer.security.CustomerUserDetails;
 import nz.fox.craig.customer.service.CustomerDetailsService;
 
 @Component
 @RequiredArgsConstructor
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
+public class OldJwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private final OldJwtService jwtService;
     private final CustomerDetailsService customerDetailsService;
    
     @Override
-    protected void doFilterInternal(
+    public  void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain)

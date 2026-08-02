@@ -26,7 +26,7 @@ import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.repository.AbstractPostgresTest;
-import nz.fox.craig.order.security.JwtService;
+import nz.fox.craig.security.JwtService;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -48,6 +48,9 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
     @Value("${jwt.secret}")
     private String jwtSecret;
+
+    @Autowired
+    private JwtService jwtService;
 
     private final UUID productId = UUID.fromString("1b0d0fa6-52e1-4acd-8286-892bc29f8b3a");
 
@@ -80,6 +83,10 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 "test@example.com",
                 jwtSecret,
                 Duration.ofHours(1));
+                
+        assertTrue(jwtService.isTokenValid(token));
+        assertEquals(customerId, jwtService.extractCustomerId(token));
+        assertEquals("test@example.com", jwtService.extractEmail(token));        
 
         final List<OrderItemRequest> itemRequests =
                 List.of(new OrderItemRequest(productId, 2));

@@ -1,4 +1,4 @@
-package nz.fox.craig.customer.security;
+package nz.fox.craig.customer.security.old;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -18,7 +18,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 @Service
-public class JwtService {
+public class OldJwtService {
 
     @Value("${jwt.secret}")
     private String secret;
