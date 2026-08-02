@@ -1,4 +1,8 @@
-package nz.fox.craig.customer.security;
+package nz.fox.craig.security;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.UUID;
 
@@ -9,37 +13,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.web.servlet.MockMvc;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import nz.fox.craig.customer.model.Customer;
-import nz.fox.craig.customer.model.CustomerStatus;
-import nz.fox.craig.customer.security.old.OldJwtAuthenticationFilter;
-import nz.fox.craig.customer.security.old.OldJwtService;
-import nz.fox.craig.customer.service.CustomerDetailsService;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
 
     private static final UUID CUSTOMER_ID = UUID.randomUUID();
+    private static final String EMAIL = "jane@example.com";
 
     @Mock
-    private OldJwtService jwtService;
-
-    @Mock
-    private CustomerDetailsService customerDetailsService;
+    private JwtService jwtService;
 
     @Mock
     private HttpServletRequest request;
@@ -51,22 +40,10 @@ class JwtAuthenticationFilterTest {
     private FilterChain filterChain;
 
     @InjectMocks
-    private OldJwtAuthenticationFilter jwtAuthenticationFilter;
-
-    private CustomerUserDetails userDetails;
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @BeforeEach
     void setUp() {
-
-        Customer customer = Customer.builder()
-                .id(CUSTOMER_ID)
-                .email("jane@example.com")
-                .password("password")
-                .status(CustomerStatus.ACTIVE)
-                .build();
-
-        userDetails = new CustomerUserDetails(customer);
-
         SecurityContextHolder.clearContext();
     }
 
@@ -93,7 +70,7 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    void shouldContinueWhenAuthorizationHeaderIsInvalid() throws Exception {
+    void shouldContinueWhenAuthorizationHeaderIsNotBearerToken() throws Exception {
 
         when(request.getHeader("Authorization"))
                 .thenReturn("Basic abc123");
@@ -110,19 +87,19 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    void shouldAuthenticateUserFromJwt() throws Exception {
+    void shouldAuthenticateValidJwt() throws Exception {
 
         when(request.getHeader("Authorization"))
                 .thenReturn("Bearer jwt-token");
 
+        when(jwtService.isTokenValid("jwt-token"))
+                .thenReturn(true);
+
         when(jwtService.extractCustomerId("jwt-token"))
                 .thenReturn(CUSTOMER_ID);
 
-        when(customerDetailsService.loadUserById(CUSTOMER_ID))
-                .thenReturn(userDetails);
-
-        when(jwtService.isTokenValid("jwt-token"))
-                .thenReturn(true);
+        when(jwtService.extractEmail("jwt-token"))
+                .thenReturn(EMAIL);
 
         jwtAuthenticationFilter.doFilterInternal(
                 request,
@@ -133,8 +110,15 @@ class JwtAuthenticationFilterTest {
                 SecurityContextHolder.getContext().getAuthentication();
 
         assertThat(authentication).isNotNull();
+
         assertThat(authentication.getPrincipal())
-                .isEqualTo(userDetails);
+                .isInstanceOf(AuthenticatedCustomer.class);
+
+        AuthenticatedCustomer principal =
+                (AuthenticatedCustomer) authentication.getPrincipal();
+
+        assertThat(principal.customerId()).isEqualTo(CUSTOMER_ID);
+        assertThat(principal.email()).isEqualTo(EMAIL);
 
         verify(filterChain).doFilter(request, response);
     }
@@ -145,7 +129,7 @@ class JwtAuthenticationFilterTest {
         when(request.getHeader("Authorization"))
                 .thenReturn("Bearer jwt-token");
 
-        when(jwtService.extractCustomerId("jwt-token"))
+        when(jwtService.isTokenValid("jwt-token"))
                 .thenThrow(new JwtException("Invalid"));
 
         jwtAuthenticationFilter.doFilterInternal(
@@ -159,5 +143,34 @@ class JwtAuthenticationFilterTest {
         verify(filterChain).doFilter(request, response);
     }
 
+    @Test
+    void shouldNotReplaceExistingAuthentication() throws Exception {
 
+        Authentication existing =
+                org.springframework.security.authentication
+                        .UsernamePasswordAuthenticationToken
+                        .authenticated(
+                                "existing",
+                                null,
+                                java.util.List.of());
+
+        SecurityContextHolder.getContext()
+                .setAuthentication(existing);
+
+        when(request.getHeader("Authorization"))
+                .thenReturn("Bearer jwt-token");
+
+        when(jwtService.isTokenValid("jwt-token"))
+                .thenReturn(true);
+
+        jwtAuthenticationFilter.doFilterInternal(
+                request,
+                response,
+                filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication())
+                .isSameAs(existing);
+
+        verify(filterChain).doFilter(request, response);
+    }
 }

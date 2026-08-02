@@ -27,8 +27,6 @@ import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderExceptionHandler;
 import nz.fox.craig.order.exception.OrderNotFoundException;
 import nz.fox.craig.order.model.OrderStatus;
-import nz.fox.craig.order.security.OldJwtAuthenticationFilter;
-import nz.fox.craig.order.security.OldJwtService;
 import nz.fox.craig.order.service.OrderService;
 import nz.fox.craig.security.JwtAuthenticationFilter;
 import nz.fox.craig.security.JwtService;
