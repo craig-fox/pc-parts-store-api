@@ -63,7 +63,7 @@ public class CustomerService {
 	@Transactional(readOnly = true)
 	public CustomerResponse getCustomer(UUID customerId) {
 	
-		securityService.verifyCurrentCustomer(customerId);
+		securityService.verifyCurrentUser(customerId);
 	
 		return customerRepository.findById(customerId)
 				.map(CustomerResponse::from)
@@ -73,7 +73,7 @@ public class CustomerService {
 	@Transactional
 	public CustomerResponse updateCustomer(UUID customerId, CustomerRequest request) {
 
-		securityService.verifyCurrentCustomer(customerId);
+		securityService.verifyCurrentUser(customerId);
 
 		Customer customer = customerRepository.findById(customerId)
 				.orElseThrow(() -> new CustomerNotFoundException(customerId));
@@ -86,7 +86,7 @@ public class CustomerService {
 
 	@Transactional
 	public void deactivateCustomer(UUID customerId) {
-		securityService.verifyCurrentCustomer(customerId);
+		securityService.verifyCurrentUser(customerId);
 
 		Customer customer = customerRepository.findById(customerId)
 
@@ -98,7 +98,7 @@ public class CustomerService {
 
 	@Transactional
 	public void activateCustomer(UUID customerId) {
-		securityService.verifyCurrentCustomer(customerId);
+		securityService.verifyCurrentUser(customerId);
 
 		Customer customer = customerRepository.findById(customerId)
 				.orElseThrow(() -> new CustomerNotFoundException(customerId));

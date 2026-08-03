@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: auth-service
+
+customer-service:
+  base-url: http://localhost:8081
+
+jwt:
+  secret: YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXphYmNkZWZnaGlqa2xtbm9wcQ==
+  expiration: 3600000

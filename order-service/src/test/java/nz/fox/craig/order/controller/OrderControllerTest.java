@@ -29,7 +29,7 @@ import nz.fox.craig.order.exception.OrderNotFoundException;
 import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.service.OrderService;
 import nz.fox.craig.security.JwtAuthenticationFilter;
-import nz.fox.craig.security.JwtService;
+import nz.fox.craig.security.TokenService;
 
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -57,7 +57,7 @@ class OrderControllerTest {
 	private JwtAuthenticationFilter jwtAuthenticationFilter;
 
 	@MockitoBean
-	private JwtService jwtService;
+	private TokenService tokenService;
 
 	private static final UUID ORDER_ID = UUID.randomUUID();
 	private static final UUID CUSTOMER_ID = UUID.randomUUID();

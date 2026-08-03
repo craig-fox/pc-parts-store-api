@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+
 @RestControllerAdvice
 public class CustomerExceptionHandler {
 
@@ -66,36 +67,7 @@ public class CustomerExceptionHandler {
 						request.getRequestURI()));
 	}
 
-	@ExceptionHandler(CustomerInactiveException.class)
-	public ResponseEntity<ApiError> handleCustomerInactive(
-			CustomerInactiveException ex,
-			HttpServletRequest request) {
-
-		return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-				.body(new ApiError(
-						Instant.now(),
-						HttpStatus.UNAUTHORIZED.value(),
-						HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-						ex.getMessage(),
-						Map.of(),
-						request.getRequestURI()));
-	}
-
-	@ExceptionHandler(InvalidCredentialsException.class)
-	public ResponseEntity<ApiError> handleInvalidCredentials(
-			InvalidCredentialsException ex,
-			HttpServletRequest request) {
-
-		return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-				.body(new ApiError(
-						Instant.now(),
-						HttpStatus.UNAUTHORIZED.value(),
-						HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-						ex.getMessage(),
-						Map.of(),
-						request.getRequestURI()));
-	}
-
+	
 	@ExceptionHandler(AccessDeniedException.class)
 	public ResponseEntity<ApiError> handleAccessDenied(
 			AccessDeniedException ex,
