@@ -13,5 +13,6 @@
         <module>product-service</module>
         <module>inventory-service</module>
         <module>security-common</module>
+        <module>authentication-service</module>
     </modules>
 </project>

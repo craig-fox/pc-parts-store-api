@@ -1,6 +1,8 @@
 package nz.fox.craig.customer.security;
 
 
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -13,8 +15,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import nz.fox.craig.customer.model.Customer;
-import nz.fox.craig.customer.model.CustomerStatus;
+import nz.fox.craig.dto.AuthenticatedUser;
+import nz.fox.craig.dto.Role;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,28 +35,22 @@ class SecurityServiceTest {
 
         securityService = new SecurityService();
 
-        Customer customer = Customer.builder()
-                .id(CUSTOMER_ID)
-                .firstName("Jane")
-                .lastName("Doe")
-                .email("jane@example.com")
-                .password("password")
-                .status(CustomerStatus.ACTIVE)
-                .build();
-
-        CustomerUserDetails userDetails =
-                new CustomerUserDetails(customer);
+        AuthenticatedUser user =
+                new AuthenticatedUser(
+                        CUSTOMER_ID,
+                        "jane@example.com",
+                        Set.of(Role.ROLE_CUSTOMER));
 
         Authentication authentication =
                 new UsernamePasswordAuthenticationToken(
-                        userDetails,
+                        user,
                         null,
-                        userDetails.getAuthorities());
+                        List.of());
 
         SecurityContextHolder.getContext()
                 .setAuthentication(authentication);
     }
-
+    
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
@@ -63,7 +59,7 @@ class SecurityServiceTest {
     @Test
     void shouldReturnCurrentCustomerId() {
 
-        UUID customerId = securityService.getCurrentCustomerId();
+        UUID customerId = securityService.getCurrentUserId();
 
         assertThat(customerId).isEqualTo(CUSTOMER_ID);
     }
@@ -72,7 +68,7 @@ class SecurityServiceTest {
     void shouldAllowCurrentCustomer() {
 
         assertThatCode(() ->
-                securityService.verifyCurrentCustomer(CUSTOMER_ID))
+                securityService.verifyCurrentUser(CUSTOMER_ID))
                 .doesNotThrowAnyException();
     }
 
@@ -80,7 +76,7 @@ class SecurityServiceTest {
     void shouldRejectDifferentCustomer() {
 
         assertThatThrownBy(() ->
-                securityService.verifyCurrentCustomer(OTHER_CUSTOMER_ID))
+                securityService.verifyCurrentUser(OTHER_CUSTOMER_ID))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("You may only access your own account.");
     }

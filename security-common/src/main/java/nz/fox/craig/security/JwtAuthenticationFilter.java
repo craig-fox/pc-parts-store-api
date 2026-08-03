@@ -2,12 +2,12 @@ package nz.fox.craig.security;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import io.jsonwebtoken.JwtException;
@@ -16,12 +16,13 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import nz.fox.craig.dto.AuthenticatedUser;
+import nz.fox.craig.dto.Role;
 
-@Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private final TokenService tokenService;
 
     @Override
     protected void doFilterInternal(
@@ -41,15 +42,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             String jwt = authHeader.substring(7);
 
-            if (jwtService.isTokenValid(jwt)
+            if (tokenService.isTokenValid(jwt)
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                UUID customerId = jwtService.extractCustomerId(jwt);
-
-                AuthenticatedCustomer principal =
-                    new AuthenticatedCustomer(
+                UUID customerId = tokenService.extractCustomerId(jwt);
+               
+                AuthenticatedUser principal =
+                    new AuthenticatedUser(
                             customerId,
-                            jwtService.extractEmail(jwt));
+                            tokenService.extractEmail(jwt),
+                            Set.of(Role.ROLE_CUSTOMER));
 
                 UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(

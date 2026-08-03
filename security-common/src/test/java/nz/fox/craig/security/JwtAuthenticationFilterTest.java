@@ -20,6 +20,7 @@ import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import nz.fox.craig.dto.AuthenticatedUser;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
@@ -28,7 +29,7 @@ class JwtAuthenticationFilterTest {
     private static final String EMAIL = "jane@example.com";
 
     @Mock
-    private JwtService jwtService;
+    private TokenService tokenService;
 
     @Mock
     private HttpServletRequest request;
@@ -92,13 +93,13 @@ class JwtAuthenticationFilterTest {
         when(request.getHeader("Authorization"))
                 .thenReturn("Bearer jwt-token");
 
-        when(jwtService.isTokenValid("jwt-token"))
+        when(tokenService.isTokenValid("jwt-token"))
                 .thenReturn(true);
 
-        when(jwtService.extractCustomerId("jwt-token"))
+        when(tokenService.extractCustomerId("jwt-token"))
                 .thenReturn(CUSTOMER_ID);
 
-        when(jwtService.extractEmail("jwt-token"))
+        when(tokenService.extractEmail("jwt-token"))
                 .thenReturn(EMAIL);
 
         jwtAuthenticationFilter.doFilterInternal(
@@ -112,12 +113,12 @@ class JwtAuthenticationFilterTest {
         assertThat(authentication).isNotNull();
 
         assertThat(authentication.getPrincipal())
-                .isInstanceOf(AuthenticatedCustomer.class);
+                .isInstanceOf(AuthenticatedUser.class);
 
-        AuthenticatedCustomer principal =
-                (AuthenticatedCustomer) authentication.getPrincipal();
+        AuthenticatedUser principal =
+                (AuthenticatedUser) authentication.getPrincipal();
 
-        assertThat(principal.customerId()).isEqualTo(CUSTOMER_ID);
+        assertThat(principal.id()).isEqualTo(CUSTOMER_ID);
         assertThat(principal.email()).isEqualTo(EMAIL);
 
         verify(filterChain).doFilter(request, response);
@@ -129,7 +130,7 @@ class JwtAuthenticationFilterTest {
         when(request.getHeader("Authorization"))
                 .thenReturn("Bearer jwt-token");
 
-        when(jwtService.isTokenValid("jwt-token"))
+        when(tokenService.isTokenValid("jwt-token"))
                 .thenThrow(new JwtException("Invalid"));
 
         jwtAuthenticationFilter.doFilterInternal(
@@ -160,7 +161,7 @@ class JwtAuthenticationFilterTest {
         when(request.getHeader("Authorization"))
                 .thenReturn("Bearer jwt-token");
 
-        when(jwtService.isTokenValid("jwt-token"))
+        when(tokenService.isTokenValid("jwt-token"))
                 .thenReturn(true);
 
         jwtAuthenticationFilter.doFilterInternal(
