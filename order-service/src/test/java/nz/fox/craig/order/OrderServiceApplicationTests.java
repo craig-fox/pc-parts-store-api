@@ -1,5 +1,7 @@
 package nz.fox.craig.order;
 
+import java.util.Arrays;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,13 +13,18 @@ import nz.fox.craig.order.repository.AbstractPostgresTest;
 @SpringBootTest
 class OrderServiceApplicationTests extends AbstractPostgresTest {
 
-
-	@Autowired
+    @Autowired
     private ApplicationContext context;
 
     @Test
-    void contextLoads() {
-        System.out.println(context.getBean(OrderMapper.class));
-    }
+    void dumpMapperBeans() {
 
+        context.getBeansOfType(OrderMapper.class)
+                .forEach((k, v) -> System.out.println(k + " -> " + v));
+
+        Arrays.stream(context.getBeanDefinitionNames())
+                .filter(n -> n.contains("Mapper"))
+                .sorted()
+                .forEach(System.out::println);
+    }
 }
