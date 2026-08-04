@@ -29,6 +29,7 @@
         <checkstyle.version>10.26.1</checkstyle.version>
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <maven.surefire.version>3.5.3</maven.surefire.version>
+        <mock.webserver.version>5.1.0</mock.webserver.version>
     </properties>
 
     <dependencyManagement>
@@ -45,6 +46,17 @@
                 <groupId>org.mapstruct</groupId>
                 <artifactId>mapstruct</artifactId>
                 <version>${mapstruct.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>mockwebserver</artifactId>
+                <version>${mock.webserver.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-mapstruct-binding</artifactId>
+                <scope>provided</scope>
+                <version>${lombok.mapstruct.binding.version}</version>
             </dependency>
     
         </dependencies>
