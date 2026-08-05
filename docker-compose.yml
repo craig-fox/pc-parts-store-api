@@ -150,6 +150,17 @@ services:
     ports:
       - "8084:8080"
     networks:
+      - backend    
+
+  authentication-service:
+    build:
+      context: ./authentication-service
+    container_name: authentication-service
+    environment:
+      SERVER_PORT: 8080
+    ports:
+      - "8085:8080"
+    networks:
       - backend      
   
 volumes:

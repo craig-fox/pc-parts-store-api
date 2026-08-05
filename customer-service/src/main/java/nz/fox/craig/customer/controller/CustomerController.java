@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import lombok.RequiredArgsConstructor;
+import nz.fox.craig.customer.dto.CustomerAuthenticationResponse;
 import nz.fox.craig.customer.dto.CustomerRequest;
 import nz.fox.craig.customer.dto.CustomerResponse;
 import nz.fox.craig.customer.model.CustomerStatus;
@@ -77,6 +78,16 @@ public class CustomerController {
 	@GetMapping("/{id}")
 	public CustomerResponse getCustomer(@PathVariable UUID id) {
 		return customerService.getCustomer(id);
+	}
+
+	@Operation(summary = "Retrieve details of a customer by email")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "Customer found"),
+		@ApiResponse(responseCode = "404", description = "Customer not found")
+	})
+	@GetMapping("/email/{email}")
+	public CustomerAuthenticationResponse getCustomerByEmail(@PathVariable String email) {
+		return customerService.getCustomerByEmail(email);
 	}
 
 	@Operation(summary = "Reactivate an inactive customer")

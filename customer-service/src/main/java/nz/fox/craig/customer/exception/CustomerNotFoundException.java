@@ -8,4 +8,8 @@ public class CustomerNotFoundException extends BusinessException {
 		super("Customer not found with id: " + id);
 	}
 
+	public CustomerNotFoundException(String email) {
+        super("Customer not found with email: " + email);
+    }
+
 }
