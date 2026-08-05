@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import lombok.RequiredArgsConstructor;
+import nz.fox.craig.customer.dto.CustomerAuthenticationResponse;
 import nz.fox.craig.customer.dto.CustomerRequest;
 import nz.fox.craig.customer.dto.CustomerResponse;
 import nz.fox.craig.customer.exception.CustomerAlreadyExistsException;
@@ -68,6 +69,15 @@ public class CustomerService {
 		return customerRepository.findById(customerId)
 				.map(CustomerResponse::from)
 				.orElseThrow(() -> new CustomerNotFoundException(customerId));
+	}
+
+	@Transactional(readOnly = true)
+	public CustomerAuthenticationResponse getCustomerByEmail(String email) {
+	
+		Customer customer = customerRepository.findByEmail(email)
+				.orElseThrow(() -> new CustomerNotFoundException(email));
+	
+		return CustomerAuthenticationResponse.from(customer);
 	}
 
 	@Transactional
