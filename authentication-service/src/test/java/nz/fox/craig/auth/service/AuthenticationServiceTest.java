@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import nz.fox.craig.auth.client.CustomerClient;
@@ -20,8 +21,8 @@ import nz.fox.craig.security.TokenService;
 
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 class AuthenticationServiceTest {
@@ -51,7 +52,7 @@ class AuthenticationServiceTest {
     
         when(passwordEncoder.matches(
                 LOGIN_PASSWORD,
-                customer.passwordHash()))
+                customer.password()))
                 .thenReturn(true);
     
         when(tokenService.generateToken(any(AuthenticatedUser.class)))
@@ -70,9 +71,18 @@ class AuthenticationServiceTest {
     
         verify(customerClient).findByEmail(customer.email());
         verify(passwordEncoder)
-                .matches(LOGIN_PASSWORD, customer.passwordHash());
+                .matches(LOGIN_PASSWORD, customer.password());
         verify(tokenService).generateToken(any(AuthenticatedUser.class));
     }
+
+        @Test
+        void passwordHashMatches() {
+                PasswordEncoder encoder = new BCryptPasswordEncoder();
+
+                String hash = "$2a$10$nalmCvkxSWfwt/elgq0Yo.wcbCxCvxdetuJ6qkYMjSFj/Puk1sWcG";
+
+                assertTrue(encoder.matches("myPassword123", hash));
+        }
 
     @Test
     void shouldRejectUnknownEmail() {
@@ -97,7 +107,7 @@ class AuthenticationServiceTest {
                 "encoded-password",
                 active,
                 "Jane",
-                "Jo",
-                Set.of(Role.ROLE_CUSTOMER));
+                "Jo");
+
     }
 }

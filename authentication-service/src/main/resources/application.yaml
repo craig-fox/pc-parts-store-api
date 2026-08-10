@@ -3,7 +3,11 @@ spring:
     name: auth-service
 
 customer-service:
-  base-url: http://localhost:8081
+  base-url: http://customer-service:8080
+
+
+server:
+  port: ${SERVER_PORT:8085}
 
 jwt:
   secret: YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXphYmNkZWZnaGlqa2xtbm9wcQ==

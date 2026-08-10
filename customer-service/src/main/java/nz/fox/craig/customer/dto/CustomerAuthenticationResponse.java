@@ -9,15 +9,18 @@ public record CustomerAuthenticationResponse(
     UUID id,
     String email,
     String password,
-    CustomerStatus status
+    boolean active,
+    String firstName,
+    String preferredName
 ) {
-
     public static CustomerAuthenticationResponse from(Customer customer) {
         return new CustomerAuthenticationResponse(
-                customer.getId(),
-                customer.getEmail(),
-                customer.getPassword(),
-                customer.getStatus()
+            customer.getId(),
+            customer.getEmail(),
+            customer.getPassword(),
+            customer.getStatus() == CustomerStatus.ACTIVE,
+            customer.getFirstName(),
+            customer.getPreferredName()
         );
     }
 }
