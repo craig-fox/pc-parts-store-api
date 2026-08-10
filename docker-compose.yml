@@ -85,6 +85,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://customer-postgres:5432/customerdb
       SPRING_DATASOURCE_USERNAME: customer
       SPRING_DATASOURCE_PASSWORD: customer
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
     ports:
       - "8081:8080"
     networks:
@@ -125,9 +127,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://order-postgres:5432/orderdb
       SPRING_DATASOURCE_USERNAME: order
       SPRING_DATASOURCE_PASSWORD: order
-
       CUSTOMER_SERVICE_URL: http://customer-service:8080
       PRODUCT_SERVICE_URL: http://product-service:8080
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
 
     ports:
       - "8082:8080"
@@ -158,6 +161,8 @@ services:
     container_name: authentication-service
     environment:
       SERVER_PORT: 8080
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
     ports:
       - "8085:8080"
     networks:
