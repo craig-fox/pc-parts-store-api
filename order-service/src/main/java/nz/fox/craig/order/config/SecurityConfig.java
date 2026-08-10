@@ -1,4 +1,4 @@
-package nz.fox.craig.order.security;
+package nz.fox.craig.order.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -227,8 +227,7 @@ class AuthenticationIntegrationTest {
             passwordHash,
             active,
             "Jane",
-            preferred,
-            Set.of(Role.ROLE_CUSTOMER));
+            preferred);
     }
 
 

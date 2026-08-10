@@ -25,24 +25,30 @@ public class AuthenticationService {
     private final TokenService tokenService;
 
     public LoginResponse login(LoginRequest request) {
-
+    
         AuthenticatedCustomer customer =
                 customerClient.findByEmail(request.email());
-
+    
         if (!customer.active()) {
             throw new CustomerInactiveException();
         }
-
-        if (!passwordEncoder.matches(
+    
+        boolean passwordMatches = passwordEncoder.matches(
                 request.password(),
-                customer.passwordHash())) {
-
+                customer.password());
+    
+        if (!passwordMatches) {
             throw new InvalidCredentialsException();
         }
-        AuthenticatedUser user = new AuthenticatedUser(customer.id(), customer.email(), Set.of(Role.ROLE_CUSTOMER));
-
+    
+        AuthenticatedUser user = new AuthenticatedUser(
+                customer.id(),
+                customer.email(),
+                Set.of(Role.ROLE_CUSTOMER)
+        );
+    
         String token = tokenService.generateToken(user);
-
+    
         return new LoginResponse(
                 token,
                 customer.id(),
