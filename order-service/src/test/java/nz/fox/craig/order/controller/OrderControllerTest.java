@@ -67,11 +67,12 @@ class OrderControllerTest {
 	class CreateOrder {
 		@Test
 		void returnsCreatedOrder() throws Exception {
-			OrderRequest request = orderRequest(CUSTOMER_ID, orderItems());
+			OrderRequest request = orderRequest(orderItems());
 			OrderResponse response = sampleResponse(OrderStatus.PLACED);
-
-			when(orderService.createOrder(any(OrderRequest.class))).thenReturn(response);
-
+		
+			when(orderService.createOrder(any(OrderRequest.class)))
+					.thenReturn(response);
+		
 			mockMvc.perform(post("/api/orders")
 					.contentType(MediaType.APPLICATION_JSON)
 					.content(objectMapper.writeValueAsString(request)))
@@ -81,24 +82,13 @@ class OrderControllerTest {
 					.andExpect(jsonPath("$.status").value("PLACED"))
 					.andExpect(jsonPath("$.items").isArray())
 					.andExpect(jsonPath("$.total").value(0));
+		
 			verify(orderService).createOrder(any(OrderRequest.class));
 		}
 
 		@Test
-		void missingCustomerIdReturnsBadRequest() throws Exception {
-			OrderRequest request = orderRequest(null, orderItems());
-
-			mockMvc.perform(post("/api/orders")
-					.contentType(MediaType.APPLICATION_JSON)
-					.content(objectMapper.writeValueAsString(request)))
-					.andExpect(status().isBadRequest())
-					.andExpect(jsonPath("$.message")
-							.value("customerId: Customer id is required"));
-		}
-
-		@Test
 		void emptyOrderItemsReturnsBadRequest() throws Exception {
-			OrderRequest request = orderRequest(CUSTOMER_ID, List.of());
+			OrderRequest request = orderRequest(List.of());
 
 			mockMvc.perform(post("/api/orders")
 					.contentType(MediaType.APPLICATION_JSON)
@@ -111,7 +101,7 @@ class OrderControllerTest {
 		@Test
 		void customerNotFoundReturns404() throws Exception {
 			var missingCustomerID = UUID.randomUUID();
-			OrderRequest request = orderRequest(CUSTOMER_ID, orderItems());
+			OrderRequest request = orderRequest(orderItems());
 
 			when(orderService.createOrder(any(OrderRequest.class)))
 					.thenThrow(new CustomerNotFoundException(missingCustomerID));
@@ -120,10 +110,11 @@ class OrderControllerTest {
 					.contentType(MediaType.APPLICATION_JSON)
 					.content(objectMapper.writeValueAsString(request)))
 					.andExpect(status().isNotFound())
-					.andExpect(jsonPath("$.message").value("Customer not found with id: " + missingCustomerID));
+					.andExpect(jsonPath("$.message")
+							.value("Customer not found with id: " + missingCustomerID));
 		}
 
-	}
+	}	
 
 	@Nested
 	class GetOrder {
@@ -204,9 +195,8 @@ class OrderControllerTest {
 				.build();
 	}
 
-	private OrderRequest orderRequest(UUID customerId, List<OrderItemRequest> items) {
+	private OrderRequest orderRequest(List<OrderItemRequest> items) {
 		return OrderRequest.builder()
-				.customerId(customerId)
 				.items(items)
 				.build();
 	}
@@ -218,5 +208,5 @@ class OrderControllerTest {
 						.quantity(1)
 						.build());
 	}
-
+  
 }

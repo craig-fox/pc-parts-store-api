@@ -92,7 +92,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 List.of(new OrderItemRequest(productId, 2));
 
         final OrderRequest request =
-            new OrderRequest(customerId, itemRequests);
+            new OrderRequest(itemRequests);
 
            
 

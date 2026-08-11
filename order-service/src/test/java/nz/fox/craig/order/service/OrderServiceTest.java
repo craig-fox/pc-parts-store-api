@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -19,8 +20,15 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 
+import nz.fox.craig.dto.AuthenticatedUser;
+import nz.fox.craig.dto.Role;
 import nz.fox.craig.order.client.CustomerClient;
 import nz.fox.craig.order.client.InventoryClient;
 import nz.fox.craig.order.client.ProductClient;
@@ -65,6 +73,16 @@ class OrderServiceTest {
 
         @InjectMocks
         private OrderService service;
+
+        @BeforeEach
+        void setUpSecurityContext() {
+            authenticateCustomer();
+        }
+
+        @AfterEach
+        void clearSecurityContext() {
+                SecurityContextHolder.clearContext();
+        }
 
         @Nested
         class CreateOrder {
@@ -317,7 +335,6 @@ class OrderServiceTest {
 
         private OrderRequest orderRequest() {
                 return OrderRequest.builder()
-                                .customerId(CUSTOMER_ID)
                                 .items(List.of(
                                                 OrderItemRequest.builder()
                                                                 .productId(PRODUCT_ID)
@@ -362,4 +379,20 @@ class OrderServiceTest {
                                 .active(true)
                                 .build();
         }
+
+        private void authenticateCustomer() {
+                AuthenticatedUser user = new AuthenticatedUser(
+                        CUSTOMER_ID,
+                        "alice.smith@example.com",
+                        Set.of(Role.ROLE_CUSTOMER));
+            
+                Authentication authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                user,
+                                null,
+                                List.of());
+            
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authentication);
+            }
 }

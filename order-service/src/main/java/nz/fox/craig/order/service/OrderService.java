@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import lombok.RequiredArgsConstructor;
+import nz.fox.craig.dto.AuthenticatedUser;
 import nz.fox.craig.order.client.CustomerClient;
 import nz.fox.craig.order.client.InventoryClient;
 import nz.fox.craig.order.client.ProductClient;
@@ -20,6 +21,9 @@ import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.repository.OrderRepository;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,17 +39,17 @@ public class OrderService {
 
 	@Transactional
 	public OrderResponse createOrder(OrderRequest request) {
-
-		validateCustomer(request.customerId());
+		UUID customerId = getAuthenticatedCustomerId();
+		validateCustomer(customerId);
 		for (OrderItemRequest item : request.items()) {
 			inventoryClient.reserveStock(item.productId(), item.quantity());
 		}
-		final Order order = assembleOrder(request);
+		final Order order = assembleOrder(request, customerId);
 		final Order savedOrder = orderRepository.save(order);
 		return orderMapper.toResponse(savedOrder);
 	}
 
-	private Order assembleOrder(OrderRequest request) {
+	private Order assembleOrder(OrderRequest request, UUID customerId) {
 
 		final List<OrderItem> items = buildOrderItems(request);
 	
@@ -54,7 +58,7 @@ public class OrderService {
 		final BigDecimal total = calculateTotal(subtotal, shipping);
 	
 		final Order order = Order.builder()
-				.customerId(request.customerId())
+				.customerId(customerId)
 				.orderDate(LocalDateTime.now())
 				.status(OrderStatus.PLACED)
 				.subtotal(subtotal)
@@ -65,6 +69,16 @@ public class OrderService {
 		items.forEach(order::addItem);
 	
 		return order;
+	}
+
+	private UUID getAuthenticatedCustomerId() {
+		Authentication authentication =
+				SecurityContextHolder.getContext().getAuthentication();
+	
+		AuthenticatedUser user =
+				(AuthenticatedUser) authentication.getPrincipal();
+	
+		return user.id();
 	}
 
 	private void validateCustomer(UUID customerId) {
