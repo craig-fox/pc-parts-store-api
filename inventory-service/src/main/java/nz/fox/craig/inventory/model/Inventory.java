@@ -12,6 +12,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import nz.fox.craig.inventory.exception.InsufficientInventoryException;
 
 @Entity
 @Table(name = "inventory")
@@ -56,9 +57,9 @@ public class Inventory {
         if (quantity <= 0) {
             throw new IllegalArgumentException("Quantity must be greater than zero.");
         }
-    
+
         if (quantity > getAvailableQuantity()) {
-            throw new IllegalArgumentException("Insufficient inventory.");
+            throw new InsufficientInventoryException(this.productId);
         }
     
         quantityReserved += quantity;

@@ -13,4 +13,9 @@ public class InventoryExceptionHandler {
 	public ResponseEntity<Map<String, String>> handleInventoryNotFound(InventoryNotFoundException ex) {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", ex.getMessage()));
 	}
+
+	@ExceptionHandler(InsufficientInventoryException.class)
+	public ResponseEntity<Map<String, String>> handleInsufficientInventory(InsufficientInventoryException ex) {
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
+	}
 }
