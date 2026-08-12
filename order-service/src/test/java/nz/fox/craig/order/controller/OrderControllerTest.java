@@ -143,6 +143,23 @@ class OrderControllerTest {
 			verify(orderService).getOrder(MISSING_ORDER);
 		}
 
+		@Test
+		void returnsOrders() throws Exception {
+			OrderResponse first = sampleResponse(OrderStatus.PLACED);
+			OrderResponse second = sampleResponse(OrderStatus.CANCELLED);
+
+			when(orderService.getOrdersForAuthenticatedCustomer()).thenReturn(List.of(first, second));
+
+			mockMvc.perform(get("/api/orders"))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$").isArray())
+					.andExpect(jsonPath("$.length()").value(2))
+					.andExpect(jsonPath("$[0].status").value("PLACED"))
+					.andExpect(jsonPath("$[1].status").value("CANCELLED"));
+
+			verify(orderService).getOrdersForAuthenticatedCustomer();
+		}
+
 	}
 
 	@Nested
@@ -179,6 +196,18 @@ class OrderControllerTest {
 					.andExpect(status().isConflict())
 					.andExpect(jsonPath("$.message").value("Order " + CUSTOMER_ID + " is already cancelled"));
 			verify(orderService).cancelOrder(CUSTOMER_ID);
+		}
+
+		@Test
+		void returnsEmptyListWhenCustomerHasNoOrders() throws Exception {
+			when(orderService.getOrdersForAuthenticatedCustomer()).thenReturn(List.of());
+
+			mockMvc.perform(get("/api/orders"))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$").isArray())
+					.andExpect(jsonPath("$.length()").value(0));
+
+			verify(orderService).getOrdersForAuthenticatedCustomer();
 		}
 	}
 

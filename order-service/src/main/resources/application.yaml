@@ -29,6 +29,6 @@ services:
     base-url: ${PRODUCT_SERVICE_URL:http://localhost:8083}
 
   inventory:
-    base-url: ${PRODUCT_SERVICE_URL:http://localhost:8084}  
+    base-url: ${INVENTORY_SERVICE_URL:http://localhost:8084}  
 
 

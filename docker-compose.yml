@@ -129,6 +129,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: order
       CUSTOMER_SERVICE_URL: http://customer-service:8080
       PRODUCT_SERVICE_URL: http://product-service:8080
+      INVENTORY_SERVICE_URL: http://inventory-service:8080
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
 

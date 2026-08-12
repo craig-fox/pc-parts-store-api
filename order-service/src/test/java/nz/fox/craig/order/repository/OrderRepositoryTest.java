@@ -78,9 +78,15 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
         orderRepository.save(order1);
         orderRepository.save(order2);
 
-        final List<Order> orders = orderRepository.findByCustomerId(customerId);
-        assertThat(orders).hasSize(2);
+        final List<Order> orders =
+                orderRepository.findByCustomerId(customerId);
 
+        assertThat(orders)
+                .hasSize(2)
+                .extracting(Order::getId)
+                .containsExactlyInAnyOrder(
+                        order1.getId(),
+                        order2.getId());
     }
 
     @Test
@@ -107,6 +113,27 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
         final List<Order> orders =
                 orderRepository.findByCustomerId(UUID.randomUUID());
         assertThat(orders).isEmpty();
+    }
+
+    @Test
+    void shouldOnlyFindOrdersForSpecifiedCustomer() {
+        final UUID customerId = UUID.randomUUID();
+        final UUID otherCustomerId = UUID.randomUUID();
+
+        final Order customerOrder = createOrder(customerId);
+        final Order otherCustomerOrder = createOrder(otherCustomerId);
+
+        orderRepository.save(customerOrder);
+        orderRepository.save(otherCustomerOrder);
+
+        final List<Order> orders =
+                orderRepository.findByCustomerId(customerId);
+
+        assertThat(orders)
+                .hasSize(1)
+                .first()
+                .extracting(Order::getCustomerId)
+                .isEqualTo(customerId);
     }
     
 

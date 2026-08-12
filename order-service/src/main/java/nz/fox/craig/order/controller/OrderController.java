@@ -6,6 +6,7 @@ import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.service.OrderService;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -37,6 +38,11 @@ public class OrderController {
             @PathVariable UUID id) {
 
         return ResponseEntity.ok(orderService.getOrder(id));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<OrderResponse>> getOrders() {
+        return ResponseEntity.ok(orderService.getOrdersForAuthenticatedCustomer());
     }
 
     @PostMapping("/{id}/cancel")

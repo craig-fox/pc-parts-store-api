@@ -9,4 +9,6 @@ import nz.fox.craig.order.model.Order;
 
 public interface OrderRepository extends JpaRepository<Order, UUID> {
     List<Order> findByCustomerId(UUID customerId);
+
+    List<Order> findByCustomerIdOrderByOrderDateDesc(UUID customerId);
 }
