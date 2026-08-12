@@ -32,31 +32,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
+        System.out.println("=== JWT FILTER ===");
+        System.out.println("METHOD: " + request.getMethod());
+        System.out.println("URI: " + request.getRequestURI());
+        System.out.println("AUTH HEADER: " + request.getHeader("Authorization"));
+
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            System.out.println("NO BEARER TOKEN");
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
-
             String jwt = authHeader.substring(7);
+
+            System.out.println("TOKEN VALID: " + tokenService.isTokenValid(jwt));
+
             if (tokenService.isTokenValid(jwt)
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                UUID customerId = tokenService.extractCustomerId(jwt);          
+                UUID customerId = tokenService.extractCustomerId(jwt);
+
                 AuthenticatedUser principal =
-                    new AuthenticatedUser(
-                            customerId,
-                            tokenService.extractEmail(jwt),
-                            Set.of(Role.ROLE_CUSTOMER));
+                        new AuthenticatedUser(
+                                customerId,
+                                tokenService.extractEmail(jwt),
+                                Set.of(Role.ROLE_CUSTOMER));
 
                 UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        principal,
-                        jwt,
-                        List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));        
+                        new UsernamePasswordAuthenticationToken(
+                                principal,
+                                jwt,
+                                List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
 
                 authentication.setDetails(
                         new WebAuthenticationDetailsSource()
@@ -64,13 +73,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext()
                         .setAuthentication(authentication);
+
+                System.out.println("AUTHENTICATED CUSTOMER: " + customerId);
             }
 
         } catch (JwtException | IllegalArgumentException ex) {
-            // Invalid token - continue without authenticating
+            System.out.println("JWT ERROR: " + ex.getMessage());
         }
-    
+
+        System.out.println(
+                "SECURITY CONTEXT: " +
+                SecurityContextHolder.getContext().getAuthentication());
 
         filterChain.doFilter(request, response);
     }
+      
 }

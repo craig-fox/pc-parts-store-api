@@ -26,6 +26,12 @@ public class InventoryService {
 
     public InventoryResponse reserveStock(UUID productId, int quantity) {
         Inventory inventory = findInventory(productId);
+        System.out.println("=== RESERVE STOCK ===");
+        System.out.println("PRODUCT ID: " + productId);
+        System.out.println("REQUESTED QUANTITY: " + quantity);
+        System.out.println("ON HAND: " + inventory.getQuantityOnHand());
+        System.out.println("RESERVED: " + inventory.getQuantityReserved());
+        System.out.println("AVAILABLE: " + inventory.getAvailableQuantity());
 
         inventory.reserve(quantity);
 
