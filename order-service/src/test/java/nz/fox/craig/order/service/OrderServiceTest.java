@@ -76,7 +76,7 @@ class OrderServiceTest {
 
         @BeforeEach
         void setUpSecurityContext() {
-            authenticateCustomer();
+                authenticateCustomer();
         }
 
         @AfterEach
@@ -120,7 +120,6 @@ class OrderServiceTest {
 
                         // Assert - interactions
                         ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
-                     
 
                         InOrder inOrder = inOrder(
                                         customerClient,
@@ -139,13 +138,12 @@ class OrderServiceTest {
 
                         inOrder.verify(repository)
                                         .save(captor.capture());
-                        
 
-                           // Assert - order persisted
+                        // Assert - order persisted
                         Order savedOrder = captor.getValue();
-                        OrderItem item = savedOrder.getItems().getFirst();  
+                        OrderItem item = savedOrder.getItems().getFirst();
                         inOrder.verify(orderMapper)
-                                        .toResponse(savedOrder);              
+                                        .toResponse(savedOrder);
 
                         verifyNoMoreInteractions(
                                         customerClient,
@@ -272,6 +270,69 @@ class OrderServiceTest {
         }
 
         @Nested
+        class GetOrders {
+
+                @Test
+                void shouldReturnOrdersForAuthenticatedCustomer() {
+                        // Arrange
+                        Order order1 = existingOrder();
+                        Order order2 = existingOrder();
+                        order2.setId(UUID.randomUUID());
+
+                        OrderResponse response1 = OrderResponse.builder()
+                                        .id(order1.getId())
+                                        .customerId(CUSTOMER_ID)
+                                        .status(OrderStatus.PLACED.name())
+                                        .build();
+
+                        OrderResponse response2 = OrderResponse.builder()
+                                        .id(order2.getId())
+                                        .customerId(CUSTOMER_ID)
+                                        .status(OrderStatus.PLACED.name())
+                                        .build();
+
+                        when(repository.findByCustomerIdOrderByOrderDateDesc(CUSTOMER_ID))
+                                        .thenReturn(List.of(order1, order2));
+
+                        when(orderMapper.toResponse(order1))
+                                        .thenReturn(response1);
+
+                        when(orderMapper.toResponse(order2))
+                                        .thenReturn(response2);
+
+                        // Act
+                        List<OrderResponse> responses = service.getOrdersForAuthenticatedCustomer();
+
+                        // Assert
+                        assertThat(responses)
+                                        .containsExactly(response1, response2);
+
+                        verify(repository).findByCustomerIdOrderByOrderDateDesc(CUSTOMER_ID);
+                        verify(orderMapper).toResponse(order1);
+                        verify(orderMapper).toResponse(order2);
+
+                        verifyNoMoreInteractions(repository, orderMapper);
+                }
+
+                @Test
+                void shouldReturnEmptyListWhenAuthenticatedCustomerHasNoOrders() {
+                        UUID customerId = UUID.randomUUID();
+
+                        mockAuthenticatedCustomer(customerId);
+
+                        when(repository.findByCustomerIdOrderByOrderDateDesc(customerId))
+                                .thenReturn(List.of());
+
+                        List<OrderResponse> responses = service.getOrdersForAuthenticatedCustomer();
+
+                        assertThat(responses).isEmpty();
+
+                        verify(repository)
+                                .findByCustomerIdOrderByOrderDateDesc(customerId);
+                        }
+                }
+
+        @Nested
         class CancelOrder {
                 @Test
                 void shouldCancelOrder() {
@@ -382,15 +443,32 @@ class OrderServiceTest {
 
         private void authenticateCustomer() {
                 AuthenticatedUser user = new AuthenticatedUser(
-                        CUSTOMER_ID,
-                        "alice.smith@example.com",
-                        Set.of(Role.ROLE_CUSTOMER));
-            
-                Authentication authentication =
-                        new UsernamePasswordAuthenticationToken(
+                                CUSTOMER_ID,
+                                "alice.smith@example.com",
+                                Set.of(Role.ROLE_CUSTOMER));
+
+                Authentication authentication = new UsernamePasswordAuthenticationToken(
                                 user,
                                 null,
                                 List.of());
+
+                SecurityContextHolder.getContext()
+                                .setAuthentication(authentication);
+        }
+
+        private void mockAuthenticatedCustomer(UUID customerId) {
+                AuthenticatedUser principal = new AuthenticatedUser(
+                        customerId,
+                        "alice.smith@example.com",
+                        Set.of(Role.ROLE_CUSTOMER)
+                );
+            
+                Authentication authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                principal,
+                                null,
+                                List.of()
+                        );
             
                 SecurityContextHolder.getContext()
                         .setAuthentication(authentication);

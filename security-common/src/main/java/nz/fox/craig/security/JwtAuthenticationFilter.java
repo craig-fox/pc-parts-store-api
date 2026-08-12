@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -41,12 +42,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
 
             String jwt = authHeader.substring(7);
-
             if (tokenService.isTokenValid(jwt)
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                UUID customerId = tokenService.extractCustomerId(jwt);
-               
+                UUID customerId = tokenService.extractCustomerId(jwt);          
                 AuthenticatedUser principal =
                     new AuthenticatedUser(
                             customerId,
@@ -54,10 +53,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             Set.of(Role.ROLE_CUSTOMER));
 
                 UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            principal,
-                            null,
-                            List.of());
+                new UsernamePasswordAuthenticationToken(
+                        principal,
+                        jwt,
+                        List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));        
 
                 authentication.setDetails(
                         new WebAuthenticationDetailsSource()
@@ -70,6 +69,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (JwtException | IllegalArgumentException ex) {
             // Invalid token - continue without authenticating
         }
+    
 
         filterChain.doFilter(request, response);
     }

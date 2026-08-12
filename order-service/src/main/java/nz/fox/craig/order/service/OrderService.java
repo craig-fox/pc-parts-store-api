@@ -149,4 +149,14 @@ public class OrderService {
 		}
 	}
 
+	@Transactional(readOnly = true)
+	public List<OrderResponse> getOrdersForAuthenticatedCustomer() {
+		UUID customerId = getAuthenticatedCustomerId();
+
+		return orderRepository.findByCustomerIdOrderByOrderDateDesc(customerId)
+				.stream()
+				.map(orderMapper::toResponse)
+				.toList();
+	}
+
 }
