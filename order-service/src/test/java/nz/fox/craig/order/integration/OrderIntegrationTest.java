@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
+import nz.fox.craig.order.dto.request.ShippingAddressRequest;
 import nz.fox.craig.order.repository.AbstractPostgresTest;
 import nz.fox.craig.security.TokenService;
 import okhttp3.mockwebserver.MockResponse;
@@ -92,7 +93,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 List.of(new OrderItemRequest(productId, 2));
 
         final OrderRequest request =
-            new OrderRequest(itemRequests);
+            new OrderRequest(itemRequests, shippingAddress());
 
            
 
@@ -131,6 +132,15 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 .price(new BigDecimal("89.99"))
                 .weightKg(new BigDecimal("0.30"))
                 .active(true)
+                .build();
+    }
+
+    private ShippingAddressRequest shippingAddress() {
+        return ShippingAddressRequest.builder()
+                .addressLine1("1 Main St")
+                .city("Auckland")
+                .postcode("1010")
+                .country("NZ")
                 .build();
     }
 

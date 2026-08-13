@@ -35,6 +35,7 @@ import nz.fox.craig.order.client.ProductClient;
 import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
+import nz.fox.craig.order.dto.request.ShippingAddressRequest;
 import nz.fox.craig.order.dto.response.OrderItemResponse;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
@@ -396,12 +397,21 @@ class OrderServiceTest {
 
         private OrderRequest orderRequest() {
                 return OrderRequest.builder()
-                                .items(List.of(
-                                                OrderItemRequest.builder()
-                                                                .productId(PRODUCT_ID)
-                                                                .quantity(2)
-                                                                .build()))
-                                .build();
+                        .items(List.of(
+                                OrderItemRequest.builder()
+                                        .productId(PRODUCT_ID)
+                                        .quantity(QUANTITY)
+                                        .build()
+                        ))
+                        .shippingAddress(
+                                ShippingAddressRequest.builder()
+                                        .addressLine1("1 Main St")
+                                        .city("Auckland")
+                                        .postcode("1010")
+                                        .country("NZ")
+                                        .build()
+                        )
+                        .build();
         }
 
         private Order existingOrder() {
@@ -473,4 +483,12 @@ class OrderServiceTest {
                 SecurityContextHolder.getContext()
                         .setAuthentication(authentication);
             }
+
+        private static final ShippingAddressRequest SHIPPING_ADDRESS =
+            ShippingAddressRequest.builder()
+                .addressLine1("1 Main St")
+                .city("Auckland")
+                .postcode("1010")
+                .country("NZ")
+                .build();
 }
