@@ -10,7 +10,10 @@ public record OrderRequest(
 
     @Valid
     @NotEmpty(message = "Items must not be empty")
-    List<OrderItemRequest> items
+    List<OrderItemRequest> items,
+    
+    @Valid
+    ShippingAddressRequest shippingAddress
 
 ) {
 }

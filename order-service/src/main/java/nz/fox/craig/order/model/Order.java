@@ -2,6 +2,7 @@ package nz.fox.craig.order.model;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -62,6 +63,9 @@ public class Order {
             fetch = FetchType.LAZY
     )
     private List<OrderItem> items = new ArrayList<>();
+
+    @Embedded
+    private ShippingAddress shippingAddress;
 
 	public void addItem(OrderItem item) {
         items.add(item);

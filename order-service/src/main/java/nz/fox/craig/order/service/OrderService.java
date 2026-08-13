@@ -20,6 +20,7 @@ import nz.fox.craig.order.mapper.OrderMapper;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
+import nz.fox.craig.order.model.ShippingAddress;
 import nz.fox.craig.order.repository.OrderRepository;
 
 import org.springframework.security.core.Authentication;
@@ -64,6 +65,14 @@ public class OrderService {
 				.subtotal(subtotal)
 				.shipping(shipping)
 				.total(total)
+				.shippingAddress(
+					new ShippingAddress(
+							request.shippingAddress().addressLine1(),
+							request.shippingAddress().city(),
+							request.shippingAddress().postcode(),
+							request.shippingAddress().country()
+					)
+			)
 				.build();
 	
 		items.forEach(order::addItem);
