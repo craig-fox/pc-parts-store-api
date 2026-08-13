@@ -2,23 +2,16 @@ package nz.fox.craig.order.controller;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.response.OrderResponse;
@@ -30,212 +23,208 @@ import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.service.OrderService;
 import nz.fox.craig.security.JwtAuthenticationFilter;
 import nz.fox.craig.security.TokenService;
-
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(OrderController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(OrderExceptionHandler.class)
 @WithMockUser
 class OrderControllerTest {
-	@Autowired
-	private MockMvc mockMvc;
+    @Autowired private MockMvc mockMvc;
 
-	@Autowired
-	private ObjectMapper objectMapper;
+    @Autowired private ObjectMapper objectMapper;
 
-	@MockitoBean
-	private OrderService orderService;
+    @MockitoBean private OrderService orderService;
 
-	@MockitoBean
-	private JwtAuthenticationFilter jwtAuthenticationFilter;
+    @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-	@MockitoBean
-	private TokenService tokenService;
+    @MockitoBean private TokenService tokenService;
 
-	private static final UUID ORDER_ID = UUID.randomUUID();
-	private static final UUID CUSTOMER_ID = UUID.randomUUID();
-	private static final UUID PRODUCT_ID = UUID.randomUUID();
+    private static final UUID ORDER_ID = UUID.randomUUID();
+    private static final UUID CUSTOMER_ID = UUID.randomUUID();
+    private static final UUID PRODUCT_ID = UUID.randomUUID();
 
-	@Nested
-	class CreateOrder {
-		@Test
-		void returnsCreatedOrder() throws Exception {
-			OrderRequest request = orderRequest(orderItems());
-			OrderResponse response = sampleResponse(OrderStatus.PLACED);
-		
-			when(orderService.createOrder(any(OrderRequest.class)))
-					.thenReturn(response);
-		
-			mockMvc.perform(post("/api/orders")
-					.contentType(MediaType.APPLICATION_JSON)
-					.content(objectMapper.writeValueAsString(request)))
-					.andExpect(status().isCreated())
-					.andExpect(jsonPath("$.id").value(ORDER_ID.toString()))
-					.andExpect(jsonPath("$.customerId").value(CUSTOMER_ID.toString()))
-					.andExpect(jsonPath("$.status").value("PLACED"))
-					.andExpect(jsonPath("$.items").isArray())
-					.andExpect(jsonPath("$.total").value(0));
-		
-			verify(orderService).createOrder(any(OrderRequest.class));
-		}
+    @Nested
+    class CreateOrder {
+        @Test
+        void returnsCreatedOrder() throws Exception {
+            OrderRequest request = orderRequest(orderItems());
+            OrderResponse response = sampleResponse(OrderStatus.PLACED);
 
-		@Test
-		void emptyOrderItemsReturnsBadRequest() throws Exception {
-			OrderRequest request = orderRequest(List.of());
+            when(orderService.createOrder(any(OrderRequest.class))).thenReturn(response);
 
-			mockMvc.perform(post("/api/orders")
-					.contentType(MediaType.APPLICATION_JSON)
-					.content(objectMapper.writeValueAsString(request)))
-					.andExpect(status().isBadRequest())
-					.andExpect(jsonPath("$.message")
-							.value("items: Items must not be empty"));
-		}
+            mockMvc.perform(
+                            post("/api/orders")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.id").value(ORDER_ID.toString()))
+                    .andExpect(jsonPath("$.customerId").value(CUSTOMER_ID.toString()))
+                    .andExpect(jsonPath("$.status").value("PLACED"))
+                    .andExpect(jsonPath("$.items").isArray())
+                    .andExpect(jsonPath("$.total").value(0));
 
-		@Test
-		void customerNotFoundReturns404() throws Exception {
-			var missingCustomerID = UUID.randomUUID();
-			OrderRequest request = orderRequest(orderItems());
+            verify(orderService).createOrder(any(OrderRequest.class));
+        }
 
-			when(orderService.createOrder(any(OrderRequest.class)))
-					.thenThrow(new CustomerNotFoundException(missingCustomerID));
+        @Test
+        void emptyOrderItemsReturnsBadRequest() throws Exception {
+            OrderRequest request = orderRequest(List.of());
 
-			mockMvc.perform(post("/api/orders")
-					.contentType(MediaType.APPLICATION_JSON)
-					.content(objectMapper.writeValueAsString(request)))
-					.andExpect(status().isNotFound())
-					.andExpect(jsonPath("$.message")
-							.value("Customer not found with id: " + missingCustomerID));
-		}
+            mockMvc.perform(
+                            post("/api/orders")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("items: Items must not be empty"));
+        }
 
-	}	
+        @Test
+        void customerNotFoundReturns404() throws Exception {
+            var missingCustomerID = UUID.randomUUID();
+            OrderRequest request = orderRequest(orderItems());
 
-	@Nested
-	class GetOrder {
-		@Test
-		void returnsOrder() throws Exception {
-			when(orderService.getOrder(ORDER_ID))
-					.thenReturn(sampleResponse(OrderStatus.PLACED));
+            when(orderService.createOrder(any(OrderRequest.class)))
+                    .thenThrow(new CustomerNotFoundException(missingCustomerID));
 
-			mockMvc.perform(get("/api/orders/{id}", ORDER_ID))
-					.andExpect(status().isOk())
-					.andExpect(jsonPath("$.id").value(ORDER_ID.toString()))
-					.andExpect(jsonPath("$.status").value("PLACED"));
-			verify(orderService).getOrder(ORDER_ID);
-		}
+            mockMvc.perform(
+                            post("/api/orders")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(
+                            jsonPath("$.message")
+                                    .value("Customer not found with id: " + missingCustomerID));
+        }
+    }
 
-		@Test
-		void orderNotFoundReturns404() throws Exception {
-			var MISSING_ORDER = UUID.randomUUID();
+    @Nested
+    class GetOrder {
+        @Test
+        void returnsOrder() throws Exception {
+            when(orderService.getOrder(ORDER_ID)).thenReturn(sampleResponse(OrderStatus.PLACED));
 
-			when(orderService.getOrder(MISSING_ORDER))
-					.thenThrow(new OrderNotFoundException(MISSING_ORDER));
+            mockMvc.perform(get("/api/orders/{id}", ORDER_ID))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(ORDER_ID.toString()))
+                    .andExpect(jsonPath("$.status").value("PLACED"));
+            verify(orderService).getOrder(ORDER_ID);
+        }
 
-			mockMvc.perform(get("/api/orders/{id}", MISSING_ORDER))
-					.andExpect(status().isNotFound())
-					.andExpect(jsonPath("$.message").value("Order " + MISSING_ORDER + " not found"));
-			verify(orderService).getOrder(MISSING_ORDER);
-		}
+        @Test
+        void orderNotFoundReturns404() throws Exception {
+            var MISSING_ORDER = UUID.randomUUID();
 
-		@Test
-		void returnsOrders() throws Exception {
-			OrderResponse first = sampleResponse(OrderStatus.PLACED);
-			OrderResponse second = sampleResponse(OrderStatus.CANCELLED);
+            when(orderService.getOrder(MISSING_ORDER))
+                    .thenThrow(new OrderNotFoundException(MISSING_ORDER));
 
-			when(orderService.getOrdersForAuthenticatedCustomer()).thenReturn(List.of(first, second));
+            mockMvc.perform(get("/api/orders/{id}", MISSING_ORDER))
+                    .andExpect(status().isNotFound())
+                    .andExpect(
+                            jsonPath("$.message").value("Order " + MISSING_ORDER + " not found"));
+            verify(orderService).getOrder(MISSING_ORDER);
+        }
 
-			mockMvc.perform(get("/api/orders"))
-					.andExpect(status().isOk())
-					.andExpect(jsonPath("$").isArray())
-					.andExpect(jsonPath("$.length()").value(2))
-					.andExpect(jsonPath("$[0].status").value("PLACED"))
-					.andExpect(jsonPath("$[1].status").value("CANCELLED"));
+        @Test
+        void returnsOrders() throws Exception {
+            OrderResponse first = sampleResponse(OrderStatus.PLACED);
+            OrderResponse second = sampleResponse(OrderStatus.CANCELLED);
 
-			verify(orderService).getOrdersForAuthenticatedCustomer();
-		}
+            when(orderService.getOrdersForAuthenticatedCustomer())
+                    .thenReturn(List.of(first, second));
 
-	}
+            mockMvc.perform(get("/api/orders"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$").isArray())
+                    .andExpect(jsonPath("$.length()").value(2))
+                    .andExpect(jsonPath("$[0].status").value("PLACED"))
+                    .andExpect(jsonPath("$[1].status").value("CANCELLED"));
 
-	@Nested
-	class CancelOrder {
-		@Test
-		void returnsCancelledOrder() throws Exception {
-			OrderResponse cancelled = sampleResponse(OrderStatus.CANCELLED);
+            verify(orderService).getOrdersForAuthenticatedCustomer();
+        }
+    }
 
-			when(orderService.cancelOrder(CUSTOMER_ID)).thenReturn(cancelled);
+    @Nested
+    class CancelOrder {
+        @Test
+        void returnsCancelledOrder() throws Exception {
+            OrderResponse cancelled = sampleResponse(OrderStatus.CANCELLED);
 
-			mockMvc.perform(post("/api/orders/{id}/cancel", CUSTOMER_ID))
-					.andExpect(status().isOk())
-					.andExpect(jsonPath("$.status").value("CANCELLED"));
-			verify(orderService).cancelOrder(CUSTOMER_ID);
-		}
+            when(orderService.cancelOrder(CUSTOMER_ID)).thenReturn(cancelled);
 
-		@Test
-		void orderNotFoundReturns404() throws Exception {
-			var missingCustomerID = UUID.randomUUID();
-			when(orderService.cancelOrder(missingCustomerID)).thenThrow(new OrderNotFoundException(missingCustomerID));
+            mockMvc.perform(post("/api/orders/{id}/cancel", CUSTOMER_ID))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("CANCELLED"));
+            verify(orderService).cancelOrder(CUSTOMER_ID);
+        }
 
-			mockMvc.perform(post("/api/orders/{id}/cancel", missingCustomerID))
-					.andExpect(status().isNotFound())
-					.andExpect(jsonPath("$.message").value("Order " + missingCustomerID + " not found"));
-			verify(orderService).cancelOrder(missingCustomerID);
-		}
+        @Test
+        void orderNotFoundReturns404() throws Exception {
+            var missingCustomerID = UUID.randomUUID();
+            when(orderService.cancelOrder(missingCustomerID))
+                    .thenThrow(new OrderNotFoundException(missingCustomerID));
 
-		@Test
-		void returnsConflictIfOrderCancelled() throws Exception {
-			when(orderService.cancelOrder(CUSTOMER_ID))
-					.thenThrow(new OrderAlreadyCancelledException(CUSTOMER_ID));
+            mockMvc.perform(post("/api/orders/{id}/cancel", missingCustomerID))
+                    .andExpect(status().isNotFound())
+                    .andExpect(
+                            jsonPath("$.message")
+                                    .value("Order " + missingCustomerID + " not found"));
+            verify(orderService).cancelOrder(missingCustomerID);
+        }
 
-			mockMvc.perform(post("/api/orders/{id}/cancel", CUSTOMER_ID))
-					.andExpect(status().isConflict())
-					.andExpect(jsonPath("$.message").value("Order " + CUSTOMER_ID + " is already cancelled"));
-			verify(orderService).cancelOrder(CUSTOMER_ID);
-		}
+        @Test
+        void returnsConflictIfOrderCancelled() throws Exception {
+            when(orderService.cancelOrder(CUSTOMER_ID))
+                    .thenThrow(new OrderAlreadyCancelledException(CUSTOMER_ID));
 
-		@Test
-		void returnsEmptyListWhenCustomerHasNoOrders() throws Exception {
-			when(orderService.getOrdersForAuthenticatedCustomer()).thenReturn(List.of());
+            mockMvc.perform(post("/api/orders/{id}/cancel", CUSTOMER_ID))
+                    .andExpect(status().isConflict())
+                    .andExpect(
+                            jsonPath("$.message")
+                                    .value("Order " + CUSTOMER_ID + " is already cancelled"));
+            verify(orderService).cancelOrder(CUSTOMER_ID);
+        }
 
-			mockMvc.perform(get("/api/orders"))
-					.andExpect(status().isOk())
-					.andExpect(jsonPath("$").isArray())
-					.andExpect(jsonPath("$.length()").value(0));
+        @Test
+        void returnsEmptyListWhenCustomerHasNoOrders() throws Exception {
+            when(orderService.getOrdersForAuthenticatedCustomer()).thenReturn(List.of());
 
-			verify(orderService).getOrdersForAuthenticatedCustomer();
-		}
-	}
+            mockMvc.perform(get("/api/orders"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$").isArray())
+                    .andExpect(jsonPath("$.length()").value(0));
 
-	private OrderResponse sampleResponse(OrderStatus status) {
-		return OrderResponse.builder()
-				.id(ORDER_ID)
-				.customerId(CUSTOMER_ID)
-				.orderDate(LocalDateTime.of(2026, 7, 14, 10, 0))
-				.status(status.name())
-				.subtotal(BigDecimal.ZERO)
-				.shipping(BigDecimal.ZERO)
-				.total(BigDecimal.ZERO)
-				.items(List.of())
-				.build();
-	}
+            verify(orderService).getOrdersForAuthenticatedCustomer();
+        }
+    }
 
-	private OrderRequest orderRequest(List<OrderItemRequest> items) {
-		return OrderRequest.builder()
-				.items(items)
-				.build();
-	}
+    private OrderResponse sampleResponse(OrderStatus status) {
+        return OrderResponse.builder()
+                .id(ORDER_ID)
+                .customerId(CUSTOMER_ID)
+                .orderDate(LocalDateTime.of(2026, 7, 14, 10, 0))
+                .status(status.name())
+                .subtotal(BigDecimal.ZERO)
+                .shipping(BigDecimal.ZERO)
+                .total(BigDecimal.ZERO)
+                .items(List.of())
+                .build();
+    }
 
-	private List<OrderItemRequest> orderItems() {
-		return List.of(
-				OrderItemRequest.builder()
-						.productId(PRODUCT_ID)
-						.quantity(1)
-						.build());
-	}
-  
+    private OrderRequest orderRequest(List<OrderItemRequest> items) {
+        return OrderRequest.builder().items(items).build();
+    }
+
+    private List<OrderItemRequest> orderItems() {
+        return List.of(OrderItemRequest.builder().productId(PRODUCT_ID).quantity(1).build());
+    }
 }

@@ -13,6 +13,7 @@ public final class ProductResponses {
               "weightKg":0.3,
               "active":true
             }
-            """.formatted(id);
+            """
+                .formatted(id);
     }
 }

@@ -1,29 +1,21 @@
 package nz.fox.craig.security;
 
-
-import java.time.Duration;
-import java.util.Date;
-import java.util.UUID;
-
-import javax.crypto.SecretKey;
-
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import java.time.Duration;
+import java.util.Date;
+import java.util.UUID;
+import javax.crypto.SecretKey;
 
 public final class JwtTestFactory {
 
-    private JwtTestFactory() {
-    }
+    private JwtTestFactory() {}
 
     public static String createToken(
-            UUID customerId,
-            String email,
-            String base64Secret,
-            Duration validity) {
+            UUID customerId, String email, String base64Secret, Duration validity) {
 
-        SecretKey key = Keys.hmacShaKeyFor(
-                Decoders.BASE64.decode(base64Secret));
+        SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(base64Secret));
 
         Date now = new Date();
         Date expiry = new Date(now.getTime() + validity.toMillis());

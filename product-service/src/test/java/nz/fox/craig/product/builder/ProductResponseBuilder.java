@@ -1,9 +1,8 @@
 package nz.fox.craig.product.builder;
 
-import nz.fox.craig.product.dto.ProductResponse;
-
 import java.math.BigDecimal;
 import java.util.UUID;
+import nz.fox.craig.product.dto.ProductResponse;
 
 public class ProductResponseBuilder {
 
@@ -18,8 +17,7 @@ public class ProductResponseBuilder {
     private BigDecimal weightKg = new BigDecimal("0.15");
     private String imageUrl = "https://example.com/images/CPU-001.jpg";
 
-    private ProductResponseBuilder() {
-    }
+    private ProductResponseBuilder() {}
 
     public static ProductResponseBuilder aProductResponse() {
         return new ProductResponseBuilder();
@@ -78,7 +76,6 @@ public class ProductResponseBuilder {
                 price,
                 stockQuantity,
                 weightKg,
-                imageUrl
-        );
+                imageUrl);
     }
 }

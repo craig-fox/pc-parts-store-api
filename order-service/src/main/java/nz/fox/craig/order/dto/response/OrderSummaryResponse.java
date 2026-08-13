@@ -3,14 +3,8 @@ package nz.fox.craig.order.dto.response;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
-
 import lombok.Builder;
 
 @Builder
 public record OrderSummaryResponse(
-        UUID id,
-        LocalDateTime orderDate,
-        String status,
-        BigDecimal total
-) {
-}
+        UUID id, LocalDateTime orderDate, String status, BigDecimal total) {}

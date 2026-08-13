@@ -1,11 +1,10 @@
 package nz.fox.craig.order.mapper;
 
-import org.springframework.stereotype.Component;
-
 import nz.fox.craig.order.dto.response.OrderItemResponse;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
+import org.springframework.stereotype.Component;
 
 @Component
 public class OrderMapper {
@@ -19,9 +18,7 @@ public class OrderMapper {
                 .subtotal(order.getSubtotal())
                 .shipping(order.getShipping())
                 .total(order.getTotal())
-                .items(order.getItems().stream()
-                        .map(this::toResponse)
-                        .toList())
+                .items(order.getItems().stream().map(this::toResponse).toList())
                 .build();
     }
 

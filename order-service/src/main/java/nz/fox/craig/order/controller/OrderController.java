@@ -1,14 +1,12 @@
 package nz.fox.craig.order.controller;
 
 import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.service.OrderService;
-
-import java.util.List;
-import java.util.UUID;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,16 +24,13 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<OrderResponse> createOrder(
-            @Valid @RequestBody OrderRequest request) {
+    public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody OrderRequest request) {
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(orderService.createOrder(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(request));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<OrderResponse> getOrder(
-            @PathVariable UUID id) {
+    public ResponseEntity<OrderResponse> getOrder(@PathVariable UUID id) {
 
         return ResponseEntity.ok(orderService.getOrder(id));
     }
@@ -46,8 +41,7 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/cancel")
-    public ResponseEntity<OrderResponse> cancelOrder(
-            @PathVariable UUID id) {
+    public ResponseEntity<OrderResponse> cancelOrder(@PathVariable UUID id) {
 
         return ResponseEntity.ok(orderService.cancelOrder(id));
     }

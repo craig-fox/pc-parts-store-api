@@ -1,5 +1,6 @@
 package nz.fox.craig.auth.service;
 
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import nz.fox.craig.auth.client.CustomerClient;
 import nz.fox.craig.auth.dto.AuthenticatedCustomer;
@@ -10,9 +11,6 @@ import nz.fox.craig.auth.exception.InvalidCredentialsException;
 import nz.fox.craig.dto.AuthenticatedUser;
 import nz.fox.craig.dto.Role;
 import nz.fox.craig.security.TokenService;
-
-import java.util.Set;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -25,35 +23,25 @@ public class AuthenticationService {
     private final TokenService tokenService;
 
     public LoginResponse login(LoginRequest request) {
-    
-        AuthenticatedCustomer customer =
-                customerClient.findByEmail(request.email());
-    
+
+        AuthenticatedCustomer customer = customerClient.findByEmail(request.email());
+
         if (!customer.active()) {
             throw new CustomerInactiveException();
         }
-    
-        boolean passwordMatches = passwordEncoder.matches(
-                request.password(),
-                customer.password());
-    
+
+        boolean passwordMatches = passwordEncoder.matches(request.password(), customer.password());
+
         if (!passwordMatches) {
             throw new InvalidCredentialsException();
         }
-    
-        AuthenticatedUser user = new AuthenticatedUser(
-                customer.id(),
-                customer.email(),
-                Set.of(Role.ROLE_CUSTOMER)
-        );
-    
+
+        AuthenticatedUser user =
+                new AuthenticatedUser(customer.id(), customer.email(), Set.of(Role.ROLE_CUSTOMER));
+
         String token = tokenService.generateToken(user);
-    
+
         return new LoginResponse(
-                token,
-                customer.id(),
-                customer.firstName(),
-                customer.preferredName()
-        );
+                token, customer.id(), customer.firstName(), customer.preferredName());
     }
 }

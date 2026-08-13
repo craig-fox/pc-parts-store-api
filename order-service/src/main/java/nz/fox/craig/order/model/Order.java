@@ -12,13 +12,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,7 +30,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Order {
 
-	@Id
+    @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
@@ -60,14 +58,12 @@ public class Order {
             mappedBy = "order",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
-            fetch = FetchType.LAZY
-    )
+            fetch = FetchType.LAZY)
     private List<OrderItem> items = new ArrayList<>();
 
-    @Embedded
-    private ShippingAddress shippingAddress;
+    @Embedded private ShippingAddress shippingAddress;
 
-	public void addItem(OrderItem item) {
+    public void addItem(OrderItem item) {
         items.add(item);
         item.setOrder(this);
     }
@@ -76,7 +72,4 @@ public class Order {
         items.remove(item);
         item.setOrder(null);
     }
-
-
-
 }

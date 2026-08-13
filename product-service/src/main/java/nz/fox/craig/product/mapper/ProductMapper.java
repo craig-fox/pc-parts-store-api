@@ -1,11 +1,9 @@
 package nz.fox.craig.product.mapper;
 
 import java.util.List;
-
-import org.springframework.stereotype.Component;
-
 import nz.fox.craig.product.dto.ProductResponse;
 import nz.fox.craig.product.model.Product;
+import org.springframework.stereotype.Component;
 
 @Component
 public class ProductMapper {
@@ -26,8 +24,6 @@ public class ProductMapper {
     }
 
     public List<ProductResponse> toResponseList(List<Product> products) {
-        return products.stream()
-                .map(this::toResponse)
-                .toList();
+        return products.stream().map(this::toResponse).toList();
     }
 }

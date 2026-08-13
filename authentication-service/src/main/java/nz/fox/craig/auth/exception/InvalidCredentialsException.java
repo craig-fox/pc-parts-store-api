@@ -2,7 +2,6 @@ package nz.fox.craig.auth.exception;
 
 public class InvalidCredentialsException extends RuntimeException {
     public InvalidCredentialsException() {
-		super("Invalid email or password");
-	}
-
+        super("Invalid email or password");
+    }
 }

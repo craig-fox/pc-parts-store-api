@@ -2,7 +2,6 @@ package nz.fox.craig.product.dto;
 
 import java.math.BigDecimal;
 import java.util.UUID;
-
 import lombok.Builder;
 
 @Builder
@@ -16,6 +15,4 @@ public record ProductResponse(
         BigDecimal price,
         Integer stockQuantity,
         BigDecimal weightKg,
-        String imageUrl
-) {
-}
+        String imageUrl) {}

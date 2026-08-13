@@ -1,10 +1,9 @@
 package nz.fox.craig.order.config;
 
+import nz.fox.craig.security.JwtPropagationInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
-
-import nz.fox.craig.security.JwtPropagationInterceptor;
 
 @Configuration
 public class RestClientConfig {
@@ -20,8 +19,7 @@ public class RestClientConfig {
             CustomerServiceProperties properties,
             JwtPropagationInterceptor jwtPropagationInterceptor) {
 
-        return builder
-                .baseUrl(properties.baseUrl())
+        return builder.baseUrl(properties.baseUrl())
                 .requestInterceptor(jwtPropagationInterceptor)
                 .build();
     }
@@ -32,8 +30,7 @@ public class RestClientConfig {
             ProductServiceProperties properties,
             JwtPropagationInterceptor jwtPropagationInterceptor) {
 
-        return builder
-                .baseUrl(properties.baseUrl())
+        return builder.baseUrl(properties.baseUrl())
                 .requestInterceptor(jwtPropagationInterceptor)
                 .build();
     }
@@ -44,8 +41,7 @@ public class RestClientConfig {
             InventoryServiceProperties properties,
             JwtPropagationInterceptor jwtPropagationInterceptor) {
 
-        return builder
-                .baseUrl(properties.baseUrl())
+        return builder.baseUrl(properties.baseUrl())
                 .requestInterceptor(jwtPropagationInterceptor)
                 .build();
     }

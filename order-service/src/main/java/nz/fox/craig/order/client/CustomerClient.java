@@ -5,5 +5,4 @@ import java.util.UUID;
 public interface CustomerClient {
 
     void validateCustomerExists(UUID customerId);
-
 }
