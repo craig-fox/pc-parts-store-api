@@ -1,10 +1,10 @@
 package nz.fox.craig.order.service;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,21 +12,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-
 import nz.fox.craig.dto.AuthenticatedUser;
 import nz.fox.craig.dto.Role;
 import nz.fox.craig.order.client.CustomerClient;
@@ -48,447 +33,420 @@ import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.repository.OrderRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
-        private static final UUID CUSTOMER_ID = UUID.randomUUID();
-        private static final UUID ORDER_ID = UUID.randomUUID();
-        private static final UUID PRODUCT_ID = UUID.randomUUID();
-        private static final int QUANTITY = 2;
+    private static final UUID CUSTOMER_ID = UUID.randomUUID();
+    private static final UUID ORDER_ID = UUID.randomUUID();
+    private static final UUID PRODUCT_ID = UUID.randomUUID();
+    private static final int QUANTITY = 2;
 
-        @Mock
-        private OrderRepository repository;
+    @Mock private OrderRepository repository;
 
-        @Mock
-        private CustomerClient customerClient;
+    @Mock private CustomerClient customerClient;
 
-        @Mock
-        private ProductClient productClient;
+    @Mock private ProductClient productClient;
 
-        @Mock
-        private InventoryClient inventoryClient;
+    @Mock private InventoryClient inventoryClient;
 
-        @Mock
-        private OrderMapper orderMapper;
+    @Mock private OrderMapper orderMapper;
 
-        @InjectMocks
-        private OrderService service;
+    @InjectMocks private OrderService service;
 
-        @BeforeEach
-        void setUpSecurityContext() {
-                authenticateCustomer();
-        }
+    @BeforeEach
+    void setUpSecurityContext() {
+        authenticateCustomer();
+    }
 
-        @AfterEach
-        void clearSecurityContext() {
-                SecurityContextHolder.clearContext();
-        }
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
-        @Nested
-        class CreateOrder {
-                @Test
-                void shouldCreateOrder() {
-                        // Arrange
-                        doNothing().when(customerClient)
-                                        .validateCustomerExists(CUSTOMER_ID);
+    @Nested
+    class CreateOrder {
+        @Test
+        void shouldCreateOrder() {
+            // Arrange
+            doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
 
-                        when(repository.save(any(Order.class)))
-                                        .thenAnswer(invocation -> {
-                                                Order order = invocation.getArgument(0);
-                                                if (order.getId() == null) {
-                                                        order.setId(UUID.randomUUID());
-                                                }
-                                                order.getItems().forEach(item -> {
-                                                        if (item.getId() == null) {
-                                                                item.setId(UUID.randomUUID());
-                                                        }
+            when(repository.save(any(Order.class)))
+                    .thenAnswer(
+                            invocation -> {
+                                Order order = invocation.getArgument(0);
+                                if (order.getId() == null) {
+                                    order.setId(UUID.randomUUID());
+                                }
+                                order.getItems()
+                                        .forEach(
+                                                item -> {
+                                                    if (item.getId() == null) {
+                                                        item.setId(UUID.randomUUID());
+                                                    }
                                                 });
-                                                return order;
-                                        });
-                        when(productClient.getProduct(PRODUCT_ID))
-                                        .thenReturn(productSnapshot());
-                        OrderResponse expectedResponse = OrderResponse.builder()
-                                        .id(ORDER_ID)
-                                        .status("PLACED")
-                                        .build();
+                                return order;
+                            });
+            when(productClient.getProduct(PRODUCT_ID)).thenReturn(productSnapshot());
+            OrderResponse expectedResponse =
+                    OrderResponse.builder().id(ORDER_ID).status("PLACED").build();
 
-                        when(orderMapper.toResponse(any(Order.class)))
-                                        .thenReturn(expectedResponse);
+            when(orderMapper.toResponse(any(Order.class))).thenReturn(expectedResponse);
 
-                        // Act
-                        OrderResponse response = service.createOrder(orderRequest());
+            // Act
+            OrderResponse response = service.createOrder(orderRequest());
 
-                        // Assert - interactions
-                        ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
+            // Assert - interactions
+            ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
 
-                        InOrder inOrder = inOrder(
-                                        customerClient,
-                                        inventoryClient,
-                                        productClient,
-                                        repository,
-                                        orderMapper);
-                        inOrder.verify(customerClient)
-                                        .validateCustomerExists(CUSTOMER_ID);
+            InOrder inOrder =
+                    inOrder(
+                            customerClient,
+                            inventoryClient,
+                            productClient,
+                            repository,
+                            orderMapper);
+            inOrder.verify(customerClient).validateCustomerExists(CUSTOMER_ID);
 
-                        inOrder.verify(inventoryClient)
-                                        .reserveStock(PRODUCT_ID, QUANTITY);
+            inOrder.verify(inventoryClient).reserveStock(PRODUCT_ID, QUANTITY);
 
-                        inOrder.verify(productClient)
-                                        .getProduct(PRODUCT_ID);
+            inOrder.verify(productClient).getProduct(PRODUCT_ID);
 
-                        inOrder.verify(repository)
-                                        .save(captor.capture());
+            inOrder.verify(repository).save(captor.capture());
 
-                        // Assert - order persisted
-                        Order savedOrder = captor.getValue();
-                        OrderItem item = savedOrder.getItems().getFirst();
-                        inOrder.verify(orderMapper)
-                                        .toResponse(savedOrder);
+            // Assert - order persisted
+            Order savedOrder = captor.getValue();
+            OrderItem item = savedOrder.getItems().getFirst();
+            inOrder.verify(orderMapper).toResponse(savedOrder);
 
-                        verifyNoMoreInteractions(
-                                        customerClient,
-                                        inventoryClient,
-                                        productClient,
-                                        repository);
+            verifyNoMoreInteractions(customerClient, inventoryClient, productClient, repository);
 
-                        assertThat(item.getProductId()).isEqualTo(PRODUCT_ID);
-                        assertThat(item.getProductName()).isEqualTo("Gaming Mouse");
-                        assertThat(item.getUnitPrice())
-                                        .isEqualByComparingTo(new BigDecimal("89.99"));
-                        assertThat(item.getQuantity()).isEqualTo(2);
-                        assertThat(item.getLineTotal())
-                                        .isEqualByComparingTo(new BigDecimal("179.98"));
-                        assertThat(savedOrder.getCustomerId()).isEqualTo(CUSTOMER_ID);
-                        assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PLACED);
-                        assertThat(savedOrder.getSubtotal())
-                                        .isEqualByComparingTo(new BigDecimal("179.98"));
+            assertThat(item.getProductId()).isEqualTo(PRODUCT_ID);
+            assertThat(item.getProductName()).isEqualTo("Gaming Mouse");
+            assertThat(item.getUnitPrice()).isEqualByComparingTo(new BigDecimal("89.99"));
+            assertThat(item.getQuantity()).isEqualTo(2);
+            assertThat(item.getLineTotal()).isEqualByComparingTo(new BigDecimal("179.98"));
+            assertThat(savedOrder.getCustomerId()).isEqualTo(CUSTOMER_ID);
+            assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PLACED);
+            assertThat(savedOrder.getSubtotal()).isEqualByComparingTo(new BigDecimal("179.98"));
 
-                        assertThat(savedOrder.getShipping())
-                                        .isEqualByComparingTo(new BigDecimal("0"));
+            assertThat(savedOrder.getShipping()).isEqualByComparingTo(new BigDecimal("0"));
 
-                        assertThat(savedOrder.getTotal())
-                                        .isEqualByComparingTo(new BigDecimal("179.98"));
-                        assertThat(savedOrder.getItems())
-                                        .hasSize(1);
-                        assertThat(savedOrder.getId()).isNotNull();
-                        assertThat(savedOrder.getOrderDate()).isNotNull();
+            assertThat(savedOrder.getTotal()).isEqualByComparingTo(new BigDecimal("179.98"));
+            assertThat(savedOrder.getItems()).hasSize(1);
+            assertThat(savedOrder.getId()).isNotNull();
+            assertThat(savedOrder.getOrderDate()).isNotNull();
 
-                        // Assert - returned response
-                        assertThat(response).isSameAs(expectedResponse);
-                }
-
-                @Test
-                void shouldNotCreateOrderWhenInventoryReservationFails() {
-                        doThrow(new InsufficientStockException(PRODUCT_ID))
-                                        .when(inventoryClient)
-                                        .reserveStock(PRODUCT_ID, QUANTITY);
-
-                        assertThatThrownBy(() -> service.createOrder(orderRequest()))
-                                        .isInstanceOf(InsufficientStockException.class);
-
-                        verify(repository, never()).save(any());
-                        verify(inventoryClient)
-                                        .reserveStock(PRODUCT_ID, QUANTITY);
-
-                        verify(repository, never()).save(any());
-                        verify(productClient, never()).getProduct(any());
-                }
-
-                @Test
-                void shouldThrowWhenCustomerDoesNotExist() {
-                        OrderRequest request = orderRequest();
-                        doThrow(new CustomerNotFoundException(CUSTOMER_ID))
-                                        .when(customerClient)
-                                        .validateCustomerExists(CUSTOMER_ID);
-
-                        assertThrows(CustomerNotFoundException.class, () -> service.createOrder(request));
-
-                        verify(repository, never()).save(any());
-                }
-
-                @Test
-                void shouldThrowWhenProductDoesNotExist() {
-                        when(productClient.getProduct(PRODUCT_ID))
-                                        .thenThrow(new ProductNotFoundException(PRODUCT_ID));
-                        doNothing().when(customerClient)
-                                        .validateCustomerExists(CUSTOMER_ID);
-
-                        assertThatThrownBy(() -> service.createOrder(orderRequest()))
-                                        .isInstanceOf(ProductNotFoundException.class);
-
-                        verify(repository, never()).save(any());
-                }
+            // Assert - returned response
+            assertThat(response).isSameAs(expectedResponse);
         }
 
-        @Nested
-        class GetOrder {
-                @Test
-                void shouldReturnOrder() {
-                        // Arrange
-                        Order order = existingOrder();
+        @Test
+        void shouldNotCreateOrderWhenInventoryReservationFails() {
+            doThrow(new InsufficientStockException(PRODUCT_ID))
+                    .when(inventoryClient)
+                    .reserveStock(PRODUCT_ID, QUANTITY);
 
-                        OrderResponse expectedResponse = OrderResponse.builder()
-                                        .id(ORDER_ID)
-                                        .customerId(CUSTOMER_ID)
-                                        .status(OrderStatus.PLACED.name())
-                                        .subtotal(new BigDecimal("179.98"))
-                                        .shipping(BigDecimal.ZERO)
-                                        .total(new BigDecimal("179.98"))
-                                        .items(List.of(
-                                                        OrderItemResponse.builder()
-                                                                        .productId(PRODUCT_ID)
-                                                                        .productName("Gaming Mouse")
-                                                                        .quantity(QUANTITY)
-                                                                        .unitPrice(new BigDecimal("89.99"))
-                                                                        .lineTotal(new BigDecimal("179.98"))
-                                                                        .build()))
-                                        .build();
+            assertThatThrownBy(() -> service.createOrder(orderRequest()))
+                    .isInstanceOf(InsufficientStockException.class);
 
-                        when(repository.findById(ORDER_ID))
-                                        .thenReturn(Optional.of(order));
+            verify(repository, never()).save(any());
+            verify(inventoryClient).reserveStock(PRODUCT_ID, QUANTITY);
 
-                        when(orderMapper.toResponse(order))
-                                        .thenReturn(expectedResponse);
-
-                        // Act
-                        OrderResponse response = service.getOrder(ORDER_ID);
-
-                        // Assert
-                        assertThat(response).isSameAs(expectedResponse);
-
-                        verify(repository).findById(ORDER_ID);
-                        verify(orderMapper).toResponse(order);
-                        verifyNoMoreInteractions(repository, orderMapper);
-                }
-
-                @Test
-                void shouldThrowWhenOrderNotFound() {
-                        when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
-
-                        assertThrows(OrderNotFoundException.class, () -> service.getOrder(ORDER_ID));
-                }
+            verify(repository, never()).save(any());
+            verify(productClient, never()).getProduct(any());
         }
 
-        @Nested
-        class GetOrders {
+        @Test
+        void shouldThrowWhenCustomerDoesNotExist() {
+            OrderRequest request = orderRequest();
+            doThrow(new CustomerNotFoundException(CUSTOMER_ID))
+                    .when(customerClient)
+                    .validateCustomerExists(CUSTOMER_ID);
 
-                @Test
-                void shouldReturnOrdersForAuthenticatedCustomer() {
-                        // Arrange
-                        Order order1 = existingOrder();
-                        Order order2 = existingOrder();
-                        order2.setId(UUID.randomUUID());
+            assertThrows(CustomerNotFoundException.class, () -> service.createOrder(request));
 
-                        OrderResponse response1 = OrderResponse.builder()
-                                        .id(order1.getId())
-                                        .customerId(CUSTOMER_ID)
-                                        .status(OrderStatus.PLACED.name())
-                                        .build();
-
-                        OrderResponse response2 = OrderResponse.builder()
-                                        .id(order2.getId())
-                                        .customerId(CUSTOMER_ID)
-                                        .status(OrderStatus.PLACED.name())
-                                        .build();
-
-                        when(repository.findByCustomerIdOrderByOrderDateDesc(CUSTOMER_ID))
-                                        .thenReturn(List.of(order1, order2));
-
-                        when(orderMapper.toResponse(order1))
-                                        .thenReturn(response1);
-
-                        when(orderMapper.toResponse(order2))
-                                        .thenReturn(response2);
-
-                        // Act
-                        List<OrderResponse> responses = service.getOrdersForAuthenticatedCustomer();
-
-                        // Assert
-                        assertThat(responses)
-                                        .containsExactly(response1, response2);
-
-                        verify(repository).findByCustomerIdOrderByOrderDateDesc(CUSTOMER_ID);
-                        verify(orderMapper).toResponse(order1);
-                        verify(orderMapper).toResponse(order2);
-
-                        verifyNoMoreInteractions(repository, orderMapper);
-                }
-
-                @Test
-                void shouldReturnEmptyListWhenAuthenticatedCustomerHasNoOrders() {
-                        UUID customerId = UUID.randomUUID();
-
-                        mockAuthenticatedCustomer(customerId);
-
-                        when(repository.findByCustomerIdOrderByOrderDateDesc(customerId))
-                                .thenReturn(List.of());
-
-                        List<OrderResponse> responses = service.getOrdersForAuthenticatedCustomer();
-
-                        assertThat(responses).isEmpty();
-
-                        verify(repository)
-                                .findByCustomerIdOrderByOrderDateDesc(customerId);
-                        }
-                }
-
-        @Nested
-        class CancelOrder {
-                @Test
-                void shouldCancelOrder() {
-                        // Arrange
-                        Order existingOrder = existingOrder();
-
-                        OrderResponse expectedResponse = OrderResponse.builder()
-                                        .id(ORDER_ID)
-                                        .customerId(CUSTOMER_ID)
-                                        .status(OrderStatus.CANCELLED.name())
-                                        .subtotal(new BigDecimal("179.98"))
-                                        .shipping(BigDecimal.ZERO)
-                                        .total(new BigDecimal("179.98"))
-                                        .items(List.of(
-                                                        OrderItemResponse.builder()
-                                                                        .productId(PRODUCT_ID)
-                                                                        .productName("Gaming Mouse")
-                                                                        .quantity(QUANTITY)
-                                                                        .unitPrice(new BigDecimal("89.99"))
-                                                                        .lineTotal(new BigDecimal("179.98"))
-                                                                        .build()))
-                                        .build();
-
-                        when(repository.findById(ORDER_ID))
-                                        .thenReturn(Optional.of(existingOrder));
-                        when(repository.save(existingOrder))
-                                        .thenReturn(existingOrder);
-                        when(orderMapper.toResponse(existingOrder))
-                                        .thenReturn(expectedResponse);
-
-                        // Act
-                        OrderResponse response = service.cancelOrder(ORDER_ID);
-
-                        // Assert
-                        assertThat(existingOrder.getStatus())
-                                        .isEqualTo(OrderStatus.CANCELLED);
-
-                        assertThat(response).isSameAs(expectedResponse);
-
-                        verify(repository).findById(ORDER_ID);
-                        verify(repository).save(existingOrder);
-                        verify(orderMapper).toResponse(existingOrder);
-
-                        verifyNoMoreInteractions(repository, orderMapper);
-                }
-
-                @Test
-                void shouldThrowWhenOrderNotFound() {
-                        when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
-                        assertThrows(OrderNotFoundException.class, () -> service.cancelOrder(ORDER_ID));
-                        verify(repository, never()).save(any());
-                }
-
-                @Test
-                void shouldThrowWhenOrderAlreadyCancelled() {
-                        when(repository.findById(ORDER_ID)).thenReturn(Optional.of(cancelledOrder()));
-                        assertThrows(OrderAlreadyCancelledException.class, () -> service.cancelOrder(ORDER_ID));
-                        verify(repository, never()).save(any());
-                }
+            verify(repository, never()).save(any());
         }
 
-        private OrderRequest orderRequest() {
-                return OrderRequest.builder()
-                        .items(List.of(
+        @Test
+        void shouldThrowWhenProductDoesNotExist() {
+            when(productClient.getProduct(PRODUCT_ID))
+                    .thenThrow(new ProductNotFoundException(PRODUCT_ID));
+            doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
+
+            assertThatThrownBy(() -> service.createOrder(orderRequest()))
+                    .isInstanceOf(ProductNotFoundException.class);
+
+            verify(repository, never()).save(any());
+        }
+    }
+
+    @Nested
+    class GetOrder {
+        @Test
+        void shouldReturnOrder() {
+            // Arrange
+            Order order = existingOrder();
+
+            OrderResponse expectedResponse =
+                    OrderResponse.builder()
+                            .id(ORDER_ID)
+                            .customerId(CUSTOMER_ID)
+                            .status(OrderStatus.PLACED.name())
+                            .subtotal(new BigDecimal("179.98"))
+                            .shipping(BigDecimal.ZERO)
+                            .total(new BigDecimal("179.98"))
+                            .items(
+                                    List.of(
+                                            OrderItemResponse.builder()
+                                                    .productId(PRODUCT_ID)
+                                                    .productName("Gaming Mouse")
+                                                    .quantity(QUANTITY)
+                                                    .unitPrice(new BigDecimal("89.99"))
+                                                    .lineTotal(new BigDecimal("179.98"))
+                                                    .build()))
+                            .build();
+
+            when(repository.findById(ORDER_ID)).thenReturn(Optional.of(order));
+
+            when(orderMapper.toResponse(order)).thenReturn(expectedResponse);
+
+            // Act
+            OrderResponse response = service.getOrder(ORDER_ID);
+
+            // Assert
+            assertThat(response).isSameAs(expectedResponse);
+
+            verify(repository).findById(ORDER_ID);
+            verify(orderMapper).toResponse(order);
+            verifyNoMoreInteractions(repository, orderMapper);
+        }
+
+        @Test
+        void shouldThrowWhenOrderNotFound() {
+            when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
+
+            assertThrows(OrderNotFoundException.class, () -> service.getOrder(ORDER_ID));
+        }
+    }
+
+    @Nested
+    class GetOrders {
+
+        @Test
+        void shouldReturnOrdersForAuthenticatedCustomer() {
+            // Arrange
+            Order order1 = existingOrder();
+            Order order2 = existingOrder();
+            order2.setId(UUID.randomUUID());
+
+            OrderResponse response1 =
+                    OrderResponse.builder()
+                            .id(order1.getId())
+                            .customerId(CUSTOMER_ID)
+                            .status(OrderStatus.PLACED.name())
+                            .build();
+
+            OrderResponse response2 =
+                    OrderResponse.builder()
+                            .id(order2.getId())
+                            .customerId(CUSTOMER_ID)
+                            .status(OrderStatus.PLACED.name())
+                            .build();
+
+            when(repository.findByCustomerIdOrderByOrderDateDesc(CUSTOMER_ID))
+                    .thenReturn(List.of(order1, order2));
+
+            when(orderMapper.toResponse(order1)).thenReturn(response1);
+
+            when(orderMapper.toResponse(order2)).thenReturn(response2);
+
+            // Act
+            List<OrderResponse> responses = service.getOrdersForAuthenticatedCustomer();
+
+            // Assert
+            assertThat(responses).containsExactly(response1, response2);
+
+            verify(repository).findByCustomerIdOrderByOrderDateDesc(CUSTOMER_ID);
+            verify(orderMapper).toResponse(order1);
+            verify(orderMapper).toResponse(order2);
+
+            verifyNoMoreInteractions(repository, orderMapper);
+        }
+
+        @Test
+        void shouldReturnEmptyListWhenAuthenticatedCustomerHasNoOrders() {
+            UUID customerId = UUID.randomUUID();
+
+            mockAuthenticatedCustomer(customerId);
+
+            when(repository.findByCustomerIdOrderByOrderDateDesc(customerId)).thenReturn(List.of());
+
+            List<OrderResponse> responses = service.getOrdersForAuthenticatedCustomer();
+
+            assertThat(responses).isEmpty();
+
+            verify(repository).findByCustomerIdOrderByOrderDateDesc(customerId);
+        }
+    }
+
+    @Nested
+    class CancelOrder {
+        @Test
+        void shouldCancelOrder() {
+            // Arrange
+            Order existingOrder = existingOrder();
+
+            OrderResponse expectedResponse =
+                    OrderResponse.builder()
+                            .id(ORDER_ID)
+                            .customerId(CUSTOMER_ID)
+                            .status(OrderStatus.CANCELLED.name())
+                            .subtotal(new BigDecimal("179.98"))
+                            .shipping(BigDecimal.ZERO)
+                            .total(new BigDecimal("179.98"))
+                            .items(
+                                    List.of(
+                                            OrderItemResponse.builder()
+                                                    .productId(PRODUCT_ID)
+                                                    .productName("Gaming Mouse")
+                                                    .quantity(QUANTITY)
+                                                    .unitPrice(new BigDecimal("89.99"))
+                                                    .lineTotal(new BigDecimal("179.98"))
+                                                    .build()))
+                            .build();
+
+            when(repository.findById(ORDER_ID)).thenReturn(Optional.of(existingOrder));
+            when(repository.save(existingOrder)).thenReturn(existingOrder);
+            when(orderMapper.toResponse(existingOrder)).thenReturn(expectedResponse);
+
+            // Act
+            OrderResponse response = service.cancelOrder(ORDER_ID);
+
+            // Assert
+            assertThat(existingOrder.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+
+            assertThat(response).isSameAs(expectedResponse);
+
+            verify(repository).findById(ORDER_ID);
+            verify(repository).save(existingOrder);
+            verify(orderMapper).toResponse(existingOrder);
+
+            verifyNoMoreInteractions(repository, orderMapper);
+        }
+
+        @Test
+        void shouldThrowWhenOrderNotFound() {
+            when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
+            assertThrows(OrderNotFoundException.class, () -> service.cancelOrder(ORDER_ID));
+            verify(repository, never()).save(any());
+        }
+
+        @Test
+        void shouldThrowWhenOrderAlreadyCancelled() {
+            when(repository.findById(ORDER_ID)).thenReturn(Optional.of(cancelledOrder()));
+            assertThrows(OrderAlreadyCancelledException.class, () -> service.cancelOrder(ORDER_ID));
+            verify(repository, never()).save(any());
+        }
+    }
+
+    private OrderRequest orderRequest() {
+        return OrderRequest.builder()
+                .items(
+                        List.of(
                                 OrderItemRequest.builder()
                                         .productId(PRODUCT_ID)
                                         .quantity(QUANTITY)
-                                        .build()
-                        ))
-                        .shippingAddress(
-                                ShippingAddressRequest.builder()
-                                        .addressLine1("1 Main St")
-                                        .city("Auckland")
-                                        .postcode("1010")
-                                        .country("NZ")
-                                        .build()
-                        )
-                        .build();
-        }
-
-        private Order existingOrder() {
-                Order order = Order.builder()
-                                .id(ORDER_ID)
-                                .customerId(CUSTOMER_ID)
-                                .orderDate(LocalDateTime.now())
-                                .status(OrderStatus.PLACED)
-                                .subtotal(new BigDecimal("179.98"))
-                                .shipping(BigDecimal.ZERO)
-                                .total(new BigDecimal("179.98"))
-                                .build();
-
-                order.addItem(
-                                OrderItem.builder()
-                                                .productId(PRODUCT_ID)
-                                                .productName("Gaming Mouse")
-                                                .quantity(QUANTITY)
-                                                .unitPrice(new BigDecimal("89.99"))
-                                                .build());
-                return order;
-        }
-
-        private Order cancelledOrder() {
-                Order order = existingOrder();
-                order.setStatus(OrderStatus.CANCELLED);
-                return order;
-        }
-
-        private ProductSnapshot productSnapshot() {
-                return ProductSnapshot.builder()
-                                .id(PRODUCT_ID)
-                                .name("Gaming Mouse")
-                                .price(new BigDecimal("89.99"))
-                                .weightKg(new BigDecimal("0.30"))
-                                .active(true)
-                                .build();
-        }
-
-        private void authenticateCustomer() {
-                AuthenticatedUser user = new AuthenticatedUser(
-                                CUSTOMER_ID,
-                                "alice.smith@example.com",
-                                Set.of(Role.ROLE_CUSTOMER));
-
-                Authentication authentication = new UsernamePasswordAuthenticationToken(
-                                user,
-                                null,
-                                List.of());
-
-                SecurityContextHolder.getContext()
-                                .setAuthentication(authentication);
-        }
-
-        private void mockAuthenticatedCustomer(UUID customerId) {
-                AuthenticatedUser principal = new AuthenticatedUser(
-                        customerId,
-                        "alice.smith@example.com",
-                        Set.of(Role.ROLE_CUSTOMER)
-                );
-            
-                Authentication authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                principal,
-                                null,
-                                List.of()
-                        );
-            
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
-            }
-
-        private static final ShippingAddressRequest SHIPPING_ADDRESS =
-            ShippingAddressRequest.builder()
-                .addressLine1("1 Main St")
-                .city("Auckland")
-                .postcode("1010")
-                .country("NZ")
+                                        .build()))
+                .shippingAddress(
+                        ShippingAddressRequest.builder()
+                                .addressLine1("1 Main St")
+                                .city("Auckland")
+                                .postcode("1010")
+                                .country("NZ")
+                                .build())
                 .build();
+    }
+
+    private Order existingOrder() {
+        Order order =
+                Order.builder()
+                        .id(ORDER_ID)
+                        .customerId(CUSTOMER_ID)
+                        .orderDate(LocalDateTime.now())
+                        .status(OrderStatus.PLACED)
+                        .subtotal(new BigDecimal("179.98"))
+                        .shipping(BigDecimal.ZERO)
+                        .total(new BigDecimal("179.98"))
+                        .build();
+
+        order.addItem(
+                OrderItem.builder()
+                        .productId(PRODUCT_ID)
+                        .productName("Gaming Mouse")
+                        .quantity(QUANTITY)
+                        .unitPrice(new BigDecimal("89.99"))
+                        .build());
+        return order;
+    }
+
+    private Order cancelledOrder() {
+        Order order = existingOrder();
+        order.setStatus(OrderStatus.CANCELLED);
+        return order;
+    }
+
+    private ProductSnapshot productSnapshot() {
+        return ProductSnapshot.builder()
+                .id(PRODUCT_ID)
+                .name("Gaming Mouse")
+                .price(new BigDecimal("89.99"))
+                .weightKg(new BigDecimal("0.30"))
+                .active(true)
+                .build();
+    }
+
+    private void authenticateCustomer() {
+        AuthenticatedUser user =
+                new AuthenticatedUser(
+                        CUSTOMER_ID, "alice.smith@example.com", Set.of(Role.ROLE_CUSTOMER));
+
+        Authentication authentication =
+                new UsernamePasswordAuthenticationToken(user, null, List.of());
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    private void mockAuthenticatedCustomer(UUID customerId) {
+        AuthenticatedUser principal =
+                new AuthenticatedUser(
+                        customerId, "alice.smith@example.com", Set.of(Role.ROLE_CUSTOMER));
+
+        Authentication authentication =
+                new UsernamePasswordAuthenticationToken(principal, null, List.of());
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    private static final ShippingAddressRequest SHIPPING_ADDRESS =
+            ShippingAddressRequest.builder()
+                    .addressLine1("1 Main St")
+                    .city("Auckland")
+                    .postcode("1010")
+                    .country("NZ")
+                    .build();
 }

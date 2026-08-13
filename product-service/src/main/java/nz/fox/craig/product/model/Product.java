@@ -1,15 +1,14 @@
 package nz.fox.craig.product.model;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.UUID;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,8 +18,7 @@ import lombok.Setter;
 @Table(name = "products")
 public class Product {
 
-    @Id
-    private UUID id;
+    @Id private UUID id;
 
     @Column(nullable = false, unique = true)
     private String sku;

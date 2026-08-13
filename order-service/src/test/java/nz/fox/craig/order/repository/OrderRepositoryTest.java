@@ -1,36 +1,30 @@
 package nz.fox.craig.order.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-
+import nz.fox.craig.order.model.Order;
+import nz.fox.craig.order.model.OrderItem;
+import nz.fox.craig.order.model.OrderStatus;
+import nz.fox.craig.order.model.ShippingAddress;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import nz.fox.craig.order.model.Order;
-import nz.fox.craig.order.model.OrderItem;
-import nz.fox.craig.order.model.OrderStatus;
-import nz.fox.craig.order.model.ShippingAddress;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 public class OrderRepositoryTest extends AbstractPostgresTest {
 
-    @Autowired
-    private OrderRepository orderRepository;
+    @Autowired private OrderRepository orderRepository;
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
+    @PersistenceContext private EntityManager entityManager;
 
     @Test
     void shouldSaveOrder() {
@@ -44,14 +38,10 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
         assertThat(found.getShipping()).isEqualByComparingTo("25.00");
         assertThat(found.getTotal()).isEqualByComparingTo("1025.00");
         assertThat(found.getShippingAddress()).isNotNull();
-        assertThat(found.getShippingAddress().addressLine1())
-                .isEqualTo("1 Main St");
-        assertThat(found.getShippingAddress().city())
-                .isEqualTo("Auckland");
-        assertThat(found.getShippingAddress().postcode())
-                .isEqualTo("1010");
-        assertThat(found.getShippingAddress().country())
-                .isEqualTo("NZ");
+        assertThat(found.getShippingAddress().addressLine1()).isEqualTo("1 Main St");
+        assertThat(found.getShippingAddress().city()).isEqualTo("Auckland");
+        assertThat(found.getShippingAddress().postcode()).isEqualTo("1010");
+        assertThat(found.getShippingAddress().country()).isEqualTo("NZ");
     }
 
     @Test
@@ -68,14 +58,11 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
         assertThat(found.getItems()).hasSize(2);
         final OrderItem item = found.getItems().getFirst();
 
-        assertThat(item.getProductName())
-        .isEqualTo("RTX 5070");
+        assertThat(item.getProductName()).isEqualTo("RTX 5070");
 
-        assertThat(item.getUnitPrice())
-        .isEqualByComparingTo("899.00");
+        assertThat(item.getUnitPrice()).isEqualByComparingTo("899.00");
 
-        assertThat(item.getQuantity())
-        .isEqualTo(1);
+        assertThat(item.getQuantity()).isEqualTo(1);
     }
 
     @Test
@@ -88,15 +75,12 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
         orderRepository.save(order1);
         orderRepository.save(order2);
 
-        final List<Order> orders =
-                orderRepository.findByCustomerId(customerId);
+        final List<Order> orders = orderRepository.findByCustomerId(customerId);
 
         assertThat(orders)
                 .hasSize(2)
                 .extracting(Order::getId)
-                .containsExactlyInAnyOrder(
-                        order1.getId(),
-                        order2.getId());
+                .containsExactlyInAnyOrder(order1.getId(), order2.getId());
     }
 
     @Test
@@ -114,14 +98,12 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
         final OrderItem item = reloaded.getItems().getFirst();
         assertThat(reloaded.getItems()).hasSize(1);
         assertThat(item.getOrder()).isNotNull();
-        assertThat(item.getOrder().getId())
-                .isEqualTo(found.getId());
+        assertThat(item.getOrder().getId()).isEqualTo(found.getId());
     }
 
     @Test
     void shouldReturnEmptyListWhenCustomerHasNoOrders() {
-        final List<Order> orders =
-                orderRepository.findByCustomerId(UUID.randomUUID());
+        final List<Order> orders = orderRepository.findByCustomerId(UUID.randomUUID());
         assertThat(orders).isEmpty();
     }
 
@@ -136,8 +118,7 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
         orderRepository.save(customerOrder);
         orderRepository.save(otherCustomerOrder);
 
-        final List<Order> orders =
-                orderRepository.findByCustomerId(customerId);
+        final List<Order> orders = orderRepository.findByCustomerId(customerId);
 
         assertThat(orders)
                 .hasSize(1)
@@ -145,7 +126,6 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
                 .extracting(Order::getCustomerId)
                 .isEqualTo(customerId);
     }
-    
 
     private Order createOrder(UUID customerId) {
         return Order.builder()
@@ -155,21 +135,12 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
                 .subtotal(new BigDecimal("1000.00"))
                 .shipping(new BigDecimal("25.00"))
                 .total(new BigDecimal("1025.00"))
-                .shippingAddress(
-                    new ShippingAddress(
-                            "1 Main St",
-                            "Auckland",
-                            "1010",
-                            "NZ"
-                    )
-            )
+                .shippingAddress(new ShippingAddress("1 Main St", "Auckland", "1010", "NZ"))
                 .build();
     }
 
-    private OrderItem createOrderItem(UUID productId,
-            String productName,
-            int quantity,
-            BigDecimal price) {
+    private OrderItem createOrderItem(
+            UUID productId, String productName, int quantity, BigDecimal price) {
         return OrderItem.builder()
                 .productId(productId)
                 .productName(productName)
@@ -179,17 +150,9 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
     }
 
     private void addItemsToOrder(Order order) {
-        order.addItem(createOrderItem(
-            UUID.randomUUID(),
-            "RTX 5070",
-            1,
-            new BigDecimal("899.00")));
+        order.addItem(createOrderItem(UUID.randomUUID(), "RTX 5070", 1, new BigDecimal("899.00")));
 
-        order.addItem(createOrderItem(
-            UUID.randomUUID(),
-            "Ryzen 9800X3D",
-            2,
-            new BigDecimal("449.00")));
+        order.addItem(
+                createOrderItem(UUID.randomUUID(), "Ryzen 9800X3D", 2, new BigDecimal("449.00")));
     }
-
 }

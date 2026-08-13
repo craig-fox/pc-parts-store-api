@@ -4,9 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-
 import lombok.Builder;
-
 
 @Builder
 public record OrderResponse(
@@ -17,6 +15,4 @@ public record OrderResponse(
         BigDecimal subtotal,
         BigDecimal shipping,
         BigDecimal total,
-        List<OrderItemResponse> items
-) {
-}
+        List<OrderItemResponse> items) {}

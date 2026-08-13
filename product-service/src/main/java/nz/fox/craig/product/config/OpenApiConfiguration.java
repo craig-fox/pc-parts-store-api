@@ -11,9 +11,10 @@ public class OpenApiConfiguration {
     @Bean
     public OpenAPI productApi() {
         return new OpenAPI()
-                .info(new Info()
-                        .title("PC Parts Store Product API")
-                        .description("Product catalogue service")
-                        .version("v1"));
+                .info(
+                        new Info()
+                                .title("PC Parts Store Product API")
+                                .description("Product catalogue service")
+                                .version("v1"));
     }
 }

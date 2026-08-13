@@ -8,8 +8,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 public abstract class AbstractPostgresTest {
 
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer<?> postgres =
-            new PostgreSQLContainer<>("postgres:17");
+    @Container @ServiceConnection
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17");
 }

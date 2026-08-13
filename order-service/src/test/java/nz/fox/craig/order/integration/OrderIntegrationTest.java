@@ -1,13 +1,24 @@
 package nz.fox.craig.order.integration;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
-
+import nz.fox.craig.order.dto.client.ProductSnapshot;
+import nz.fox.craig.order.dto.request.OrderItemRequest;
+import nz.fox.craig.order.dto.request.OrderRequest;
+import nz.fox.craig.order.dto.request.ShippingAddressRequest;
+import nz.fox.craig.order.repository.AbstractPostgresTest;
+import nz.fox.craig.security.TokenService;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -20,38 +31,21 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import nz.fox.craig.order.dto.client.ProductSnapshot;
-import nz.fox.craig.order.dto.request.OrderItemRequest;
-import nz.fox.craig.order.dto.request.OrderRequest;
-import nz.fox.craig.order.dto.request.ShippingAddressRequest;
-import nz.fox.craig.order.repository.AbstractPostgresTest;
-import nz.fox.craig.security.TokenService;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class OrderIntegrationTest extends AbstractPostgresTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Autowired private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @Autowired private ObjectMapper objectMapper;
 
     static MockWebServer mockWebServer;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-    @Autowired
-    private TokenService tokenService;
+    @Autowired private TokenService tokenService;
 
     private final UUID productId = UUID.fromString("1b0d0fa6-52e1-4acd-8286-892bc29f8b3a");
 
@@ -79,45 +73,39 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
         UUID customerId = UUID.randomUUID();
 
-        String token = JwtTestFactory.createToken(
-                customerId,
-                "test@example.com",
-                jwtSecret,
-                Duration.ofHours(1));
-                
+        String token =
+                JwtTestFactory.createToken(
+                        customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
+
         assertTrue(tokenService.isTokenValid(token));
         assertEquals(customerId, tokenService.extractCustomerId(token));
-        assertEquals("test@example.com", tokenService.extractEmail(token));        
+        assertEquals("test@example.com", tokenService.extractEmail(token));
 
-        final List<OrderItemRequest> itemRequests =
-                List.of(new OrderItemRequest(productId, 2));
+        final List<OrderItemRequest> itemRequests = List.of(new OrderItemRequest(productId, 2));
 
-        final OrderRequest request =
-            new OrderRequest(itemRequests, shippingAddress());
-
-           
+        final OrderRequest request = new OrderRequest(itemRequests, shippingAddress());
 
         // Customer validation
-        mockWebServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .addHeader("Content-Length", "0"));
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
 
         // Inventory reservation
-        mockWebServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .addHeader("Content-Length", "0"));
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
 
         // Product lookup
-        mockWebServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody(objectMapper.writeValueAsString(productSnapshot()))
-                .addHeader("Content-Type", "application/json"));
+        mockWebServer.enqueue(
+                new MockResponse()
+                        .setResponseCode(200)
+                        .setBody(objectMapper.writeValueAsString(productSnapshot()))
+                        .addHeader("Content-Type", "application/json"));
 
-        mockMvc.perform(post("/api/orders")
-        .header("Authorization", "Bearer " + token)
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated());    
+        mockMvc.perform(
+                        post("/api/orders")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
 
@@ -143,5 +131,4 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 .country("NZ")
                 .build();
     }
-
 }

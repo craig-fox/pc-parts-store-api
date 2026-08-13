@@ -1,22 +1,18 @@
 package nz.fox.craig.security;
 
-import java.time.Instant;
-import java.util.Date;
-import java.util.UUID;
-
-import javax.crypto.SecretKey;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import java.time.Instant;
+import java.util.Date;
+import java.util.UUID;
+import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
 import nz.fox.craig.dto.AuthenticatedUser;
-
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -45,8 +41,6 @@ public class TokenService {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
-
-
 
     public boolean isTokenValid(String token) {
         try {

@@ -1,26 +1,20 @@
 package nz.fox.craig.order.integration;
 
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
-
 import javax.crypto.SecretKey;
-
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 
 public final class JwtTestFactory {
 
-    private JwtTestFactory() {
-    }
+    private JwtTestFactory() {}
 
     public static String createToken(
-            UUID customerId,
-            String email,
-            String secret,
-            Duration expiry) {
+            UUID customerId, String email, String secret, Duration expiry) {
 
         Instant now = Instant.now();
 

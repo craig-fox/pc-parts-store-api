@@ -1,15 +1,13 @@
 package nz.fox.craig.inventory.service;
 
 import java.util.UUID;
-
-import org.springframework.stereotype.Service;
-
 import lombok.RequiredArgsConstructor;
 import nz.fox.craig.inventory.dto.InventoryResponse;
 import nz.fox.craig.inventory.exception.InventoryNotFoundException;
 import nz.fox.craig.inventory.mapper.InventoryMapper;
 import nz.fox.craig.inventory.model.Inventory;
 import nz.fox.craig.inventory.repository.InventoryRepository;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -53,8 +51,8 @@ public class InventoryService {
     }
 
     private Inventory findInventory(UUID productId) {
-        return inventoryRepository.findById(productId)
+        return inventoryRepository
+                .findById(productId)
                 .orElseThrow(() -> new InventoryNotFoundException(productId));
     }
-
 }

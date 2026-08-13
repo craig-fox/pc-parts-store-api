@@ -1,22 +1,12 @@
 package nz.fox.craig.inventory.service;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import nz.fox.craig.inventory.dto.InventoryResponse;
 import nz.fox.craig.inventory.exception.InsufficientInventoryException;
 import nz.fox.craig.inventory.exception.InventoryNotFoundException;
@@ -24,6 +14,13 @@ import nz.fox.craig.inventory.mapper.InventoryMapper;
 import nz.fox.craig.inventory.model.Inventory;
 import nz.fox.craig.inventory.model.InventoryStatus;
 import nz.fox.craig.inventory.repository.InventoryRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class InventoryServiceTest {
@@ -33,40 +30,33 @@ class InventoryServiceTest {
     private Inventory inventory;
     private InventoryResponse response;
 
-    @Mock
-    private InventoryRepository inventoryRepository;
+    @Mock private InventoryRepository inventoryRepository;
 
-    @Mock
-    private InventoryMapper inventoryMapper;
+    @Mock private InventoryMapper inventoryMapper;
 
-    @InjectMocks
-    private InventoryService inventoryService;
+    @InjectMocks private InventoryService inventoryService;
 
     @BeforeEach
     void setUp() {
-        inventory = new Inventory(
-                PRODUCT_ID,
-                20,
-                5);
+        inventory = new Inventory(PRODUCT_ID, 20, 5);
 
-        response = new InventoryResponse(
-                PRODUCT_ID,
-                20,
-                5,
-                15,
-                InventoryStatus.IN_STOCK,
-                inventory.getLastUpdated());
+        response =
+                new InventoryResponse(
+                        PRODUCT_ID,
+                        20,
+                        5,
+                        15,
+                        InventoryStatus.IN_STOCK,
+                        inventory.getLastUpdated());
     }
 
     @Nested
     class GetInventory {
         @Test
         void shouldReturnInventory() {
-            when(inventoryRepository.findById(PRODUCT_ID))
-                    .thenReturn(Optional.of(inventory));
+            when(inventoryRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(inventory));
 
-            when(inventoryMapper.toResponse(inventory))
-                    .thenReturn(response);
+            when(inventoryMapper.toResponse(inventory)).thenReturn(response);
 
             InventoryResponse result = inventoryService.getInventory(PRODUCT_ID);
 
@@ -79,8 +69,7 @@ class InventoryServiceTest {
         @Test
         void shouldThrowWhenInventoryNotFound() {
 
-            when(inventoryRepository.findById(PRODUCT_ID))
-                    .thenReturn(Optional.empty());
+            when(inventoryRepository.findById(PRODUCT_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> inventoryService.getInventory(PRODUCT_ID))
                     .isInstanceOf(InventoryNotFoundException.class);
@@ -95,11 +84,9 @@ class InventoryServiceTest {
         @Test
         void shouldReserveStock() {
 
-            when(inventoryRepository.findById(PRODUCT_ID))
-                    .thenReturn(Optional.of(inventory));
+            when(inventoryRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(inventory));
 
-            when(inventoryMapper.toResponse(any()))
-                    .thenReturn(response);
+            when(inventoryMapper.toResponse(any())).thenReturn(response);
 
             InventoryResponse result = inventoryService.reserveStock(PRODUCT_ID, 3);
 
@@ -112,8 +99,7 @@ class InventoryServiceTest {
         @Test
         void shouldThrowWhenInventoryNotFound() {
 
-            when(inventoryRepository.findById(PRODUCT_ID))
-                    .thenReturn(Optional.empty());
+            when(inventoryRepository.findById(PRODUCT_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> inventoryService.reserveStock(PRODUCT_ID, 3))
                     .isInstanceOf(InventoryNotFoundException.class);
@@ -125,15 +111,13 @@ class InventoryServiceTest {
         @Test
         void shouldThrowWhenInsufficientStock() {
 
-            when(inventoryRepository.findById(PRODUCT_ID))
-                    .thenReturn(Optional.of(inventory));
+            when(inventoryRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(inventory));
 
             assertThatThrownBy(() -> inventoryService.reserveStock(PRODUCT_ID, 100))
                     .isInstanceOf(InsufficientInventoryException.class);
 
             verify(inventoryRepository, never()).save(any());
         }
-
     }
 
     @Nested
@@ -141,11 +125,9 @@ class InventoryServiceTest {
         @Test
         void shouldReleaseReservation() {
 
-            when(inventoryRepository.findById(PRODUCT_ID))
-                    .thenReturn(Optional.of(inventory));
+            when(inventoryRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(inventory));
 
-            when(inventoryMapper.toResponse(any()))
-                    .thenReturn(response);
+            when(inventoryMapper.toResponse(any())).thenReturn(response);
 
             InventoryResponse result = inventoryService.releaseReservation(PRODUCT_ID, 2);
 
@@ -157,8 +139,7 @@ class InventoryServiceTest {
         @Test
         void shouldThrowWhenInventoryNotFound() {
 
-            when(inventoryRepository.findById(PRODUCT_ID))
-                    .thenReturn(Optional.empty());
+            when(inventoryRepository.findById(PRODUCT_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> inventoryService.releaseReservation(PRODUCT_ID, 2))
                     .isInstanceOf(InventoryNotFoundException.class);
@@ -166,33 +147,28 @@ class InventoryServiceTest {
             verify(inventoryRepository).findById(PRODUCT_ID);
             verifyNoInteractions(inventoryMapper);
         }
-
     }
 
     @Nested
     class ConfirmReservation {
         @Test
         void shouldConfirmReservation() {
-        
-            when(inventoryRepository.findById(PRODUCT_ID))
-                    .thenReturn(Optional.of(inventory));
-        
-            when(inventoryMapper.toResponse(any()))
-                    .thenReturn(response);
-        
-            InventoryResponse result =
-                    inventoryService.confirmReservation(PRODUCT_ID, 2);
-        
+
+            when(inventoryRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(inventory));
+
+            when(inventoryMapper.toResponse(any())).thenReturn(response);
+
+            InventoryResponse result = inventoryService.confirmReservation(PRODUCT_ID, 2);
+
             assertThat(result).isEqualTo(response);
-        
+
             verify(inventoryRepository).save(inventory);
         }
 
         @Test
         void shouldThrowWhenInventoryNotFound() {
 
-            when(inventoryRepository.findById(PRODUCT_ID))
-                    .thenReturn(Optional.empty());
+            when(inventoryRepository.findById(PRODUCT_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> inventoryService.confirmReservation(PRODUCT_ID, 2))
                     .isInstanceOf(InventoryNotFoundException.class);
@@ -200,7 +176,5 @@ class InventoryServiceTest {
             verify(inventoryRepository).findById(PRODUCT_ID);
             verifyNoInteractions(inventoryMapper);
         }
-
-
     }
 }

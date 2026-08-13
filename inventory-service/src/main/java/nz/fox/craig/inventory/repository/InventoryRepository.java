@@ -1,10 +1,7 @@
 package nz.fox.craig.inventory.repository;
 
+import java.util.UUID;
+import nz.fox.craig.inventory.model.Inventory;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import nz.fox.craig.inventory.model.Inventory;
-
-import java.util.UUID;
-
-public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
-}
+public interface InventoryRepository extends JpaRepository<Inventory, UUID> {}

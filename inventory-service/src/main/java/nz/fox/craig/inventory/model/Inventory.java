@@ -1,13 +1,12 @@
 package nz.fox.craig.inventory.model;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -39,8 +38,7 @@ public class Inventory {
     @Column(nullable = false)
     private LocalDateTime lastUpdated;
 
-    protected Inventory() {
-    }
+    protected Inventory() {}
 
     public Inventory(UUID productId, int quantityOnHand, int quantityReserved) {
         this.productId = productId;
@@ -61,7 +59,7 @@ public class Inventory {
         if (quantity > getAvailableQuantity()) {
             throw new InsufficientInventoryException(this.productId);
         }
-    
+
         quantityReserved += quantity;
         lastUpdated = LocalDateTime.now();
     }
@@ -70,11 +68,11 @@ public class Inventory {
         if (quantity <= 0) {
             throw new IllegalArgumentException("Quantity must be greater than zero.");
         }
-    
+
         if (quantity > quantityReserved) {
             throw new IllegalArgumentException("Cannot release more stock than is reserved.");
         }
-    
+
         quantityReserved -= quantity;
         lastUpdated = LocalDateTime.now();
     }
@@ -83,11 +81,11 @@ public class Inventory {
         if (quantity <= 0) {
             throw new IllegalArgumentException("Quantity must be greater than zero.");
         }
-    
+
         if (quantity > quantityReserved) {
             throw new IllegalArgumentException("Cannot confirm more stock than is reserved.");
         }
-    
+
         quantityReserved -= quantity;
         quantityOnHand -= quantity;
         lastUpdated = LocalDateTime.now();
@@ -97,11 +95,11 @@ public class Inventory {
         if (quantityOnHand == 0) {
             return InventoryStatus.OUT_OF_STOCK;
         }
-    
+
         if (getAvailableQuantity() <= 5) {
             return InventoryStatus.LOW_STOCK;
         }
-    
+
         return InventoryStatus.IN_STOCK;
     }
 }

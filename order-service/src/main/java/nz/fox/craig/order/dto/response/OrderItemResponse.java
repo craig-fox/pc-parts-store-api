@@ -2,7 +2,6 @@ package nz.fox.craig.order.dto.response;
 
 import java.math.BigDecimal;
 import java.util.UUID;
-
 import lombok.Builder;
 
 @Builder
@@ -11,6 +10,4 @@ public record OrderItemResponse(
         String productName,
         Integer quantity,
         BigDecimal unitPrice,
-        BigDecimal lineTotal
-) {
-}
+        BigDecimal lineTotal) {}

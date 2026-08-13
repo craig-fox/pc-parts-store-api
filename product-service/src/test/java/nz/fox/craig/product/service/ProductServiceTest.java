@@ -1,5 +1,11 @@
 package nz.fox.craig.product.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import nz.fox.craig.product.dto.ProductResponse;
 import nz.fox.craig.product.exception.ProductNotFoundException;
 import nz.fox.craig.product.fixture.ProductFixtures;
@@ -7,34 +13,22 @@ import nz.fox.craig.product.fixture.ProductResponseFixtures;
 import nz.fox.craig.product.mapper.ProductMapper;
 import nz.fox.craig.product.model.Product;
 import nz.fox.craig.product.repository.ProductRepository;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import org.junit.jupiter.api.Test;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
 
-    @Mock
-    private ProductRepository productRepository;
+    @Mock private ProductRepository productRepository;
 
-    @Mock
-    private ProductMapper productMapper;
+    @Mock private ProductMapper productMapper;
 
-    @InjectMocks
-    private ProductService productService;
+    @InjectMocks private ProductService productService;
 
     /** Happy Path */
-
     @Test
     void shouldReturnAllActiveProducts() {
         List<Product> products = ProductFixtures.catalogue();
@@ -57,10 +51,8 @@ class ProductServiceTest {
         Product product = ProductFixtures.gamingMouse();
         ProductResponse expectedResponse = ProductResponseFixtures.gamingMouse();
 
-        when(productRepository.findById(product.getId()))
-                .thenReturn(Optional.of(product));
-        when(productMapper.toResponse(product))
-                .thenReturn(expectedResponse);
+        when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
+        when(productMapper.toResponse(product)).thenReturn(expectedResponse);
 
         // Act
         ProductResponse result = productService.getProductById(product.getId());
@@ -78,11 +70,9 @@ class ProductServiceTest {
     void shouldThrowWhenProductNotFound() {
         UUID id = UUID.randomUUID();
 
-        when(productRepository.findById(id))
-                .thenReturn(Optional.empty());
+        when(productRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(ProductNotFoundException.class,
-                () -> productService.getProductById(id));
+        assertThrows(ProductNotFoundException.class, () -> productService.getProductById(id));
 
         verify(productRepository).findById(id);
         verifyNoInteractions(productMapper);
@@ -94,18 +84,15 @@ class ProductServiceTest {
 
         Product inactiveProduct = ProductFixtures.inactiveProduct();
 
-        when(productRepository.findById(id))
-                .thenReturn(Optional.of(inactiveProduct));
+        when(productRepository.findById(id)).thenReturn(Optional.of(inactiveProduct));
 
-        assertThrows(ProductNotFoundException.class,
-                () -> productService.getProductById(id));
+        assertThrows(ProductNotFoundException.class, () -> productService.getProductById(id));
 
         verify(productRepository).findById(id);
         verifyNoInteractions(productMapper);
     }
 
     /** Verification */
-
     @Test
     void verifyRepositoryInteractions() {
         UUID id = UUID.randomUUID();
@@ -113,11 +100,9 @@ class ProductServiceTest {
         Product product = ProductFixtures.gamingMouse();
         ProductResponse response = mock(ProductResponse.class);
 
-        when(productRepository.findById(id))
-                .thenReturn(Optional.of(product));
+        when(productRepository.findById(id)).thenReturn(Optional.of(product));
 
-        when(productMapper.toResponse(product))
-                .thenReturn(response);
+        when(productMapper.toResponse(product)).thenReturn(response);
 
         productService.getProductById(id);
 
@@ -125,5 +110,4 @@ class ProductServiceTest {
         verify(productMapper).toResponse(product);
         verifyNoMoreInteractions(productRepository, productMapper);
     }
-
 }

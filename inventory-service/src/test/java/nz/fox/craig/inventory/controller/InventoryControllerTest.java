@@ -1,8 +1,20 @@
 package nz.fox.craig.inventory.controller;
 
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.UUID;
-
+import nz.fox.craig.inventory.dto.InventoryReservationRequest;
+import nz.fox.craig.inventory.dto.InventoryResponse;
+import nz.fox.craig.inventory.exception.InventoryExceptionHandler;
+import nz.fox.craig.inventory.exception.InventoryNotFoundException;
+import nz.fox.craig.inventory.model.InventoryStatus;
+import nz.fox.craig.inventory.service.InventoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,34 +24,15 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import nz.fox.craig.inventory.dto.InventoryReservationRequest;
-import nz.fox.craig.inventory.dto.InventoryResponse;
-import nz.fox.craig.inventory.exception.InventoryExceptionHandler;
-import nz.fox.craig.inventory.exception.InventoryNotFoundException;
-import nz.fox.craig.inventory.model.InventoryStatus;
-import nz.fox.craig.inventory.service.InventoryService;
-
-import static org.mockito.Mockito.*;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-
 @WebMvcTest(InventoryController.class)
 @Import(InventoryExceptionHandler.class)
 class InventoryControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Autowired private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @Autowired private ObjectMapper objectMapper;
 
-    @MockitoBean
-    private InventoryService inventoryService;
+    @MockitoBean private InventoryService inventoryService;
 
     private UUID productId;
     private InventoryResponse response;
@@ -48,20 +41,20 @@ class InventoryControllerTest {
     void setUp() {
         productId = UUID.randomUUID();
 
-        response = new InventoryResponse(
-                productId,
-                20,
-                5,
-                15,
-                InventoryStatus.IN_STOCK,
-                LocalDateTime.of(2026, 7, 30, 10, 0));
+        response =
+                new InventoryResponse(
+                        productId,
+                        20,
+                        5,
+                        15,
+                        InventoryStatus.IN_STOCK,
+                        LocalDateTime.of(2026, 7, 30, 10, 0));
     }
 
     @Test
     void shouldReturnInventory() throws Exception {
 
-        when(inventoryService.getInventory(productId))
-                .thenReturn(response);
+        when(inventoryService.getInventory(productId)).thenReturn(response);
 
         mockMvc.perform(get("/api/inventory/{productId}", productId))
                 .andExpect(status().isOk())
@@ -92,12 +85,12 @@ class InventoryControllerTest {
 
         InventoryReservationRequest request = new InventoryReservationRequest(3);
 
-        when(inventoryService.reserveStock(productId, 3))
-                .thenReturn(response);
+        when(inventoryService.reserveStock(productId, 3)).thenReturn(response);
 
-        mockMvc.perform(post("/api/inventory/{productId}/reserve", productId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(
+                        post("/api/inventory/{productId}/reserve", productId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.availableQuantity").value(15));
 
@@ -110,9 +103,10 @@ class InventoryControllerTest {
 
         InventoryReservationRequest request = new InventoryReservationRequest(0);
 
-        mockMvc.perform(post("/api/inventory/{productId}/reserve", productId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(
+                        post("/api/inventory/{productId}/reserve", productId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(inventoryService);
@@ -123,12 +117,12 @@ class InventoryControllerTest {
 
         InventoryReservationRequest request = new InventoryReservationRequest(3);
 
-        when(inventoryService.releaseReservation(productId, 3))
-                .thenReturn(response);
+        when(inventoryService.releaseReservation(productId, 3)).thenReturn(response);
 
-        mockMvc.perform(post("/api/inventory/{productId}/release", productId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(
+                        post("/api/inventory/{productId}/release", productId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.availableQuantity").value(15));
 
@@ -141,26 +135,26 @@ class InventoryControllerTest {
 
         InventoryReservationRequest request = new InventoryReservationRequest(0);
 
-        mockMvc.perform(post("/api/inventory/{productId}/release", productId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(
+                        post("/api/inventory/{productId}/release", productId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(inventoryService);
     }
-
 
     @Test
     void shouldConfirmReservation() throws Exception {
 
         InventoryReservationRequest request = new InventoryReservationRequest(3);
 
-        when(inventoryService.confirmReservation(productId, 3))
-                .thenReturn(response);
+        when(inventoryService.confirmReservation(productId, 3)).thenReturn(response);
 
-        mockMvc.perform(post("/api/inventory/{productId}/confirm", productId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(
+                        post("/api/inventory/{productId}/confirm", productId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.availableQuantity").value(15));
 
@@ -173,12 +167,12 @@ class InventoryControllerTest {
 
         InventoryReservationRequest request = new InventoryReservationRequest(0);
 
-        mockMvc.perform(post("/api/inventory/{productId}/confirm", productId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(
+                        post("/api/inventory/{productId}/confirm", productId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(inventoryService);
     }
-
 }

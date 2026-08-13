@@ -1,11 +1,9 @@
 package nz.fox.craig.inventory.mapper;
 
 import java.util.List;
-
-import org.springframework.stereotype.Component;
-
 import nz.fox.craig.inventory.dto.InventoryResponse;
 import nz.fox.craig.inventory.model.Inventory;
+import org.springframework.stereotype.Component;
 
 @Component
 public class InventoryMapper {
@@ -22,8 +20,6 @@ public class InventoryMapper {
     }
 
     public List<InventoryResponse> toResponseList(List<Inventory> inventory) {
-        return inventory.stream()
-                .map(this::toResponse)
-                .toList();
+        return inventory.stream().map(this::toResponse).toList();
     }
 }

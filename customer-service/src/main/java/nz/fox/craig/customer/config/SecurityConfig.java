@@ -1,7 +1,8 @@
 package nz.fox.craig.customer.config;
 
 import java.util.List;
-
+import nz.fox.craig.security.JwtAuthenticationFilter;
+import nz.fox.craig.security.TokenService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -19,9 +20,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import nz.fox.craig.security.JwtAuthenticationFilter;
-import nz.fox.craig.security.TokenService;
 
 @Configuration
 public class SecurityConfig {
@@ -41,17 +39,10 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-        configuration.setAllowedMethods(List.of(
-            "GET",
-            "POST",
-            "PUT",
-            "DELETE",
-            "OPTIONS"
-        ));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
 
-        UrlBasedCorsConfigurationSource source =
-            new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
         source.registerCorsConfiguration("/**", configuration);
 
@@ -59,36 +50,40 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
-            throws Exception {
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
 
         if (jwtAuthenticationFilter == null) {
             throw new IllegalStateException("JwtAuthenticationFilter is NULL");
         }
 
-        http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(Customizer.withDefaults())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint(
-                    new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-                .accessDeniedHandler(new AccessDeniedHandlerImpl()))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/customers").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/customers/email/**").permitAll()
-
-                .requestMatchers(
-                    "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html")
-                .permitAll()
-                .anyRequest()
-                .authenticated())
-            .addFilterBefore(
-                jwtAuthenticationFilter,
-                UsernamePasswordAuthenticationFilter.class);    
+        http.csrf(AbstractHttpConfigurer::disable)
+                .cors(Customizer.withDefaults())
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(
+                        exception ->
+                                exception
+                                        .authenticationEntryPoint(
+                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                                        .accessDeniedHandler(new AccessDeniedHandlerImpl()))
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers("/api/auth/**")
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.POST, "/api/customers")
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/api/customers/email/**")
+                                        .permitAll()
+                                        .requestMatchers(
+                                                "/v3/api-docs/**",
+                                                "/swagger-ui/**",
+                                                "/swagger-ui.html")
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated())
+                .addFilterBefore(
+                        jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         ;
 
         return http.build();

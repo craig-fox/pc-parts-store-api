@@ -4,8 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.jsonwebtoken.JwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.UUID;
-
+import nz.fox.craig.dto.AuthenticatedUser;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,32 +20,21 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import io.jsonwebtoken.JwtException;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import nz.fox.craig.dto.AuthenticatedUser;
-
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
 
     private static final UUID CUSTOMER_ID = UUID.randomUUID();
     private static final String EMAIL = "jane@example.com";
 
-    @Mock
-    private TokenService tokenService;
+    @Mock private TokenService tokenService;
 
-    @Mock
-    private HttpServletRequest request;
+    @Mock private HttpServletRequest request;
 
-    @Mock
-    private HttpServletResponse response;
+    @Mock private HttpServletResponse response;
 
-    @Mock
-    private FilterChain filterChain;
+    @Mock private FilterChain filterChain;
 
-    @InjectMocks
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    @InjectMocks private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @BeforeEach
     void setUp() {
@@ -56,67 +49,47 @@ class JwtAuthenticationFilterTest {
     @Test
     void shouldContinueWhenAuthorizationHeaderMissing() throws Exception {
 
-        when(request.getHeader("Authorization"))
-                .thenReturn(null);
+        when(request.getHeader("Authorization")).thenReturn(null);
 
-        jwtAuthenticationFilter.doFilterInternal(
-                request,
-                response,
-                filterChain);
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
 
-        assertThat(SecurityContextHolder.getContext().getAuthentication())
-                .isNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
     @Test
     void shouldContinueWhenAuthorizationHeaderIsNotBearerToken() throws Exception {
 
-        when(request.getHeader("Authorization"))
-                .thenReturn("Basic abc123");
+        when(request.getHeader("Authorization")).thenReturn("Basic abc123");
 
-        jwtAuthenticationFilter.doFilterInternal(
-                request,
-                response,
-                filterChain);
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
 
-        assertThat(SecurityContextHolder.getContext().getAuthentication())
-                .isNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
     @Test
     void shouldAuthenticateValidJwt() throws Exception {
 
-        when(request.getHeader("Authorization"))
-                .thenReturn("Bearer jwt-token");
+        when(request.getHeader("Authorization")).thenReturn("Bearer jwt-token");
 
-        when(tokenService.isTokenValid("jwt-token"))
-                .thenReturn(true);
+        when(tokenService.isTokenValid("jwt-token")).thenReturn(true);
 
-        when(tokenService.extractCustomerId("jwt-token"))
-                .thenReturn(CUSTOMER_ID);
+        when(tokenService.extractCustomerId("jwt-token")).thenReturn(CUSTOMER_ID);
 
-        when(tokenService.extractEmail("jwt-token"))
-                .thenReturn(EMAIL);
+        when(tokenService.extractEmail("jwt-token")).thenReturn(EMAIL);
 
-        jwtAuthenticationFilter.doFilterInternal(
-                request,
-                response,
-                filterChain);
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         assertThat(authentication).isNotNull();
 
-        assertThat(authentication.getPrincipal())
-                .isInstanceOf(AuthenticatedUser.class);
+        assertThat(authentication.getPrincipal()).isInstanceOf(AuthenticatedUser.class);
 
-        AuthenticatedUser principal =
-                (AuthenticatedUser) authentication.getPrincipal();
+        AuthenticatedUser principal = (AuthenticatedUser) authentication.getPrincipal();
 
         assertThat(principal.id()).isEqualTo(CUSTOMER_ID);
         assertThat(principal.email()).isEqualTo(EMAIL);
@@ -127,19 +100,13 @@ class JwtAuthenticationFilterTest {
     @Test
     void shouldIgnoreInvalidJwt() throws Exception {
 
-        when(request.getHeader("Authorization"))
-                .thenReturn("Bearer jwt-token");
+        when(request.getHeader("Authorization")).thenReturn("Bearer jwt-token");
 
-        when(tokenService.isTokenValid("jwt-token"))
-                .thenThrow(new JwtException("Invalid"));
+        when(tokenService.isTokenValid("jwt-token")).thenThrow(new JwtException("Invalid"));
 
-        jwtAuthenticationFilter.doFilterInternal(
-                request,
-                response,
-                filterChain);
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        assertThat(SecurityContextHolder.getContext().getAuthentication())
-                .isNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
 
         verify(filterChain).doFilter(request, response);
     }
@@ -148,29 +115,18 @@ class JwtAuthenticationFilterTest {
     void shouldNotReplaceExistingAuthentication() throws Exception {
 
         Authentication existing =
-                org.springframework.security.authentication
-                        .UsernamePasswordAuthenticationToken
-                        .authenticated(
-                                "existing",
-                                null,
-                                java.util.List.of());
+                org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+                        .authenticated("existing", null, java.util.List.of());
 
-        SecurityContextHolder.getContext()
-                .setAuthentication(existing);
+        SecurityContextHolder.getContext().setAuthentication(existing);
 
-        when(request.getHeader("Authorization"))
-                .thenReturn("Bearer jwt-token");
+        when(request.getHeader("Authorization")).thenReturn("Bearer jwt-token");
 
-        when(tokenService.isTokenValid("jwt-token"))
-                .thenReturn(true);
+        when(tokenService.isTokenValid("jwt-token")).thenReturn(true);
 
-        jwtAuthenticationFilter.doFilterInternal(
-                request,
-                response,
-                filterChain);
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        assertThat(SecurityContextHolder.getContext().getAuthentication())
-                .isSameAs(existing);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isSameAs(existing);
 
         verify(filterChain).doFilter(request, response);
     }

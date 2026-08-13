@@ -1,15 +1,13 @@
 package nz.fox.craig.order.client;
 
 import java.util.UUID;
-
+import nz.fox.craig.order.dto.request.InventoryReservationRequest;
+import nz.fox.craig.order.exception.InsufficientStockException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
-
-import nz.fox.craig.order.dto.request.InventoryReservationRequest;
-import nz.fox.craig.order.exception.InsufficientStockException;
 
 @Component
 public class HttpInventoryClient implements InventoryClient {
@@ -17,8 +15,7 @@ public class HttpInventoryClient implements InventoryClient {
     @Qualifier("inventoryRestClient")
     private final RestClient restClient;
 
-    public HttpInventoryClient(
-        @Qualifier("inventoryRestClient") RestClient restClient) {
+    public HttpInventoryClient(@Qualifier("inventoryRestClient") RestClient restClient) {
         this.restClient = restClient;
     }
 
@@ -26,7 +23,8 @@ public class HttpInventoryClient implements InventoryClient {
     public void reserveStock(UUID productId, int quantity) {
 
         try {
-            restClient.post()
+            restClient
+                    .post()
                     .uri("/api/inventory/{productId}/reserve", productId)
                     .body(new InventoryReservationRequest(quantity))
                     .retrieve()
@@ -38,12 +36,12 @@ public class HttpInventoryClient implements InventoryClient {
 
     @Override
     public void releaseStock(UUID productId, int quantity) {
-        restClient.post()
-            .uri("/api/inventory/{productId}/release", productId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(new InventoryReservationRequest(quantity))
-            .retrieve()
-            .toBodilessEntity();
+        restClient
+                .post()
+                .uri("/api/inventory/{productId}/release", productId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new InventoryReservationRequest(quantity))
+                .retrieve()
+                .toBodilessEntity();
     }
-
 }
