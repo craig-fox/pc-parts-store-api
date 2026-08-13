@@ -16,6 +16,7 @@ import jakarta.persistence.PersistenceContext;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
+import nz.fox.craig.order.model.ShippingAddress;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,6 +43,15 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
         assertThat(found.getSubtotal()).isEqualByComparingTo("1000.00");
         assertThat(found.getShipping()).isEqualByComparingTo("25.00");
         assertThat(found.getTotal()).isEqualByComparingTo("1025.00");
+        assertThat(found.getShippingAddress()).isNotNull();
+        assertThat(found.getShippingAddress().addressLine1())
+                .isEqualTo("1 Main St");
+        assertThat(found.getShippingAddress().city())
+                .isEqualTo("Auckland");
+        assertThat(found.getShippingAddress().postcode())
+                .isEqualTo("1010");
+        assertThat(found.getShippingAddress().country())
+                .isEqualTo("NZ");
     }
 
     @Test
@@ -145,6 +155,14 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
                 .subtotal(new BigDecimal("1000.00"))
                 .shipping(new BigDecimal("25.00"))
                 .total(new BigDecimal("1025.00"))
+                .shippingAddress(
+                    new ShippingAddress(
+                            "1 Main St",
+                            "Auckland",
+                            "1010",
+                            "NZ"
+                    )
+            )
                 .build();
     }
 

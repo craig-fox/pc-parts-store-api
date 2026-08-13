@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import nz.fox.craig.inventory.dto.InventoryResponse;
+import nz.fox.craig.inventory.exception.InsufficientInventoryException;
 import nz.fox.craig.inventory.exception.InventoryNotFoundException;
 import nz.fox.craig.inventory.mapper.InventoryMapper;
 import nz.fox.craig.inventory.model.Inventory;
@@ -128,7 +129,7 @@ class InventoryServiceTest {
                     .thenReturn(Optional.of(inventory));
 
             assertThatThrownBy(() -> inventoryService.reserveStock(PRODUCT_ID, 100))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(InsufficientInventoryException.class);
 
             verify(inventoryRepository, never()).save(any());
         }
