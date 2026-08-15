@@ -17,6 +17,7 @@ import nz.fox.craig.auth.exception.InvalidCredentialsException;
 import nz.fox.craig.dto.AuthenticatedUser;
 import nz.fox.craig.dto.Role;
 import nz.fox.craig.security.TokenService;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,150 +46,153 @@ class AuthenticationIntegrationTest {
 
     @MockitoBean private TokenService tokenService;
 
-    @Test
-    void shouldLoginSuccessfully() throws Exception {
+    @Nested
+    class Login {
+        @Test
+        void shouldLoginSuccessfully() throws Exception {
 
-        String loginPassword = LOGIN_PASSWORD;
+            AuthenticatedCustomer jane = authenticatedCustomer(JANE_EMAIL, true, "Jo");
 
-        AuthenticatedCustomer jane = authenticatedCustomer(JANE_EMAIL, true, "Jo");
+            String mockToken = "mock-jwt-token";
 
-        String mockToken = "mock-jwt-token";
+            when(customerClient.findByEmail(JANE_EMAIL)).thenReturn(jane);
 
-        when(customerClient.findByEmail("jane@example.com")).thenReturn(jane);
+            when(tokenService.generateToken(any(AuthenticatedUser.class))).thenReturn(mockToken);
 
-        when(tokenService.generateToken(any(AuthenticatedUser.class))).thenReturn(mockToken);
+            mockMvc.perform(
+                            post("/api/auth/login")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            objectMapper.writeValueAsString(
+                                                    new LoginRequest(JANE_EMAIL, LOGIN_PASSWORD))))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.token").value(mockToken))
+                    .andExpect(jsonPath("$.customerId").value(jane.id().toString()))
+                    .andExpect(jsonPath("$.firstName").value("Jane"))
+                    .andExpect(jsonPath("$.preferredName").value("Jo"));
 
-        mockMvc.perform(
-                        post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        objectMapper.writeValueAsString(
-                                                new LoginRequest(JANE_EMAIL, loginPassword))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value(mockToken))
-                .andExpect(jsonPath("$.customerId").value(jane.id().toString()))
-                .andExpect(jsonPath("$.firstName").value("Jane"))
-                .andExpect(jsonPath("$.preferredName").value("Jo"));
+            verify(customerClient).findByEmail(JANE_EMAIL);
 
-        verify(customerClient).findByEmail(JANE_EMAIL);
+            ArgumentCaptor<AuthenticatedUser> userCaptor =
+                    ArgumentCaptor.forClass(AuthenticatedUser.class);
 
-        ArgumentCaptor<AuthenticatedUser> userCaptor =
-                ArgumentCaptor.forClass(AuthenticatedUser.class);
+            verify(tokenService).generateToken(userCaptor.capture());
 
-        verify(tokenService).generateToken(userCaptor.capture());
+            AuthenticatedUser authenticatedUser = userCaptor.getValue();
 
-        AuthenticatedUser authenticatedUser = userCaptor.getValue();
+            assertEquals(jane.id(), authenticatedUser.id());
+            assertEquals(jane.email(), authenticatedUser.email());
+            assertEquals(Set.of(Role.ROLE_CUSTOMER), authenticatedUser.roles());
+        }
 
-        assertEquals(jane.id(), authenticatedUser.id());
-        assertEquals(JANE_EMAIL, authenticatedUser.email());
-        assertEquals(Set.of(Role.ROLE_CUSTOMER), authenticatedUser.roles());
-    }
+        @Test
+        void shouldRejectUnknownEmail() throws Exception {
 
-    @Test
-    void shouldRejectUnknownEmail() throws Exception {
+            when(customerClient.findByEmail("unknown@example.com"))
+                    .thenThrow(new InvalidCredentialsException());
 
-        when(customerClient.findByEmail("unknown@example.com"))
-                .thenThrow(new InvalidCredentialsException());
+            mockMvc.perform(
+                            post("/api/auth/login")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            objectMapper.writeValueAsString(
+                                                    new LoginRequest(
+                                                            UNKNOWN_EMAIL, LOGIN_PASSWORD))))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.message").value("Invalid email or password"));
 
-        mockMvc.perform(
-                        post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        objectMapper.writeValueAsString(
-                                                new LoginRequest(UNKNOWN_EMAIL, LOGIN_PASSWORD))))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Invalid email or password"));
+            verify(customerClient).findByEmail(UNKNOWN_EMAIL);
+            verify(tokenService, never()).generateToken(any());
+        }
 
-        verify(customerClient).findByEmail(UNKNOWN_EMAIL);
-        verify(tokenService, never()).generateToken(any());
-    }
+        @Test
+        void shouldRejectMissingEmail() throws Exception {
 
-    @Test
-    void shouldRejectMissingEmail() throws Exception {
+            mockMvc.perform(
+                            post("/api/auth/login")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            objectMapper.writeValueAsString(
+                                                    new LoginRequest(null, LOGIN_PASSWORD))))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("email: Email is required"));
 
-        mockMvc.perform(
-                        post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        objectMapper.writeValueAsString(
-                                                new LoginRequest(null, LOGIN_PASSWORD))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("email: Email is required"));
+            verifyNoInteractions(customerClient);
+            verifyNoInteractions(tokenService);
+        }
 
-        verifyNoInteractions(customerClient);
-        verifyNoInteractions(tokenService);
-    }
+        @Test
+        void shouldRejectMissingPassword() throws Exception {
 
-    @Test
-    void shouldRejectMissingPassword() throws Exception {
+            mockMvc.perform(
+                            post("/api/auth/login")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            objectMapper.writeValueAsString(
+                                                    new LoginRequest(JANE_EMAIL, null))))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("password: Password is required"));
+            verifyNoInteractions(customerClient);
+            verifyNoInteractions(tokenService);
+        }
 
-        mockMvc.perform(
-                        post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        objectMapper.writeValueAsString(
-                                                new LoginRequest(JANE_EMAIL, null))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("password: Password is required"));
-        verifyNoInteractions(customerClient);
-        verifyNoInteractions(tokenService);
-    }
+        @Test
+        void shouldRejectInvalidEmailFormat() throws Exception {
 
-    @Test
-    void shouldRejectInvalidEmailFormat() throws Exception {
+            mockMvc.perform(
+                            post("/api/auth/login")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            objectMapper.writeValueAsString(
+                                                    new LoginRequest(
+                                                            "wrongformat", LOGIN_PASSWORD))))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("email: Email must be valid"));
 
-        mockMvc.perform(
-                        post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        objectMapper.writeValueAsString(
-                                                new LoginRequest("wrongformat", LOGIN_PASSWORD))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("email: Email must be valid"));
+            verifyNoInteractions(customerClient);
+            verifyNoInteractions(tokenService);
+        }
 
-        verifyNoInteractions(customerClient);
-        verifyNoInteractions(tokenService);
-    }
+        @Test
+        void shouldRejectWrongPassword() throws Exception {
 
-    @Test
-    void shouldRejectWrongPassword() throws Exception {
+            AuthenticatedCustomer jane = authenticatedCustomer(JANE_EMAIL, true);
 
-        AuthenticatedCustomer jane = authenticatedCustomer(JANE_EMAIL, true);
+            when(customerClient.findByEmail(JANE_EMAIL)).thenReturn(jane);
 
-        when(customerClient.findByEmail(JANE_EMAIL)).thenReturn(jane);
+            mockMvc.perform(
+                            post("/api/auth/login")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            objectMapper.writeValueAsString(
+                                                    new LoginRequest(JANE_EMAIL, "WrongPassword"))))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.message").value("Invalid email or password"));
 
-        mockMvc.perform(
-                        post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        objectMapper.writeValueAsString(
-                                                new LoginRequest(JANE_EMAIL, "WrongPassword"))))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Invalid email or password"));
-        ;
+            verify(customerClient).findByEmail(JANE_EMAIL);
+            verify(tokenService, never()).generateToken(any());
+        }
 
-        verify(customerClient).findByEmail("jane@example.com");
-        verify(tokenService, never()).generateToken(any());
-    }
+        @Test
+        void shouldRejectLoginForInactiveCustomer() throws Exception {
 
-    @Test
-    void shouldRejectLoginForInactiveCustomer() throws Exception {
+            AuthenticatedCustomer jane = authenticatedCustomer(JANE_EMAIL, false);
 
-        AuthenticatedCustomer jane = authenticatedCustomer(JANE_EMAIL, false);
+            when(customerClient.findByEmail(JANE_EMAIL)).thenReturn(jane);
 
-        when(customerClient.findByEmail(JANE_EMAIL)).thenReturn(jane);
+            mockMvc.perform(
+                            post("/api/auth/login")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            objectMapper.writeValueAsString(
+                                                    new LoginRequest(
+                                                            jane.email(), LOGIN_PASSWORD))))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.message").value("Customer account is inactive"));
 
-        mockMvc.perform(
-                        post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        objectMapper.writeValueAsString(
-                                                new LoginRequest(jane.email(), LOGIN_PASSWORD))))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Customer account is inactive"));
-
-        verify(customerClient).findByEmail(JANE_EMAIL);
-        verify(tokenService, never()).generateToken(any());
+            verify(customerClient).findByEmail(JANE_EMAIL);
+            verify(tokenService, never()).generateToken(any());
+        }
     }
 
     private AuthenticatedCustomer authenticatedCustomer(

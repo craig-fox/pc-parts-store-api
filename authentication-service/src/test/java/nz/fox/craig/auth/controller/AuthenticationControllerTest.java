@@ -4,13 +4,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.UUID;
 import nz.fox.craig.auth.dto.LoginRequest;
 import nz.fox.craig.auth.dto.LoginResponse;
 import nz.fox.craig.auth.service.AuthenticationService;
-import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -29,75 +31,75 @@ class AuthenticationControllerTest {
 
     @MockitoBean private AuthenticationService authenticationService;
 
-    @Test
-    @DisplayName("Should login successfully")
-    void shouldLoginSuccessfully() throws Exception {
+    @Nested
+    class Login {
 
-        LoginRequest request = new LoginRequest("craig@example.com", "password");
+        @Test
+        void shouldLoginSuccessfully() throws Exception {
 
-        UUID customerId = UUID.randomUUID();
+            LoginRequest request = new LoginRequest("craig@example.com", "password");
 
-        LoginResponse response = new LoginResponse("jwt-token", customerId, "Craig", "Craig");
+            UUID customerId = UUID.randomUUID();
 
-        given(authenticationService.login(any(LoginRequest.class))).willReturn(response);
+            LoginResponse response = new LoginResponse("jwt-token", customerId, "Craig", "Craig");
 
-        mockMvc.perform(
-                        post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("jwt-token"))
-                .andExpect(jsonPath("$.customerId").value(customerId.toString()))
-                .andExpect(jsonPath("$.firstName").value("Craig"))
-                .andExpect(jsonPath("$.preferredName").value("Craig"));
-    }
+            given(authenticationService.login(any(LoginRequest.class))).willReturn(response);
 
-    @Test
-    @DisplayName("Should return 400 when email is missing")
-    void shouldReturn400WhenEmailMissing() throws Exception {
+            mockMvc.perform(
+                            post("/api/auth/login")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.token").value("jwt-token"))
+                    .andExpect(jsonPath("$.customerId").value(customerId.toString()))
+                    .andExpect(jsonPath("$.firstName").value("Craig"))
+                    .andExpect(jsonPath("$.preferredName").value("Craig"));
+        }
 
-        String json =
-                """
-            {
-              "password": "password"
-            }
-            """;
+        @Test
+        void shouldReturn400WhenEmailIsMissing() throws Exception {
 
-        mockMvc.perform(
-                        post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(json))
-                .andExpect(status().isBadRequest());
-    }
+            String json =
+                    """
+                    {
+                      "password": "password"
+                    }
+                    """;
 
-    @Test
-    @DisplayName("Should return 400 when password is missing")
-    void shouldReturn400WhenPasswordMissing() throws Exception {
+            mockMvc.perform(
+                            post("/api/auth/login")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isBadRequest());
+        }
 
-        String json =
-                """
-            {
-              "email": "craig@example.com"
-            }
-            """;
+        @Test
+        void shouldReturn400WhenPasswordIsMissing() throws Exception {
 
-        mockMvc.perform(
-                        post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(json))
-                .andExpect(status().isBadRequest());
-    }
+            String json =
+                    """
+                    {
+                      "email": "craig@example.com"
+                    }
+                    """;
 
-    @Test
-    @DisplayName("Should return 400 when email is invalid")
-    void shouldReturn400WhenEmailInvalid() throws Exception {
+            mockMvc.perform(
+                            post("/api/auth/login")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isBadRequest());
+        }
 
-        LoginRequest request = new LoginRequest("not-an-email", "password");
+        @Test
+        void shouldReturn400WhenEmailIsInvalid() throws Exception {
 
-        mockMvc.perform(
-                        post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+            LoginRequest request = new LoginRequest("not-an-email", "password");
+
+            mockMvc.perform(
+                            post("/api/auth/login")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
     }
 }

@@ -12,10 +12,10 @@ import org.springframework.stereotype.Service;
 public class SecurityService {
 
     public UUID getCurrentUserId() {
-
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (!(authentication.getPrincipal() instanceof AuthenticatedUser user)) {
+        if (authentication == null
+                || !(authentication.getPrincipal() instanceof AuthenticatedUser user)) {
             throw new UnauthenticatedException();
         }
 

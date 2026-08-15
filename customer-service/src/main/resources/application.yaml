@@ -3,9 +3,9 @@ spring:
     name: customer-service
 
   datasource:
-      url: jdbc:postgresql://localhost:5432/customerdb
-      username: customer
-      password: customer
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/customerdb}
+    username: ${DB_USERNAME:customer}
+    password: ${DB_PASSWORD:customer}
 
   jpa:
     hibernate:
@@ -20,10 +20,4 @@ server:
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:3600000} 
-
-
-logging:
-  level:
-    org.springframework.jdbc: DEBUG
-    org.springframework.boot.testcontainers: DEBUG
+  expiration: ${JWT_EXPIRATION:3600000}

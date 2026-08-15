@@ -9,17 +9,16 @@ import java.util.Set;
 import java.util.UUID;
 import nz.fox.craig.dto.AuthenticatedUser;
 import nz.fox.craig.dto.Role;
+import nz.fox.craig.exception.UnauthenticatedException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-@ExtendWith(MockitoExtension.class)
 class SecurityServiceTest {
 
     private static final UUID CUSTOMER_ID = UUID.randomUUID();
@@ -46,26 +45,39 @@ class SecurityServiceTest {
         SecurityContextHolder.clearContext();
     }
 
-    @Test
-    void shouldReturnCurrentCustomerId() {
+    @Nested
+    class GetCurrentUserId {
 
-        UUID customerId = securityService.getCurrentUserId();
+        @Test
+        void returnsCurrentUserId() {
+            UUID customerId = securityService.getCurrentUserId();
 
-        assertThat(customerId).isEqualTo(CUSTOMER_ID);
+            assertThat(customerId).isEqualTo(CUSTOMER_ID);
+        }
+
+        @Test
+        void throwsWhenUserIsUnauthenticated() {
+            SecurityContextHolder.clearContext();
+
+            assertThatThrownBy(() -> securityService.getCurrentUserId())
+                    .isInstanceOf(UnauthenticatedException.class);
+        }
     }
 
-    @Test
-    void shouldAllowCurrentCustomer() {
+    @Nested
+    class VerifyCurrentUser {
 
-        assertThatCode(() -> securityService.verifyCurrentUser(CUSTOMER_ID))
-                .doesNotThrowAnyException();
-    }
+        @Test
+        void allowsCurrentUser() {
+            assertThatCode(() -> securityService.verifyCurrentUser(CUSTOMER_ID))
+                    .doesNotThrowAnyException();
+        }
 
-    @Test
-    void shouldRejectDifferentCustomer() {
-
-        assertThatThrownBy(() -> securityService.verifyCurrentUser(OTHER_CUSTOMER_ID))
-                .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("You may only access your own account.");
+        @Test
+        void rejectsDifferentCustomer() {
+            assertThatThrownBy(() -> securityService.verifyCurrentUser(OTHER_CUSTOMER_ID))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessage("You may only access your own account.");
+        }
     }
 }

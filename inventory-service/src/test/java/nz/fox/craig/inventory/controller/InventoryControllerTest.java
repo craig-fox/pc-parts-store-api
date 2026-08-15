@@ -5,16 +5,21 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import nz.fox.craig.inventory.config.SecurityConfig;
 import nz.fox.craig.inventory.dto.InventoryReservationRequest;
 import nz.fox.craig.inventory.dto.InventoryResponse;
 import nz.fox.craig.inventory.exception.InventoryExceptionHandler;
 import nz.fox.craig.inventory.exception.InventoryNotFoundException;
 import nz.fox.craig.inventory.model.InventoryStatus;
 import nz.fox.craig.inventory.service.InventoryService;
+import nz.fox.craig.security.TokenService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,14 +30,23 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(InventoryController.class)
-@Import(InventoryExceptionHandler.class)
+@Import({
+        InventoryExceptionHandler.class,
+        SecurityConfig.class
+})
 class InventoryControllerTest {
 
-    @Autowired private MockMvc mockMvc;
+    @Autowired 
+    private MockMvc mockMvc;
 
-    @Autowired private ObjectMapper objectMapper;
+    @Autowired 
+    private ObjectMapper objectMapper;
 
-    @MockitoBean private InventoryService inventoryService;
+    @MockitoBean 
+    private InventoryService inventoryService;
+
+    @MockitoBean
+    private TokenService tokenService;
 
     private UUID productId;
     private InventoryResponse response;
@@ -52,6 +66,7 @@ class InventoryControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnInventory() throws Exception {
 
         when(inventoryService.getInventory(productId)).thenReturn(response);
@@ -69,6 +84,7 @@ class InventoryControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnNotFoundWhenInventoryMissing() throws Exception {
 
         when(inventoryService.getInventory(productId))
@@ -81,6 +97,7 @@ class InventoryControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReserveStock() throws Exception {
 
         InventoryReservationRequest request = new InventoryReservationRequest(3);
@@ -99,6 +116,7 @@ class InventoryControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnBadRequestWhenQuantityInvalid() throws Exception {
 
         InventoryReservationRequest request = new InventoryReservationRequest(0);
@@ -113,6 +131,7 @@ class InventoryControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReleaseReservation() throws Exception {
 
         InventoryReservationRequest request = new InventoryReservationRequest(3);
@@ -131,6 +150,7 @@ class InventoryControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnBadRequestWhenReleaseInvalid() throws Exception {
 
         InventoryReservationRequest request = new InventoryReservationRequest(0);
@@ -145,6 +165,7 @@ class InventoryControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldConfirmReservation() throws Exception {
 
         InventoryReservationRequest request = new InventoryReservationRequest(3);
@@ -163,6 +184,7 @@ class InventoryControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnBadRequestWhenConfirmInvalid() throws Exception {
 
         InventoryReservationRequest request = new InventoryReservationRequest(0);
@@ -172,6 +194,29 @@ class InventoryControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(inventoryService);
+    }
+
+    @Test
+    void shouldRequireAuthentication() throws Exception {
+
+        mockMvc.perform(get("/api/inventory/{productId}", productId))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(inventoryService);
+    }
+
+    @Test
+    void shouldRequireAuthenticationWhenReservingStock() throws Exception {
+
+        InventoryReservationRequest request = new InventoryReservationRequest(3);
+
+        mockMvc.perform(
+                        post("/api/inventory/{productId}/reserve", productId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(inventoryService);
     }

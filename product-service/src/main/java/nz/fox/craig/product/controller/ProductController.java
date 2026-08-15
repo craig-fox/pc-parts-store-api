@@ -20,15 +20,8 @@ public class ProductController {
 
     private final ProductService productService;
 
-    @Operation(
-            summary = "Retrieve all active products",
-            description =
-                    "Returns all products that are currently active and available in the catalogue.")
-    @ApiResponses({
-        @ApiResponse(
-                responseCode = "200",
-                description = "Successfully retrieved the list of active products")
-    })
+    @Operation(summary = "Get all active products")
+    @ApiResponse(responseCode = "200", description = "Active products retrieved successfully")
     @GetMapping
     public List<ProductResponse> getAllProducts() {
         return productService.getAllProducts();

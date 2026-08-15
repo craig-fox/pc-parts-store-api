@@ -13,3 +13,7 @@ spring:
 
 server:
   port: ${SERVER_PORT:8084}
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:3600000}

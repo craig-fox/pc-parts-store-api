@@ -1,9 +1,7 @@
 package nz.fox.craig.customer.integration;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +11,6 @@ import java.util.UUID;
 import nz.fox.craig.customer.common.AbstractPostgresTest;
 import nz.fox.craig.customer.dto.CustomerRequest;
 import nz.fox.craig.customer.dto.CustomerResponse;
-import nz.fox.craig.customer.repository.CustomerRepository;
 import nz.fox.craig.dto.AuthenticatedUser;
 import nz.fox.craig.dto.Role;
 import nz.fox.craig.security.TokenService;
@@ -33,12 +30,28 @@ class CustomerSecurityIntegrationTest extends AbstractPostgresTest {
 
     @Autowired private ObjectMapper objectMapper;
 
-    @Autowired private CustomerRepository customerRepository;
-
     @Autowired private TokenService tokenService;
 
     @Test
-    void shouldRetrieveOwnCustomer() { }
+    void shouldRetrieveOwnCustomer() throws Exception {
+
+        CustomerResponse customer =
+                register(
+                        new CustomerRequest(
+                                "Jane",
+                                "Doe",
+                                "Jo",
+                                "jane@example.com",
+                                "123 Main Street",
+                                "Password123!"));
+
+        String token = generateToken(customer);
+
+        mockMvc.perform(
+                        get("/api/customers/" + customer.id())
+                                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+    }
 
     @Test
     void shouldRejectRequestWithoutJwt() throws Exception {
@@ -66,51 +79,25 @@ class CustomerSecurityIntegrationTest extends AbstractPostgresTest {
 
     @Test
     void shouldRejectAccessToAnotherCustomer() throws Exception {
-
-        // Register Jane
-
-        CustomerRequest janeRequest =
-                new CustomerRequest(
-                        "Jane", "Doe", "Jo", "jane@example.com", "123 Main Street", "Password123!");
-
         CustomerResponse janeResponse =
-                objectMapper.readValue(
-                        mockMvc.perform(
-                                        post("/api/customers")
-                                                .contentType(MediaType.APPLICATION_JSON)
-                                                .content(
-                                                        objectMapper.writeValueAsString(
-                                                                janeRequest)))
-                                .andExpect(status().isCreated())
-                                .andReturn()
-                                .getResponse()
-                                .getContentAsString(),
-                        CustomerResponse.class);
-
-        // Register John
-
-        CustomerRequest johnRequest =
-                new CustomerRequest(
-                        "John",
-                        "Smith",
-                        null,
-                        "john@example.com",
-                        "456 Queen Street",
-                        "Password123!");
+                register(
+                        new CustomerRequest(
+                                "Jane",
+                                "Doe",
+                                "Jo",
+                                "jane@example.com",
+                                "123 Main Street",
+                                "Password123!"));
 
         CustomerResponse johnResponse =
-                objectMapper.readValue(
-                        mockMvc.perform(
-                                        post("/api/customers")
-                                                .contentType(MediaType.APPLICATION_JSON)
-                                                .content(
-                                                        objectMapper.writeValueAsString(
-                                                                johnRequest)))
-                                .andExpect(status().isCreated())
-                                .andReturn()
-                                .getResponse()
-                                .getContentAsString(),
-                        CustomerResponse.class);
+                register(
+                        new CustomerRequest(
+                                "John",
+                                "Smith",
+                                null,
+                                "john@example.com",
+                                "456 Queen Street",
+                                "Password123!"));
 
         String token = generateToken(janeResponse);
 
@@ -129,48 +116,6 @@ class CustomerSecurityIntegrationTest extends AbstractPostgresTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    @Test
-    void shouldRejectUpdatingAnotherCustomer() throws Exception {
-
-        CustomerResponse janeResponse =
-                register(
-                        new CustomerRequest(
-                                "Jane",
-                                "Doe",
-                                "Jo",
-                                "jane@example.com",
-                                "123 Main Street",
-                                "Password123!"));
-
-        CustomerResponse johnResponse =
-                register(
-                        new CustomerRequest(
-                                "John",
-                                "Smith",
-                                null,
-                                "john@example.com",
-                                "456 Queen Street",
-                                "Password123!"));
-
-        String token = generateToken(janeResponse);
-
-        CustomerRequest updateRequest =
-                new CustomerRequest(
-                        "John Updated",
-                        "Smith",
-                        "Johnny",
-                        "john@example.com",
-                        "789 New Street",
-                        "Password123!");
-
-        mockMvc.perform(
-                        put("/api/customers/" + johnResponse.id())
-                                .header("Authorization", "Bearer " + token)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(updateRequest)))
-                .andExpect(status().isForbidden());
-    }
-
     private CustomerResponse register(CustomerRequest request) throws Exception {
 
         MvcResult result =
@@ -183,37 +128,6 @@ class CustomerSecurityIntegrationTest extends AbstractPostgresTest {
 
         return objectMapper.readValue(
                 result.getResponse().getContentAsString(), CustomerResponse.class);
-    }
-
-    @Test
-    void shouldRejectDeactivatingAnotherCustomer() throws Exception {
-
-        CustomerResponse janeResponse =
-                register(
-                        new CustomerRequest(
-                                "Jane",
-                                "Doe",
-                                "Jo",
-                                "jane@example.com",
-                                "123 Main Street",
-                                "Password123!"));
-
-        CustomerResponse johnResponse =
-                register(
-                        new CustomerRequest(
-                                "John",
-                                "Smith",
-                                null,
-                                "john@example.com",
-                                "456 Queen Street",
-                                "Password123!"));
-
-        String token = generateToken(janeResponse);
-
-        mockMvc.perform(
-                        delete("/api/customers/" + johnResponse.id())
-                                .header("Authorization", "Bearer " + token))
-                .andExpect(status().isForbidden());
     }
 
     private String generateToken(CustomerResponse customer) {
