@@ -1,4 +1,4 @@
-package nz.fox.craig.customer.common;
+package nz.fox.craig.test;
 
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -9,5 +9,5 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public abstract class AbstractPostgresTest {
 
     @Container @ServiceConnection
-    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17");
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17");
 }

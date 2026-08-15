@@ -2,7 +2,7 @@ package nz.fox.craig.order;
 
 import java.util.Arrays;
 import nz.fox.craig.order.mapper.OrderMapper;
-import nz.fox.craig.order.repository.AbstractPostgresTest;
+import nz.fox.craig.test.AbstractPostgresTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
