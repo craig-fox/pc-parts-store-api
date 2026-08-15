@@ -1,4 +1,4 @@
-package nz.fox.craig.product.integration;
+package nz.fox.craig.test;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;

@@ -12,7 +12,10 @@ import java.time.Duration;
 import java.util.UUID;
 import nz.fox.craig.product.repository.ProductRepository;
 import nz.fox.craig.product.utility.ProductIds;
+import nz.fox.craig.security.JwtTestFactory;
 import nz.fox.craig.security.TokenService;
+import nz.fox.craig.test.AbstractPostgresTest;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

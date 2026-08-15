@@ -65,6 +65,12 @@
 			<artifactId>security-common</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>nz.fox.craig</groupId>
+			<artifactId>test-support</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
 		
 		
 		<dependency>

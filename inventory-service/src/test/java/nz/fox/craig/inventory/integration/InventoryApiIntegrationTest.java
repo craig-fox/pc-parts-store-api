@@ -10,8 +10,9 @@ import java.time.Duration;
 import java.util.UUID;
 
 import nz.fox.craig.inventory.model.Inventory;
-import nz.fox.craig.inventory.repository.AbstractPostgresTest;
 import nz.fox.craig.inventory.repository.InventoryRepository;
+import nz.fox.craig.test.AbstractPostgresTest;
+import nz.fox.craig.test.JwtTestFactory;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

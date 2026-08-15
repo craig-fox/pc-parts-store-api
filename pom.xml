@@ -20,6 +20,7 @@
         <module>inventory-service</module>
         <module>security-common</module>
         <module>authentication-service</module>
+        <module>test-support</module>
     </modules>
 
     <properties>
@@ -35,6 +36,7 @@
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <maven.surefire.version>3.5.3</maven.surefire.version>
         <mock.webserver.version>5.1.0</mock.webserver.version>
+        <jjwt.version>0.13.0</jjwt.version>
     </properties>
 
     <dependencyManagement>
