@@ -28,11 +28,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        System.out.println("=== JWT FILTER ===");
-        System.out.println("METHOD: " + request.getMethod());
-        System.out.println("URI: " + request.getRequestURI());
-        System.out.println("AUTH HEADER: " + request.getHeader("Authorization"));
-
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -43,9 +38,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             String jwt = authHeader.substring(7);
-
-            System.out.println("TOKEN VALID: " + tokenService.isTokenValid(jwt));
-
             if (tokenService.isTokenValid(jwt)
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
 
@@ -67,16 +59,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                System.out.println("AUTHENTICATED CUSTOMER: " + customerId);
             }
 
         } catch (JwtException | IllegalArgumentException ex) {
-            System.out.println("JWT ERROR: " + ex.getMessage());
+            System.out.println("Jwt Error: " + ex.getMessage());
         }
-
-        System.out.println(
-                "SECURITY CONTEXT: " + SecurityContextHolder.getContext().getAuthentication());
 
         filterChain.doFilter(request, response);
     }

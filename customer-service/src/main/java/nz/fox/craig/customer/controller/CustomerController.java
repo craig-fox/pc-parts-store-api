@@ -41,10 +41,9 @@ public class CustomerController {
         @ApiResponse(responseCode = "400", description = "Validation failed")
     })
     @PostMapping
-    public ResponseEntity<CustomerResponse> createCustomer(
-            @Valid @RequestBody CustomerRequest request) {
-        CustomerResponse response = customerService.registerCustomer(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    @ResponseStatus(HttpStatus.CREATED)
+    public CustomerResponse createCustomer(@Valid @RequestBody CustomerRequest request) {
+        return customerService.registerCustomer(request);
     }
 
     @Operation(summary = "Get customers of a given status, or all customers")

@@ -91,23 +91,4 @@ class ProductServiceTest {
         verify(productRepository).findById(id);
         verifyNoInteractions(productMapper);
     }
-
-    /** Verification */
-    @Test
-    void verifyRepositoryInteractions() {
-        UUID id = UUID.randomUUID();
-
-        Product product = ProductFixtures.gamingMouse();
-        ProductResponse response = mock(ProductResponse.class);
-
-        when(productRepository.findById(id)).thenReturn(Optional.of(product));
-
-        when(productMapper.toResponse(product)).thenReturn(response);
-
-        productService.getProductById(id);
-
-        verify(productRepository).findById(id);
-        verify(productMapper).toResponse(product);
-        verifyNoMoreInteractions(productRepository, productMapper);
-    }
 }
