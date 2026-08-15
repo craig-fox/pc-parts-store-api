@@ -12,7 +12,6 @@ import org.springframework.web.client.RestClient;
 @Component
 public class HttpInventoryClient implements InventoryClient {
 
-    @Qualifier("inventoryRestClient")
     private final RestClient restClient;
 
     public HttpInventoryClient(@Qualifier("inventoryRestClient") RestClient restClient) {
