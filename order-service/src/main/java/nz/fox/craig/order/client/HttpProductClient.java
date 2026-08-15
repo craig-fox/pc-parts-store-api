@@ -1,7 +1,6 @@
 package nz.fox.craig.order.client;
 
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.exception.ProductNotFoundException;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -10,11 +9,13 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 @Component
-@RequiredArgsConstructor
 public class HttpProductClient implements ProductClient {
 
-    @Qualifier("productRestClient")
     private final RestClient restClient;
+
+    public HttpProductClient(@Qualifier("productRestClient") RestClient restClient) {
+        this.restClient = restClient;
+    }
 
     @Override
     public ProductSnapshot getProduct(UUID productId) {
