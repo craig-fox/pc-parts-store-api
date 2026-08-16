@@ -1,7 +1,9 @@
 package nz.fox.craig.order.controller;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -14,11 +16,14 @@ import java.util.List;
 import java.util.UUID;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
+import nz.fox.craig.order.dto.request.ShippingAddressRequest;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
+import nz.fox.craig.order.exception.InsufficientStockException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderExceptionHandler;
 import nz.fox.craig.order.exception.OrderNotFoundException;
+import nz.fox.craig.order.exception.ProductNotFoundException;
 import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.service.OrderService;
 import nz.fox.craig.security.JwtAuthenticationFilter;
@@ -105,6 +110,132 @@ class OrderControllerTest {
                             jsonPath("$.message")
                                     .value("Customer not found with id: " + missingCustomerID));
         }
+
+
+        @Test
+        void insufficientStockReturns409() throws Exception {
+            OrderRequest request = orderRequest(orderItems());
+        
+            when(orderService.createOrder(any(OrderRequest.class)))
+                    .thenThrow(new InsufficientStockException(PRODUCT_ID));
+        
+            mockMvc.perform(
+                            post("/api/orders")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isConflict())
+                    .andExpect(
+                            jsonPath("$.message")
+                                    .value("Insufficient stock for product " + PRODUCT_ID));
+        
+            verify(orderService).createOrder(any(OrderRequest.class));
+        }
+
+        @Test
+        void productNotFoundReturns404() throws Exception {
+                OrderRequest request = orderRequest(orderItems());
+
+                when(orderService.createOrder(any(OrderRequest.class)))
+                        .thenThrow(new ProductNotFoundException(PRODUCT_ID));
+
+                mockMvc.perform(
+                                post("/api/orders")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(request)))
+                        .andExpect(status().isNotFound())
+                        .andExpect(
+                                jsonPath("$.message")
+                                        .value("Product " + PRODUCT_ID + " not found"));
+
+                verify(orderService).createOrder(any(OrderRequest.class));
+        }
+
+        @Test
+        void nullProductIdReturnsBadRequest() throws Exception {
+                OrderItemRequest item = OrderItemRequest.builder()
+                        .productId(null)
+                        .quantity(1)
+                        .build();
+
+                OrderRequest request = orderRequest(List.of(item));
+
+                mockMvc.perform(
+                                post("/api/orders")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(request)))
+                        .andExpect(status().isBadRequest())
+                        .andExpect(jsonPath("$.message").value("items[0].productId: must not be null"));
+
+                verifyNoInteractions(orderService);
+        }
+
+        @Test
+        void nullQuantityReturnsBadRequest() throws Exception {
+                OrderItemRequest item = OrderItemRequest.builder()
+                        .productId(PRODUCT_ID)
+                        .quantity(null)
+                        .build();
+
+                OrderRequest request = orderRequest(List.of(item));
+
+                mockMvc.perform(
+                                post("/api/orders")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(request)))
+                        .andExpect(status().isBadRequest())
+                        .andExpect(jsonPath("$.message").value("items[0].quantity: must not be null"));
+
+                verifyNoInteractions(orderService);
+        }
+
+        @Test
+        void quantityLessThanOneReturnsBadRequest() throws Exception {
+                OrderItemRequest item = OrderItemRequest.builder()
+                        .productId(PRODUCT_ID)
+                        .quantity(0)
+                        .build();
+
+                OrderRequest request = orderRequest(List.of(item));
+
+                mockMvc.perform(
+                                post("/api/orders")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(request)))
+                        .andExpect(status().isBadRequest())
+                        .andExpect(
+                                jsonPath("$.message")
+                                        .value("items[0].quantity: must be greater than or equal to 1"));
+
+                verifyNoInteractions(orderService);
+        }
+
+        @Test
+        void blankAddressLine1ReturnsBadRequest() throws Exception {
+                ShippingAddressRequest shippingAddress =
+                        ShippingAddressRequest.builder()
+                                .addressLine1("")
+                                .city("Auckland")
+                                .postcode("1010")
+                                .country("NZ")
+                                .build();
+
+                OrderRequest request =
+                        OrderRequest.builder()
+                                .items(orderItems())
+                                .shippingAddress(shippingAddress)
+                                .build();
+
+                mockMvc.perform(
+                                post("/api/orders")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(request)))
+                        .andExpect(status().isBadRequest())
+                        .andExpect(
+                                jsonPath("$.message")
+                                        .value("shippingAddress.addressLine1: must not be blank"));
+
+                verifyNoInteractions(orderService);
+        }
     }
 
     @Nested
@@ -151,48 +282,6 @@ class OrderControllerTest {
 
             verify(orderService).getOrdersForAuthenticatedCustomer();
         }
-    }
-
-    @Nested
-    class CancelOrder {
-        @Test
-        void returnsCancelledOrder() throws Exception {
-            OrderResponse cancelled = sampleResponse(OrderStatus.CANCELLED);
-
-            when(orderService.cancelOrder(CUSTOMER_ID)).thenReturn(cancelled);
-
-            mockMvc.perform(post("/api/orders/{id}/cancel", CUSTOMER_ID))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.status").value("CANCELLED"));
-            verify(orderService).cancelOrder(CUSTOMER_ID);
-        }
-
-        @Test
-        void orderNotFoundReturns404() throws Exception {
-            var missingCustomerID = UUID.randomUUID();
-            when(orderService.cancelOrder(missingCustomerID))
-                    .thenThrow(new OrderNotFoundException(missingCustomerID));
-
-            mockMvc.perform(post("/api/orders/{id}/cancel", missingCustomerID))
-                    .andExpect(status().isNotFound())
-                    .andExpect(
-                            jsonPath("$.message")
-                                    .value("Order " + missingCustomerID + " not found"));
-            verify(orderService).cancelOrder(missingCustomerID);
-        }
-
-        @Test
-        void returnsConflictIfOrderCancelled() throws Exception {
-            when(orderService.cancelOrder(CUSTOMER_ID))
-                    .thenThrow(new OrderAlreadyCancelledException(CUSTOMER_ID));
-
-            mockMvc.perform(post("/api/orders/{id}/cancel", CUSTOMER_ID))
-                    .andExpect(status().isConflict())
-                    .andExpect(
-                            jsonPath("$.message")
-                                    .value("Order " + CUSTOMER_ID + " is already cancelled"));
-            verify(orderService).cancelOrder(CUSTOMER_ID);
-        }
 
         @Test
         void returnsEmptyListWhenCustomerHasNoOrders() throws Exception {
@@ -205,6 +294,50 @@ class OrderControllerTest {
 
             verify(orderService).getOrdersForAuthenticatedCustomer();
         }
+    }
+
+    @Nested
+    class CancelOrder {
+        @Test
+        void returnsCancelledOrder() throws Exception {
+            OrderResponse cancelled = sampleResponse(OrderStatus.CANCELLED);
+
+            when(orderService.cancelOrder(ORDER_ID)).thenReturn(cancelled);
+
+            mockMvc.perform(post("/api/orders/{id}/cancel", ORDER_ID))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("CANCELLED"));
+            verify(orderService).cancelOrder(ORDER_ID);
+        }
+
+        @Test
+        void orderNotFoundReturns404() throws Exception {
+            var missingOrderID = UUID.randomUUID();
+            when(orderService.cancelOrder(missingOrderID))
+                    .thenThrow(new OrderNotFoundException(missingOrderID));
+
+            mockMvc.perform(post("/api/orders/{id}/cancel", missingOrderID))
+                    .andExpect(status().isNotFound())
+                    .andExpect(
+                            jsonPath("$.message")
+                                    .value("Order " + missingOrderID + " not found"));
+            verify(orderService).cancelOrder(missingOrderID);
+        }
+
+        @Test
+        void returnsConflictIfOrderCancelled() throws Exception {
+            when(orderService.cancelOrder(ORDER_ID))
+                    .thenThrow(new OrderAlreadyCancelledException(ORDER_ID));
+
+            mockMvc.perform(post("/api/orders/{id}/cancel", ORDER_ID))
+                    .andExpect(status().isConflict())
+                    .andExpect(
+                            jsonPath("$.message")
+                                    .value("Order " + ORDER_ID + " is already cancelled"));
+            verify(orderService).cancelOrder(ORDER_ID);
+        }
+
+        
     }
 
     private OrderResponse sampleResponse(OrderStatus status) {
@@ -221,10 +354,22 @@ class OrderControllerTest {
     }
 
     private OrderRequest orderRequest(List<OrderItemRequest> items) {
-        return OrderRequest.builder().items(items).build();
+        return OrderRequest.builder()
+                .items(items)
+                .shippingAddress(shippingAddress())
+                .build();
     }
 
     private List<OrderItemRequest> orderItems() {
         return List.of(OrderItemRequest.builder().productId(PRODUCT_ID).quantity(1).build());
+    }
+
+    private ShippingAddressRequest shippingAddress() {
+        return ShippingAddressRequest.builder()
+                .addressLine1("123 Test Street")
+                .city("Auckland")
+                .postcode("1010")
+                .country("NZ")
+                .build();
     }
 }

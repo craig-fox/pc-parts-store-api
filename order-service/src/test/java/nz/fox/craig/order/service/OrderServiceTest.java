@@ -73,7 +73,7 @@ class OrderServiceTest {
 
     @Mock private OrderMapper orderMapper;
 
-    @InjectMocks private OrderService service;
+    @InjectMocks private OrderService orderService;
 
     @BeforeEach
     void setUpSecurityContext() {
@@ -115,7 +115,7 @@ class OrderServiceTest {
             when(orderMapper.toResponse(any(Order.class))).thenReturn(expectedResponse);
 
             // Act
-            OrderResponse response = service.createOrder(orderRequest());
+            OrderResponse response = orderService.createOrder(orderRequest());
 
             // Assert - interactions
             ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
@@ -168,7 +168,7 @@ class OrderServiceTest {
                     .when(inventoryClient)
                     .reserveStock(PRODUCT_ID, QUANTITY);
 
-            assertThatThrownBy(() -> service.createOrder(orderRequest()))
+            assertThatThrownBy(() -> orderService.createOrder(orderRequest()))
                     .isInstanceOf(InsufficientStockException.class);
 
             verify(repository, never()).save(any());
@@ -185,7 +185,7 @@ class OrderServiceTest {
                     .when(customerClient)
                     .validateCustomerExists(CUSTOMER_ID);
 
-            assertThrows(CustomerNotFoundException.class, () -> service.createOrder(request));
+            assertThrows(CustomerNotFoundException.class, () -> orderService.createOrder(request));
 
             verify(repository, never()).save(any());
         }
@@ -196,11 +196,12 @@ class OrderServiceTest {
                     .thenThrow(new ProductNotFoundException(PRODUCT_ID));
             doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
 
-            assertThatThrownBy(() -> service.createOrder(orderRequest()))
+            assertThatThrownBy(() -> orderService.createOrder(orderRequest()))
                     .isInstanceOf(ProductNotFoundException.class);
 
             verify(repository, never()).save(any());
         }
+
     }
 
     @Nested
@@ -234,7 +235,7 @@ class OrderServiceTest {
             when(orderMapper.toResponse(order)).thenReturn(expectedResponse);
 
             // Act
-            OrderResponse response = service.getOrder(ORDER_ID);
+            OrderResponse response = orderService.getOrder(ORDER_ID);
 
             // Assert
             assertThat(response).isSameAs(expectedResponse);
@@ -248,7 +249,7 @@ class OrderServiceTest {
         void shouldThrowWhenOrderNotFound() {
             when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
 
-            assertThrows(OrderNotFoundException.class, () -> service.getOrder(ORDER_ID));
+            assertThrows(OrderNotFoundException.class, () -> orderService.getOrder(ORDER_ID));
         }
     }
 
@@ -284,7 +285,7 @@ class OrderServiceTest {
             when(orderMapper.toResponse(order2)).thenReturn(response2);
 
             // Act
-            List<OrderResponse> responses = service.getOrdersForAuthenticatedCustomer();
+            List<OrderResponse> responses = orderService.getOrdersForAuthenticatedCustomer();
 
             // Assert
             assertThat(responses).containsExactly(response1, response2);
@@ -304,7 +305,7 @@ class OrderServiceTest {
 
             when(repository.findByCustomerIdOrderByOrderDateDesc(customerId)).thenReturn(List.of());
 
-            List<OrderResponse> responses = service.getOrdersForAuthenticatedCustomer();
+            List<OrderResponse> responses = orderService.getOrdersForAuthenticatedCustomer();
 
             assertThat(responses).isEmpty();
 
@@ -343,7 +344,7 @@ class OrderServiceTest {
             when(orderMapper.toResponse(existingOrder)).thenReturn(expectedResponse);
 
             // Act
-            OrderResponse response = service.cancelOrder(ORDER_ID);
+            OrderResponse response = orderService.cancelOrder(ORDER_ID);
 
             // Assert
             assertThat(existingOrder.getStatus()).isEqualTo(OrderStatus.CANCELLED);
@@ -360,14 +361,14 @@ class OrderServiceTest {
         @Test
         void shouldThrowWhenOrderNotFound() {
             when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
-            assertThrows(OrderNotFoundException.class, () -> service.cancelOrder(ORDER_ID));
+            assertThrows(OrderNotFoundException.class, () -> orderService.cancelOrder(ORDER_ID));
             verify(repository, never()).save(any());
         }
 
         @Test
         void shouldThrowWhenOrderAlreadyCancelled() {
             when(repository.findById(ORDER_ID)).thenReturn(Optional.of(cancelledOrder()));
-            assertThrows(OrderAlreadyCancelledException.class, () -> service.cancelOrder(ORDER_ID));
+            assertThrows(OrderAlreadyCancelledException.class, () -> orderService.cancelOrder(ORDER_ID));
             verify(repository, never()).save(any());
         }
     }
