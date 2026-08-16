@@ -43,6 +43,13 @@ public class OrderItem {
     @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
+    @Column(name = "unit_weight_kg", nullable = false)
+    private BigDecimal unitWeightKg;
+
+    public BigDecimal getLineWeight() {
+        return unitWeightKg.multiply(BigDecimal.valueOf(quantity));
+    }
+
     public BigDecimal getLineTotal() {
         return unitPrice.multiply(BigDecimal.valueOf(quantity));
     }

@@ -2,9 +2,16 @@ package nz.fox.craig.order.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -42,6 +49,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -113,7 +121,7 @@ class OrderServiceTest {
             ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
 
             InOrder inOrder =
-                    inOrder(
+                    Mockito.inOrder(
                             customerClient,
                             inventoryClient,
                             productClient,
@@ -143,9 +151,9 @@ class OrderServiceTest {
             assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PLACED);
             assertThat(savedOrder.getSubtotal()).isEqualByComparingTo(new BigDecimal("179.98"));
 
-            assertThat(savedOrder.getShipping()).isEqualByComparingTo(new BigDecimal("0"));
+            assertThat(savedOrder.getShipping()).isEqualByComparingTo(new BigDecimal("15.00"));
 
-            assertThat(savedOrder.getTotal()).isEqualByComparingTo(new BigDecimal("179.98"));
+            assertThat(savedOrder.getTotal()).isEqualByComparingTo(new BigDecimal("194.98"));
             assertThat(savedOrder.getItems()).hasSize(1);
             assertThat(savedOrder.getId()).isNotNull();
             assertThat(savedOrder.getOrderDate()).isNotNull();
@@ -442,11 +450,4 @@ class OrderServiceTest {
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
-    private static final ShippingAddressRequest SHIPPING_ADDRESS =
-            ShippingAddressRequest.builder()
-                    .addressLine1("1 Main St")
-                    .city("Auckland")
-                    .postcode("1010")
-                    .country("NZ")
-                    .build();
 }
