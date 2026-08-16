@@ -30,6 +30,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class OrderService {
 
+    private static final BigDecimal FREE_SHIPPING_THRESHOLD = new BigDecimal("1000");
+    private static final BigDecimal LIGHT_WEIGHT_LIMIT = new BigDecimal("0.5");
+    private static final BigDecimal STANDARD_WEIGHT_LIMIT = new BigDecimal("2.0");
+
+    private static final BigDecimal LIGHT_SHIPPING = new BigDecimal("8.00");
+    private static final BigDecimal STANDARD_SHIPPING = new BigDecimal("15.00");
+    private static final BigDecimal HEAVY_SHIPPING = new BigDecimal("25.00");
+
     private final OrderRepository orderRepository;
     private final CustomerClient customerClient;
     private final ProductClient productClient;
@@ -53,8 +61,9 @@ public class OrderService {
         final List<OrderItem> items = buildOrderItems(request);
 
         final BigDecimal subtotal = calculateSubtotal(items);
-        final BigDecimal shipping = calculateShipping(subtotal);
-        final BigDecimal total = calculateTotal(subtotal, shipping);
+        final BigDecimal totalWeight = calculateTotalWeight(items);
+        final BigDecimal shipping = calculateShipping(subtotal, totalWeight);
+
 
         final Order order =
                 Order.builder()
@@ -63,7 +72,7 @@ public class OrderService {
                         .status(OrderStatus.PLACED)
                         .subtotal(subtotal)
                         .shipping(shipping)
-                        .total(total)
+                        .total(calculateTotal(subtotal, shipping))
                         .shippingAddress(
                                 new ShippingAddress(
                                         request.shippingAddress().addressLine1(),
@@ -102,6 +111,7 @@ public class OrderService {
                                     .productId(product.id())
                                     .productName(product.name())
                                     .unitPrice(unitPrice)
+                                    .unitWeightKg(product.weightKg())
                                     .quantity(item.quantity())
                                     .build();
                         })
@@ -113,8 +123,27 @@ public class OrderService {
         return items.stream().map(OrderItem::getLineTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private BigDecimal calculateShipping(BigDecimal subtotal) {
-        return BigDecimal.ZERO;
+    private BigDecimal calculateShipping(BigDecimal subtotal, BigDecimal totalWeight) {
+
+        if (subtotal.compareTo(FREE_SHIPPING_THRESHOLD) >= 0) {
+            return BigDecimal.ZERO;
+        }
+    
+        if (totalWeight.compareTo(LIGHT_WEIGHT_LIMIT) <= 0) {
+            return LIGHT_SHIPPING;
+        }
+    
+        if (totalWeight.compareTo(STANDARD_WEIGHT_LIMIT) <= 0) {
+            return STANDARD_SHIPPING;
+        }
+    
+        return HEAVY_SHIPPING;
+    }
+
+    private BigDecimal calculateTotalWeight(List<OrderItem> items) {
+        return items.stream()
+                .map(OrderItem::getLineWeight)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private BigDecimal calculateTotal(BigDecimal subtotal, BigDecimal shipping) {

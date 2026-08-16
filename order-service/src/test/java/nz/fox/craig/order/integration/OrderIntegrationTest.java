@@ -1,6 +1,8 @@
 package nz.fox.craig.order.integration;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -20,6 +22,7 @@ import nz.fox.craig.test.JwtTestFactory;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -76,23 +79,28 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
         String token =
                 JwtTestFactory.createToken(
-                        customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
+                        customerId,
+                        "test@example.com",
+                        jwtSecret,
+                        Duration.ofHours(1));
 
-        assertTrue(tokenService.isTokenValid(token));
-        assertEquals(customerId, tokenService.extractCustomerId(token));
-        assertEquals("test@example.com", tokenService.extractEmail(token));
+        List<OrderItemRequest> itemRequests =
+                List.of(new OrderItemRequest(productId, 2));
 
-        final List<OrderItemRequest> itemRequests = List.of(new OrderItemRequest(productId, 2));
+        OrderRequest request =
+                new OrderRequest(itemRequests, shippingAddress());
 
-        final OrderRequest request = new OrderRequest(itemRequests, shippingAddress());
-
-        // Customer validation
+        // Customer exists
         mockWebServer.enqueue(
-                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
+                new MockResponse()
+                        .setResponseCode(200)
+                        .addHeader("Content-Length", "0"));
 
-        // Inventory reservation
+        // Inventory reservation succeeds
         mockWebServer.enqueue(
-                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
+                new MockResponse()
+                        .setResponseCode(200)
+                        .addHeader("Content-Length", "0"));
 
         // Product lookup
         mockWebServer.enqueue(
@@ -106,13 +114,30 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                                 .header("Authorization", "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated());
-
-        RecordedRequest recordedRequest = mockWebServer.takeRequest();
-
-        assertEquals("HEAD", recordedRequest.getMethod());
-        assertTrue(recordedRequest.getPath().startsWith("/api/customers/"));
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.customerId").value(customerId.toString()))
+                .andExpect(jsonPath("$.status").value("PLACED"))
+                .andExpect(jsonPath("$.subtotal").value(179.98))
+                .andExpect(jsonPath("$.shipping").value(15.00))
+                .andExpect(jsonPath("$.total").value(194.98))
+                .andExpect(jsonPath("$.items[0].productId").value(productId.toString()))
+                .andExpect(jsonPath("$.items[0].quantity").value(2));
+        
+        RecordedRequest customerRequest = mockWebServer.takeRequest();
+        RecordedRequest inventoryRequest = mockWebServer.takeRequest();
+        RecordedRequest productRequest = mockWebServer.takeRequest();
+        
+        assertEquals("HEAD", customerRequest.getMethod());
+        assertTrue(customerRequest.getPath().startsWith("/api/customers/"));
+        
+        assertEquals("POST", inventoryRequest.getMethod());
+        assertTrue(inventoryRequest.getPath().startsWith("/api/inventory/"));
+        assertTrue(inventoryRequest.getPath().endsWith("/reserve"));
+        
+        assertEquals("GET", productRequest.getMethod());
+        assertTrue(productRequest.getPath().startsWith("/api/products/"));
     }
+
 
     private ProductSnapshot productSnapshot() {
         return ProductSnapshot.builder()
