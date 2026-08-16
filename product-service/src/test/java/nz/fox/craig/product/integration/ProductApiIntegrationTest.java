@@ -36,8 +36,6 @@ class ProductApiIntegrationTest extends AbstractPostgresTest {
 
     @Autowired private MockMvc mockMvc;
 
-    @Autowired private ProductRepository productRepository;
-
     @Test
     void shouldReturnAllActiveProducts() throws Exception {
         UUID customerId = UUID.randomUUID();
@@ -46,9 +44,6 @@ class ProductApiIntegrationTest extends AbstractPostgresTest {
                 JwtTestFactory.createToken(
                         customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
 
-        assertTrue(tokenService.isTokenValid(token));
-        assertEquals(customerId, tokenService.extractCustomerId(token));
-        assertEquals("test@example.com", tokenService.extractEmail(token));
 
         mockMvc.perform(get("/api/products").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())

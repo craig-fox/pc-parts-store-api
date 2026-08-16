@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,6 +18,7 @@ import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.request.ShippingAddressRequest;
+import nz.fox.craig.order.repository.OrderRepository;
 import nz.fox.craig.test.AbstractPostgresTest;
 import nz.fox.craig.test.JwtTestFactory;
 import okhttp3.mockwebserver.MockResponse;
@@ -43,6 +45,9 @@ class OrderIntegrationTest extends AbstractPostgresTest {
     @Autowired private MockMvc mockMvc;
 
     @Autowired private ObjectMapper objectMapper;
+
+    @Autowired
+    private OrderRepository orderRepository;
 
     static MockWebServer mockWebServer;
 
@@ -199,6 +204,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
     void shouldRejectOrderWhenInventoryIsInsufficient() throws Exception {
     
         UUID customerId = UUID.randomUUID();
+        long initialOrderCount = orderRepository.count();
     
         String token =
                 JwtTestFactory.createToken(
@@ -240,6 +246,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         assertEquals("POST", inventoryRequest.getMethod());
         assertTrue(inventoryRequest.getPath().startsWith("/api/inventory/"));
         assertTrue(inventoryRequest.getPath().endsWith("/reserve"));
+        assertThat(orderRepository.count()).isEqualTo(initialOrderCount);
     }
 
     @Test
@@ -350,6 +357,22 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 .andExpect(status().isBadRequest());
 
         assertEquals(requestCountBefore, mockWebServer.getRequestCount());        
+    }
+
+    @Test
+    @Timeout(10)
+    void shouldRejectOrderWithoutJwt() throws Exception {
+        OrderRequest request = createOrderRequest();
+
+        int requestCountBefore = mockWebServer.getRequestCount();
+
+        mockMvc.perform(
+                        post("/api/orders")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+
+        assertEquals(requestCountBefore, mockWebServer.getRequestCount());
     }
 
 
