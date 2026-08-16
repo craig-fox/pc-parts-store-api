@@ -8,4 +8,4 @@ public record AuthenticatedCustomer(
         String password,
         boolean active,
         String firstName,
-        String preferredName) {}
+        String preferredName) { }

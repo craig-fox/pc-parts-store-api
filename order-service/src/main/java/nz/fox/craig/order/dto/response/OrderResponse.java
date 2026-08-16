@@ -15,4 +15,4 @@ public record OrderResponse(
         BigDecimal subtotal,
         BigDecimal shipping,
         BigDecimal total,
-        List<OrderItemResponse> items) {}
+        List<OrderItemResponse> items) { }

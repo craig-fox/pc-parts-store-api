@@ -1,6 +1,6 @@
 spring:
   application:
-    name: auth-service
+    name: authentication-service
 
 customer-service:
   base-url: http://customer-service:8080

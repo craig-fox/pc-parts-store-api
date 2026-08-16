@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public final class ProductIds {
 
-    private ProductIds() {}
+    private ProductIds() { }
 
     public static final UUID AMD_9800X3D = UUID.fromString("1b0d0fa6-52e1-4acd-8286-892bc29f8b3a");
 

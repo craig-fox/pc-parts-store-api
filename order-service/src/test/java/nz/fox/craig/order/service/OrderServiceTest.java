@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 
 
@@ -87,80 +86,32 @@ class OrderServiceTest {
 
     @Nested
     class CreateOrder {
+        
+
         @Test
         void shouldCreateOrder() {
             // Arrange
             doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
-
-            when(repository.save(any(Order.class)))
-                    .thenAnswer(
-                            invocation -> {
-                                Order order = invocation.getArgument(0);
-                                if (order.getId() == null) {
-                                    order.setId(UUID.randomUUID());
-                                }
-                                order.getItems()
-                                        .forEach(
-                                                item -> {
-                                                    if (item.getId() == null) {
-                                                        item.setId(UUID.randomUUID());
-                                                    }
-                                                });
-                                return order;
-                            });
+            configureRepositoryToAssignIds();
             when(productClient.getProduct(PRODUCT_ID)).thenReturn(productSnapshot());
+        
             OrderResponse expectedResponse =
-                    OrderResponse.builder().id(ORDER_ID).status("PLACED").build();
-
+                    OrderResponse.builder()
+                            .id(ORDER_ID)
+                            .status("PLACED")
+                            .build();
+        
             when(orderMapper.toResponse(any(Order.class))).thenReturn(expectedResponse);
-
+        
             // Act
             OrderResponse response = orderService.createOrder(orderRequest());
-
-            // Assert - interactions
-            ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
-
-            InOrder inOrder =
-                    Mockito.inOrder(
-                            customerClient,
-                            inventoryClient,
-                            productClient,
-                            repository,
-                            orderMapper);
-            inOrder.verify(customerClient).validateCustomerExists(CUSTOMER_ID);
-
-            inOrder.verify(inventoryClient).reserveStock(PRODUCT_ID, QUANTITY);
-
-            inOrder.verify(productClient).getProduct(PRODUCT_ID);
-
-            inOrder.verify(repository).save(captor.capture());
-
-            // Assert - order persisted
-            Order savedOrder = captor.getValue();
-            OrderItem item = savedOrder.getItems().getFirst();
-            inOrder.verify(orderMapper).toResponse(savedOrder);
-
-            verifyNoMoreInteractions(customerClient, inventoryClient, productClient, repository);
-
-            assertThat(item.getProductId()).isEqualTo(PRODUCT_ID);
-            assertThat(item.getProductName()).isEqualTo("Gaming Mouse");
-            assertThat(item.getUnitPrice()).isEqualByComparingTo(new BigDecimal("89.99"));
-            assertThat(item.getQuantity()).isEqualTo(2);
-            assertThat(item.getLineTotal()).isEqualByComparingTo(new BigDecimal("179.98"));
-            assertThat(savedOrder.getCustomerId()).isEqualTo(CUSTOMER_ID);
-            assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PLACED);
-            assertThat(savedOrder.getSubtotal()).isEqualByComparingTo(new BigDecimal("179.98"));
-
-            assertThat(savedOrder.getShipping()).isEqualByComparingTo(new BigDecimal("15.00"));
-
-            assertThat(savedOrder.getTotal()).isEqualByComparingTo(new BigDecimal("194.98"));
-            assertThat(savedOrder.getItems()).hasSize(1);
-            assertThat(savedOrder.getId()).isNotNull();
-            assertThat(savedOrder.getOrderDate()).isNotNull();
-
-            // Assert - returned response
+        
+            // Assert
+            Order savedOrder = verifyCreateOrderInteractions();
+            assertSavedOrder(savedOrder);
+        
             assertThat(response).isSameAs(expectedResponse);
-        }
+        }     
 
         @Test
         void shouldNotCreateOrderWhenInventoryReservationFails() {
@@ -449,6 +400,81 @@ class OrderServiceTest {
                 new UsernamePasswordAuthenticationToken(principal, null, List.of());
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    private void configureRepositoryToAssignIds() {
+        when(repository.save(any(Order.class)))
+                .thenAnswer(
+                        invocation -> {
+                            Order order = invocation.getArgument(0);
+    
+                            if (order.getId() == null) {
+                                order.setId(UUID.randomUUID());
+                            }
+    
+                            order.getItems()
+                                    .forEach(
+                                            item -> {
+                                                if (item.getId() == null) {
+                                                    item.setId(UUID.randomUUID());
+                                                }
+                                            });
+    
+                            return order;
+                        });
+    }
+
+    private Order verifyCreateOrderInteractions() {
+        ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
+    
+        InOrder inOrder =
+                Mockito.inOrder(
+                        customerClient,
+                        inventoryClient,
+                        productClient,
+                        repository,
+                        orderMapper);
+    
+        inOrder.verify(customerClient).validateCustomerExists(CUSTOMER_ID);
+        inOrder.verify(inventoryClient).reserveStock(PRODUCT_ID, QUANTITY);
+        inOrder.verify(productClient).getProduct(PRODUCT_ID);
+        inOrder.verify(repository).save(captor.capture());
+    
+        Order savedOrder = captor.getValue();
+    
+        inOrder.verify(orderMapper).toResponse(savedOrder);
+    
+        verifyNoMoreInteractions(
+                customerClient,
+                inventoryClient,
+                productClient,
+                repository);
+    
+        return savedOrder;
+    }
+
+    private void assertSavedOrder(Order savedOrder) {
+        OrderItem item = savedOrder.getItems().getFirst();
+    
+        assertThat(item.getProductId()).isEqualTo(PRODUCT_ID);
+        assertThat(item.getProductName()).isEqualTo("Gaming Mouse");
+        assertThat(item.getUnitPrice())
+                .isEqualByComparingTo(new BigDecimal("89.99"));
+        assertThat(item.getQuantity()).isEqualTo(2);
+        assertThat(item.getLineTotal())
+                .isEqualByComparingTo(new BigDecimal("179.98"));
+    
+        assertThat(savedOrder.getCustomerId()).isEqualTo(CUSTOMER_ID);
+        assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PLACED);
+        assertThat(savedOrder.getSubtotal())
+                .isEqualByComparingTo(new BigDecimal("179.98"));
+        assertThat(savedOrder.getShipping())
+                .isEqualByComparingTo(new BigDecimal("15.00"));
+        assertThat(savedOrder.getTotal())
+                .isEqualByComparingTo(new BigDecimal("194.98"));
+        assertThat(savedOrder.getItems()).hasSize(1);
+        assertThat(savedOrder.getId()).isNotNull();
+        assertThat(savedOrder.getOrderDate()).isNotNull();
     }
 
 }

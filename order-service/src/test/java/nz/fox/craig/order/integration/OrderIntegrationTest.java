@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -16,7 +17,6 @@ import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.request.ShippingAddressRequest;
-import nz.fox.craig.security.TokenService;
 import nz.fox.craig.test.AbstractPostgresTest;
 import nz.fox.craig.test.JwtTestFactory;
 import okhttp3.mockwebserver.MockResponse;
@@ -49,8 +49,6 @@ class OrderIntegrationTest extends AbstractPostgresTest {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-    @Autowired private TokenService tokenService;
-
     private final UUID productId = UUID.fromString("1b0d0fa6-52e1-4acd-8286-892bc29f8b3a");
 
     @DynamicPropertySource
@@ -74,73 +72,33 @@ class OrderIntegrationTest extends AbstractPostgresTest {
     @Test
     @Timeout(10)
     void shouldCreateOrderForExistingCustomer() throws Exception {
-
         UUID customerId = UUID.randomUUID();
+        String token = createToken(customerId);
 
-        String token =
-                JwtTestFactory.createToken(
-                        customerId,
-                        "test@example.com",
-                        jwtSecret,
-                        Duration.ofHours(1));
+        OrderRequest request = createOrderRequest();
 
-        List<OrderItemRequest> itemRequests =
-                List.of(new OrderItemRequest(productId, 2));
-
-        OrderRequest request =
-                new OrderRequest(itemRequests, shippingAddress());
-
-        // Customer exists
-        mockWebServer.enqueue(
-                new MockResponse()
-                        .setResponseCode(200)
-                        .addHeader("Content-Length", "0"));
-
-        // Inventory reservation succeeds
-        mockWebServer.enqueue(
-                new MockResponse()
-                        .setResponseCode(200)
-                        .addHeader("Content-Length", "0"));
-
-        // Product lookup
-        mockWebServer.enqueue(
-                new MockResponse()
-                        .setResponseCode(200)
-                        .setBody(objectMapper.writeValueAsString(productSnapshot()))
-                        .addHeader("Content-Type", "application/json"));
+        enqueueSuccessfulOrderDependencies();
 
         mockMvc.perform(
-            post("/api/orders")
-                    .header("Authorization", "Bearer " + token)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.customerId").value(customerId.toString()))
-                    .andExpect(jsonPath("$.orderDate").exists())
-                    .andExpect(jsonPath("$.status").value("PLACED"))
-                    .andExpect(jsonPath("$.subtotal").value(179.98))
-                    .andExpect(jsonPath("$.shipping").value(15.00))
-                    .andExpect(jsonPath("$.total").value(194.98))
-                    .andExpect(jsonPath("$.items").isArray())
-                    .andExpect(jsonPath("$.items.length()").value(1))
-                    .andExpect(jsonPath("$.items[0].productId").value(productId.toString()))
-                    .andExpect(jsonPath("$.items[0].productName").value("Gaming Mouse"))
-                    .andExpect(jsonPath("$.items[0].unitPrice").value(89.99))
-                    .andExpect(jsonPath("$.items[0].quantity").value(2));
-        
-        RecordedRequest customerRequest = mockWebServer.takeRequest();
-        RecordedRequest inventoryRequest = mockWebServer.takeRequest();
-        RecordedRequest productRequest = mockWebServer.takeRequest();
-        
-        assertEquals("HEAD", customerRequest.getMethod());
-        assertTrue(customerRequest.getPath().startsWith("/api/customers/"));
-        
-        assertEquals("POST", inventoryRequest.getMethod());
-        assertTrue(inventoryRequest.getPath().startsWith("/api/inventory/"));
-        assertTrue(inventoryRequest.getPath().endsWith("/reserve"));
-        
-        assertEquals("GET", productRequest.getMethod());
-        assertTrue(productRequest.getPath().startsWith("/api/products/"));
+                        post("/api/orders")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.customerId").value(customerId.toString()))
+                .andExpect(jsonPath("$.orderDate").exists())
+                .andExpect(jsonPath("$.status").value("PLACED"))
+                .andExpect(jsonPath("$.subtotal").value(179.98))
+                .andExpect(jsonPath("$.shipping").value(15.00))
+                .andExpect(jsonPath("$.total").value(194.98))
+                .andExpect(jsonPath("$.items").isArray())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].productId").value(productId.toString()))
+                .andExpect(jsonPath("$.items[0].productName").value("Gaming Mouse"))
+                .andExpect(jsonPath("$.items[0].unitPrice").value(89.99))
+                .andExpect(jsonPath("$.items[0].quantity").value(2));
+
+        verifyDownstreamRequests();
     }
 
     @Test
@@ -412,5 +370,54 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 .postcode("1010")
                 .country("NZ")
                 .build();
+    }
+
+    private String createToken(UUID customerId) {
+        return JwtTestFactory.createToken(
+                customerId,
+                "test@example.com",
+                jwtSecret,
+                Duration.ofHours(1));
+    }
+    
+    private OrderRequest createOrderRequest() {
+        List<OrderItemRequest> itemRequests =
+                List.of(new OrderItemRequest(productId, 2));
+    
+        return new OrderRequest(itemRequests, shippingAddress());
+    }
+
+    private void enqueueSuccessfulOrderDependencies() throws JsonProcessingException {
+        mockWebServer.enqueue(
+                new MockResponse()
+                        .setResponseCode(200)
+                        .addHeader("Content-Length", "0"));
+    
+        mockWebServer.enqueue(
+                new MockResponse()
+                        .setResponseCode(200)
+                        .addHeader("Content-Length", "0"));
+    
+        mockWebServer.enqueue(
+                new MockResponse()
+                        .setResponseCode(200)
+                        .setBody(objectMapper.writeValueAsString(productSnapshot()))
+                        .addHeader("Content-Type", "application/json"));
+    }
+
+    private void verifyDownstreamRequests() throws InterruptedException {
+        RecordedRequest customerRequest = mockWebServer.takeRequest();
+        RecordedRequest inventoryRequest = mockWebServer.takeRequest();
+        RecordedRequest productRequest = mockWebServer.takeRequest();
+    
+        assertEquals("HEAD", customerRequest.getMethod());
+        assertTrue(customerRequest.getPath().startsWith("/api/customers/"));
+    
+        assertEquals("POST", inventoryRequest.getMethod());
+        assertTrue(inventoryRequest.getPath().startsWith("/api/inventory/"));
+        assertTrue(inventoryRequest.getPath().endsWith("/reserve"));
+    
+        assertEquals("GET", productRequest.getMethod());
+        assertTrue(productRequest.getPath().startsWith("/api/products/"));
     }
 }

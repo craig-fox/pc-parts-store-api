@@ -6,4 +6,4 @@ import lombok.Builder;
 
 @Builder
 public record ProductSnapshot(
-        UUID id, String name, BigDecimal price, BigDecimal weightKg, boolean active) {}
+        UUID id, String name, BigDecimal price, BigDecimal weightKg, boolean active) { }

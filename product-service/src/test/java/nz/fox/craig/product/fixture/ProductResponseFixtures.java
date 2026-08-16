@@ -7,7 +7,7 @@ import nz.fox.craig.product.model.Product;
 
 public final class ProductResponseFixtures {
 
-    private ProductResponseFixtures() {}
+    private ProductResponseFixtures() { }
 
     public static ProductResponse gamingMouse() {
         Product product = ProductFixtures.gamingMouse();

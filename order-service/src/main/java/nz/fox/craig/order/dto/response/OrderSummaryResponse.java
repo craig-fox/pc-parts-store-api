@@ -7,4 +7,4 @@ import lombok.Builder;
 
 @Builder
 public record OrderSummaryResponse(
-        UUID id, LocalDateTime orderDate, String status, BigDecimal total) {}
+        UUID id, LocalDateTime orderDate, String status, BigDecimal total) { }
