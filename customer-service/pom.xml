@@ -10,7 +10,6 @@
 	</parent>
 	<groupId>nz.fox.craig</groupId>
 	<artifactId>customer-service</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
 	<name>customer-service</name>
 	
 	<dependencies>
@@ -67,7 +66,7 @@
 		<dependency>
 			<groupId>nz.fox.craig</groupId>
 			<artifactId>security-common</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>${project.version}</version>
 		</dependency>
 		
 		<dependency>
