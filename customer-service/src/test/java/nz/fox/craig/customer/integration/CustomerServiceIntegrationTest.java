@@ -26,7 +26,7 @@ import org.springframework.test.web.servlet.MvcResult;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class CustomerSecurityIntegrationTest extends AbstractPostgresTest {
+class CustomerServiceIntegrationTest extends AbstractPostgresTest {
     @Autowired private MockMvc mockMvc;
 
     @Autowired private ObjectMapper objectMapper;
