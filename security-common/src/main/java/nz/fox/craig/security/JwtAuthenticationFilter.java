@@ -31,7 +31,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            System.out.println("NO BEARER TOKEN");
             filterChain.doFilter(request, response);
             return;
         }
@@ -61,8 +60,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
 
-        } catch (JwtException | IllegalArgumentException ex) {
-            System.out.println("Jwt Error: " + ex.getMessage());
+        } catch (JwtException | IllegalArgumentException ignored) {
+            // Invalid JWT: continue the request without authentication.
         }
 
         filterChain.doFilter(request, response);

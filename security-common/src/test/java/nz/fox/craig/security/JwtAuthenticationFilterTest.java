@@ -47,6 +47,37 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
+    void shouldAuthenticateValidJwt() throws Exception {
+
+        when(request.getHeader("Authorization")).thenReturn("Bearer jwt-token");
+
+        when(tokenService.isTokenValid("jwt-token")).thenReturn(true);
+
+        when(tokenService.extractCustomerId("jwt-token")).thenReturn(CUSTOMER_ID);
+
+        when(tokenService.extractEmail("jwt-token")).thenReturn(EMAIL);
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        assertThat(authentication).isNotNull();
+
+        assertThat(authentication.getPrincipal()).isInstanceOf(AuthenticatedUser.class);
+
+        AuthenticatedUser principal = (AuthenticatedUser) authentication.getPrincipal();
+
+        assertThat(principal.id()).isEqualTo(CUSTOMER_ID);
+        assertThat(principal.email()).isEqualTo(EMAIL);
+        assertThat(authentication.getAuthorities())
+            .extracting("authority")
+            .containsExactly("ROLE_CUSTOMER");
+
+        verify(filterChain).doFilter(request, response);
+        
+    }
+
+    @Test
     void shouldContinueWhenAuthorizationHeaderMissing() throws Exception {
 
         when(request.getHeader("Authorization")).thenReturn(null);
@@ -70,32 +101,7 @@ class JwtAuthenticationFilterTest {
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
-    @Test
-    void shouldAuthenticateValidJwt() throws Exception {
-
-        when(request.getHeader("Authorization")).thenReturn("Bearer jwt-token");
-
-        when(tokenService.isTokenValid("jwt-token")).thenReturn(true);
-
-        when(tokenService.extractCustomerId("jwt-token")).thenReturn(CUSTOMER_ID);
-
-        when(tokenService.extractEmail("jwt-token")).thenReturn(EMAIL);
-
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        assertThat(authentication).isNotNull();
-
-        assertThat(authentication.getPrincipal()).isInstanceOf(AuthenticatedUser.class);
-
-        AuthenticatedUser principal = (AuthenticatedUser) authentication.getPrincipal();
-
-        assertThat(principal.id()).isEqualTo(CUSTOMER_ID);
-        assertThat(principal.email()).isEqualTo(EMAIL);
-
-        verify(filterChain).doFilter(request, response);
-    }
+ 
 
     @Test
     void shouldIgnoreInvalidJwt() throws Exception {
@@ -130,4 +136,33 @@ class JwtAuthenticationFilterTest {
 
         verify(filterChain).doFilter(request, response);
     }
+
+    @Test
+    void shouldIgnoreJwtWhenCustomerIdCannotBeExtracted() throws Exception {
+        when(request.getHeader("Authorization")).thenReturn("Bearer jwt-token");
+        when(tokenService.isTokenValid("jwt-token")).thenReturn(true);
+        when(tokenService.extractCustomerId("jwt-token"))
+                .thenThrow(new JwtException("Invalid customer id"));
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+void shouldIgnoreJwtWhenEmailCannotBeExtracted() throws Exception {
+    when(request.getHeader("Authorization")).thenReturn("Bearer jwt-token");
+    when(tokenService.isTokenValid("jwt-token")).thenReturn(true);
+    when(tokenService.extractCustomerId("jwt-token")).thenReturn(CUSTOMER_ID);
+    when(tokenService.extractEmail("jwt-token"))
+            .thenThrow(new JwtException("Invalid email"));
+
+    jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+    assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+
+    verify(filterChain).doFilter(request, response);
+}
 }
