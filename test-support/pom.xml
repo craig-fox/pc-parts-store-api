@@ -16,7 +16,6 @@
 
     <artifactId>test-support</artifactId>
     <name>test-support</name>
-    <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <dependencies>
