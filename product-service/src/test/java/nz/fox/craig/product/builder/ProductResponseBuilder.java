@@ -17,7 +17,7 @@ public class ProductResponseBuilder {
     private BigDecimal weightKg = new BigDecimal("0.15");
     private String imageUrl = "https://example.com/images/CPU-001.jpg";
 
-    private ProductResponseBuilder() {}
+    private ProductResponseBuilder() { }
 
     public static ProductResponseBuilder aProductResponse() {
         return new ProductResponseBuilder();

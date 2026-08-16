@@ -9,5 +9,5 @@ import nz.fox.craig.test.AbstractPostgresTest;
 class ProductServiceApplicationTests extends AbstractPostgresTest {
 
     @Test
-    void contextLoads() {}
+    void contextLoads() { }
 }

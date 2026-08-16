@@ -14,4 +14,4 @@ public record OrderRequest(
 
         @Valid
         @NotNull(message = "Shipping address is required")
-        ShippingAddressRequest shippingAddress) {}
+        ShippingAddressRequest shippingAddress) { }

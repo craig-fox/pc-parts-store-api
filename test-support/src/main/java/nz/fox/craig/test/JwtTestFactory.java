@@ -11,7 +11,7 @@ import javax.crypto.SecretKey;
 
 public final class JwtTestFactory {
 
-    private JwtTestFactory() {}
+    private JwtTestFactory() { }
 
     public static String createToken(
             UUID customerId, String email, String secret, Duration expiry) {

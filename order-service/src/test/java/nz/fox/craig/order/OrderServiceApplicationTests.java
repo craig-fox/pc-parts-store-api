@@ -9,6 +9,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 class OrderServiceApplicationTests extends AbstractPostgresTest {
 
     @Test
-    void contextLoads() {}
+    void contextLoads() { }
 
 }

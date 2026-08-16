@@ -5,4 +5,4 @@ import java.util.UUID;
 import lombok.Builder;
 
 @Builder
-public record ProductSummary(UUID id, String name, BigDecimal price, BigDecimal weightKg) {}
+public record ProductSummary(UUID id, String name, BigDecimal price, BigDecimal weightKg) { }

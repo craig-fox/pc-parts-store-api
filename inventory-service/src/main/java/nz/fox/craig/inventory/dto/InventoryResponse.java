@@ -12,4 +12,4 @@ public record InventoryResponse(
         int quantityReserved,
         int availableQuantity,
         InventoryStatus status,
-        LocalDateTime lastUpdated) {}
+        LocalDateTime lastUpdated) { }
