@@ -1,6 +1,8 @@
 package nz.fox.craig.customer.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import nz.fox.craig.api.ApiError;
+
 import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;

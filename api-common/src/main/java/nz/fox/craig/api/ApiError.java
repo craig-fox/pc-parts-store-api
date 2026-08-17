@@ -1,4 +1,4 @@
-package nz.fox.craig.customer.exception;
+package nz.fox.craig.api;
 
 import java.time.Instant;
 import java.util.Map;

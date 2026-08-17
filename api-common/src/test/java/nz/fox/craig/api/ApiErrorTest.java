@@ -1,4 +1,4 @@
-package nz.fox.craig.auth.exception;
+package nz.fox.craig.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
