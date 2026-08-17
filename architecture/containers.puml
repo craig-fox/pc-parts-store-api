@@ -1,0 +1,29 @@
+@startuml
+
+!pragma layout smetana
+
+!include <C4/C4_Container>
+
+title PC Parts Store - Container Diagram
+
+Person(customer, "Customer")
+
+System_Boundary(platform, "PC Parts Store") {
+    Container(webui, "Web UI", "React", "Customer-facing web application")
+    Container(product, "Product Service", "Spring Boot", "Provides product information")
+    Container(auth, "Authentication Service", "Spring Boot", "Handles customer registration and authentication")
+    Container(order, "Order Service", "Spring Boot", "Creates and manages customer orders")
+    Container(customerSvc, "Customer Service", "Spring Boot", "Manages customer information")
+    Container(inventory, "Inventory Service", "Spring Boot", "Manages product inventory")
+}
+
+Rel(customer, webui, "Uses")
+
+Rel(webui, product, "Retrieves products")
+Rel(webui, auth, "Registers and authenticates")
+Rel(webui, order, "Creates and views orders")
+
+Rel(order, customerSvc, "Validates customer")
+Rel(order, inventory, "Checks inventory")
+
+@enduml

@@ -13,3 +13,7 @@ jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:3600000}
 
+logging:
+  level:
+    org.springframework.security: DEBUG
+
