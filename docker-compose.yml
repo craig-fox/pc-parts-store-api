@@ -101,6 +101,8 @@ services:
       product-postgres:
         condition: service_healthy
     environment:
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
       SERVER_PORT: 8080
       SPRING_DATASOURCE_URL: jdbc:postgresql://product-postgres:5432/productdb
       SPRING_DATASOURCE_USERNAME: product
@@ -147,6 +149,8 @@ services:
       inventory-postgres:
         condition: service_healthy
     environment:
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
       SERVER_PORT: 8080
       SPRING_DATASOURCE_URL: jdbc:postgresql://inventory-postgres:5432/inventorydb
       SPRING_DATASOURCE_USERNAME: inventory

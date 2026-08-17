@@ -1,0 +1,15 @@
+@startuml
+
+!pragma layout smetana
+
+!include <C4/C4_Context>
+
+title PC Parts Store - System Context
+
+Person(customer, "Customer", "A customer who browses products and places orders.")
+
+System(store, "PC Parts Store", "Online store for purchasing PC parts.")
+
+Rel(customer, store, "Uses")
+
+@enduml
