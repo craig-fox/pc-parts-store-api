@@ -22,5 +22,5 @@ public final class ShippingPolicy {
     public static final BigDecimal HEAVY_SHIPPING =
             new BigDecimal("25.00");
 
-    private ShippingPolicy() {}
+    private ShippingPolicy() { }
 }
