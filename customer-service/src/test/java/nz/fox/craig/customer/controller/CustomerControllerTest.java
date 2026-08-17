@@ -102,6 +102,25 @@ class CustomerControllerTest {
                                     .content("{}"))
                     .andExpect(status().isBadRequest());
         }
+
+        @Test
+        void shouldRejectCustomerWhenFirstNameIsMissing() throws Exception {
+        mockMvc.perform(
+                        post("/api/customers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                                "lastName": "Fox",
+                                                "email": "craig@example.com"
+                                        }
+                                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.validationErrors.firstName")
+                        .value("First name is required"));
+        }
     }
 
     @Nested

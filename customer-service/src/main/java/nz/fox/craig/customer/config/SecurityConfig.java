@@ -53,9 +53,6 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
 
-        if (jwtAuthenticationFilter == null) {
-            throw new IllegalStateException("JwtAuthenticationFilter is NULL");
-        }
 
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
