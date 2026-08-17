@@ -260,6 +260,17 @@ class CustomerServiceTest {
                     .isInstanceOf(CustomerNotFoundException.class)
                     .hasMessage("Customer not found with email: unknown@example.com");
         }
+
+        @Test
+        void shouldThrowWhenCustomerDoesNotExist() {
+                UUID customerId = UUID.randomUUID();
+
+                when(customerRepository.findById(customerId))
+                        .thenReturn(Optional.empty());
+
+                assertThatThrownBy(() -> customerService.getCustomer(customerId))
+                        .isInstanceOf(CustomerNotFoundException.class);
+        }
     }
 
     @Nested

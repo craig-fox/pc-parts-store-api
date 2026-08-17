@@ -26,17 +26,16 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static nz.fox.craig.order.shipping.ShippingPolicy.FREE_SHIPPING_THRESHOLD;
+import static nz.fox.craig.order.shipping.ShippingPolicy.LIGHT_SHIPPING;
+import static nz.fox.craig.order.shipping.ShippingPolicy.HEAVY_SHIPPING;
+import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_SHIPPING;
+import static nz.fox.craig.order.shipping.ShippingPolicy.LIGHT_WEIGHT_LIMIT;
+import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_WEIGHT_LIMIT;
+
 @Service
 @RequiredArgsConstructor
 public class OrderService {
-
-    private static final BigDecimal FREE_SHIPPING_THRESHOLD = new BigDecimal("1000");
-    private static final BigDecimal LIGHT_WEIGHT_LIMIT = new BigDecimal("0.5");
-    private static final BigDecimal STANDARD_WEIGHT_LIMIT = new BigDecimal("2.0");
-
-    private static final BigDecimal LIGHT_SHIPPING = new BigDecimal("8.00");
-    private static final BigDecimal STANDARD_SHIPPING = new BigDecimal("15.00");
-    private static final BigDecimal HEAVY_SHIPPING = new BigDecimal("25.00");
 
     private final OrderRepository orderRepository;
     private final CustomerClient customerClient;

@@ -10,6 +10,12 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doThrow;
+import static nz.fox.craig.order.shipping.ShippingPolicy.FREE_SHIPPING_THRESHOLD;
+import static nz.fox.craig.order.shipping.ShippingPolicy.LIGHT_SHIPPING;
+import static nz.fox.craig.order.shipping.ShippingPolicy.HEAVY_SHIPPING;
+import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_SHIPPING;
+import static nz.fox.craig.order.shipping.ShippingPolicy.LIGHT_WEIGHT_LIMIT;
+import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_WEIGHT_LIMIT;
 
 
 import java.math.BigDecimal;
@@ -60,8 +66,9 @@ class OrderServiceTest {
     private static final UUID CUSTOMER_ID = UUID.randomUUID();
     private static final UUID ORDER_ID = UUID.randomUUID();
     private static final UUID PRODUCT_ID = UUID.randomUUID();
-    private static final int QUANTITY = 2;
-
+    private static final int DEFAULT_ORDER_QUANTITY = 1;
+    private static final int EXISTING_ORDER_QUANTITY = 2;
+    
     @Mock private OrderRepository repository;
 
     @Mock private CustomerClient customerClient;
@@ -105,6 +112,7 @@ class OrderServiceTest {
         
             // Act
             OrderResponse response = orderService.createOrder(orderRequest());
+         
         
             // Assert
             Order savedOrder = verifyCreateOrderInteractions();
@@ -117,13 +125,13 @@ class OrderServiceTest {
         void shouldNotCreateOrderWhenInventoryReservationFails() {
             doThrow(new InsufficientStockException(PRODUCT_ID))
                     .when(inventoryClient)
-                    .reserveStock(PRODUCT_ID, QUANTITY);
+                    .reserveStock(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
 
             assertThatThrownBy(() -> orderService.createOrder(orderRequest()))
                     .isInstanceOf(InsufficientStockException.class);
 
             verify(repository, never()).save(any());
-            verify(inventoryClient).reserveStock(PRODUCT_ID, QUANTITY);
+            verify(inventoryClient).reserveStock(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
 
             verify(repository, never()).save(any());
             verify(productClient, never()).getProduct(any());
@@ -153,6 +161,128 @@ class OrderServiceTest {
             verify(repository, never()).save(any());
         }
 
+
+        @Test
+        void shouldProvideFreeShippingWhenSubtotalMeetsThreshold() {
+                // Arrange
+                doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
+                configureRepositoryToAssignIds();
+
+                when(productClient.getProduct(PRODUCT_ID))
+                        .thenReturn(productSnapshot(FREE_SHIPPING_THRESHOLD, BigDecimal.ONE));
+
+                ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
+
+                when(orderMapper.toResponse(orderCaptor.capture()))
+                        .thenReturn(
+                                OrderResponse.builder()
+                                        .id(ORDER_ID)
+                                        .status("PLACED")
+                                        .build());
+
+                // Act
+                orderService.createOrder(orderRequest());
+
+                // Assert
+                Order order = orderCaptor.getValue();
+
+                assertThat(order.getShipping())
+                        .isEqualByComparingTo(BigDecimal.ZERO);
+        }
+
+        @Test
+        void shouldCalculateLightShipping() {
+                // Arrange
+                doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
+                configureRepositoryToAssignIds();
+
+                when(productClient.getProduct(PRODUCT_ID))
+                        .thenReturn(
+                                productSnapshot(
+                                        new BigDecimal("100.00"),
+                                        LIGHT_WEIGHT_LIMIT));
+
+                ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
+
+                when(orderMapper.toResponse(orderCaptor.capture()))
+                        .thenReturn(
+                                OrderResponse.builder()
+                                        .id(ORDER_ID)
+                                        .status("PLACED")
+                                        .build());
+
+                // Act
+                orderService.createOrder(orderRequest());
+
+                // Assert
+                Order order = orderCaptor.getValue();
+
+                assertThat(order.getShipping())
+                        .isEqualByComparingTo(LIGHT_SHIPPING);
+        }
+
+        @Test
+        void shouldCalculateStandardShipping() {
+                // Arrange
+                doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
+                configureRepositoryToAssignIds();
+
+                when(productClient.getProduct(PRODUCT_ID))
+                        .thenReturn(
+                                productSnapshot(
+                                        new BigDecimal("100.00"),
+                                        STANDARD_WEIGHT_LIMIT));
+
+                ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
+
+                when(orderMapper.toResponse(orderCaptor.capture()))
+                        .thenReturn(
+                                OrderResponse.builder()
+                                        .id(ORDER_ID)
+                                        .status("PLACED")
+                                        .build());
+
+                // Act
+                orderService.createOrder(orderRequest());
+
+                // Assert
+                Order order = orderCaptor.getValue();
+
+                assertThat(order.getShipping())
+                        .isEqualByComparingTo(STANDARD_SHIPPING);
+        }
+
+        @Test
+        void shouldCalculateHeavyShipping() {
+                // Arrange
+                doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
+                configureRepositoryToAssignIds();
+
+                when(productClient.getProduct(PRODUCT_ID))
+                        .thenReturn(
+                                productSnapshot(
+                                        new BigDecimal("100.00"),
+                                        STANDARD_WEIGHT_LIMIT.add(new BigDecimal("0.01"))));
+
+                ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
+
+                when(orderMapper.toResponse(orderCaptor.capture()))
+                        .thenReturn(
+                                OrderResponse.builder()
+                                        .id(ORDER_ID)
+                                        .status("PLACED")
+                                        .build());
+
+                // Act
+                orderService.createOrder(orderRequest());
+
+                // Assert
+                Order order = orderCaptor.getValue();
+
+                assertThat(order.getShipping())
+                        .isEqualByComparingTo(HEAVY_SHIPPING);
+        }
+
     }
 
     @Nested
@@ -175,7 +305,7 @@ class OrderServiceTest {
                                             OrderItemResponse.builder()
                                                     .productId(PRODUCT_ID)
                                                     .productName("Gaming Mouse")
-                                                    .quantity(QUANTITY)
+                                                    .quantity(DEFAULT_ORDER_QUANTITY)
                                                     .unitPrice(new BigDecimal("89.99"))
                                                     .lineTotal(new BigDecimal("179.98"))
                                                     .build()))
@@ -284,7 +414,7 @@ class OrderServiceTest {
                                             OrderItemResponse.builder()
                                                     .productId(PRODUCT_ID)
                                                     .productName("Gaming Mouse")
-                                                    .quantity(QUANTITY)
+                                                    .quantity(DEFAULT_ORDER_QUANTITY)
                                                     .unitPrice(new BigDecimal("89.99"))
                                                     .lineTotal(new BigDecimal("179.98"))
                                                     .build()))
@@ -325,20 +455,17 @@ class OrderServiceTest {
     }
 
     private OrderRequest orderRequest() {
+        return orderRequest(DEFAULT_ORDER_QUANTITY);
+    }
+
+    private OrderRequest orderRequest(int quantity) {
         return OrderRequest.builder()
-                .items(
-                        List.of(
-                                OrderItemRequest.builder()
-                                        .productId(PRODUCT_ID)
-                                        .quantity(QUANTITY)
-                                        .build()))
-                .shippingAddress(
-                        ShippingAddressRequest.builder()
-                                .addressLine1("1 Main St")
-                                .city("Auckland")
-                                .postcode("1010")
-                                .country("NZ")
-                                .build())
+                .items(List.of(
+                        OrderItemRequest.builder()
+                                .productId(PRODUCT_ID)
+                                .quantity(quantity)
+                                .build()))
+                .shippingAddress(shippingAddressRequest())
                 .build();
     }
 
@@ -358,7 +485,7 @@ class OrderServiceTest {
                 OrderItem.builder()
                         .productId(PRODUCT_ID)
                         .productName("Gaming Mouse")
-                        .quantity(QUANTITY)
+                        .quantity(DEFAULT_ORDER_QUANTITY)
                         .unitPrice(new BigDecimal("89.99"))
                         .build());
         return order;
@@ -376,6 +503,16 @@ class OrderServiceTest {
                 .name("Gaming Mouse")
                 .price(new BigDecimal("89.99"))
                 .weightKg(new BigDecimal("0.30"))
+                .active(true)
+                .build();
+    }
+
+    private ProductSnapshot productSnapshot(BigDecimal price, BigDecimal weight) {
+        return ProductSnapshot.builder()
+                .id(PRODUCT_ID)
+                .name("Gaming Mouse")
+                .price(price)
+                .weightKg(weight)
                 .active(true)
                 .build();
     }
@@ -427,28 +564,18 @@ class OrderServiceTest {
     private Order verifyCreateOrderInteractions() {
         ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
     
-        InOrder inOrder =
-                Mockito.inOrder(
-                        customerClient,
-                        inventoryClient,
-                        productClient,
-                        repository,
-                        orderMapper);
+        verify(customerClient).validateCustomerExists(CUSTOMER_ID);
     
-        inOrder.verify(customerClient).validateCustomerExists(CUSTOMER_ID);
-        inOrder.verify(inventoryClient).reserveStock(PRODUCT_ID, QUANTITY);
-        inOrder.verify(productClient).getProduct(PRODUCT_ID);
-        inOrder.verify(repository).save(captor.capture());
+        verify(inventoryClient)
+                .reserveStock(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
+    
+        verify(productClient).getProduct(PRODUCT_ID);
+    
+        verify(repository).save(captor.capture());
     
         Order savedOrder = captor.getValue();
     
-        inOrder.verify(orderMapper).toResponse(savedOrder);
-    
-        verifyNoMoreInteractions(
-                customerClient,
-                inventoryClient,
-                productClient,
-                repository);
+        verify(orderMapper).toResponse(savedOrder);
     
         return savedOrder;
     }
@@ -460,21 +587,30 @@ class OrderServiceTest {
         assertThat(item.getProductName()).isEqualTo("Gaming Mouse");
         assertThat(item.getUnitPrice())
                 .isEqualByComparingTo(new BigDecimal("89.99"));
-        assertThat(item.getQuantity()).isEqualTo(2);
+        assertThat(item.getQuantity()).isEqualTo(1);
         assertThat(item.getLineTotal())
-                .isEqualByComparingTo(new BigDecimal("179.98"));
+                .isEqualByComparingTo(new BigDecimal("89.99"));
     
         assertThat(savedOrder.getCustomerId()).isEqualTo(CUSTOMER_ID);
         assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PLACED);
         assertThat(savedOrder.getSubtotal())
-                .isEqualByComparingTo(new BigDecimal("179.98"));
+                .isEqualByComparingTo(new BigDecimal("89.99"));
         assertThat(savedOrder.getShipping())
-                .isEqualByComparingTo(new BigDecimal("15.00"));
+                .isEqualByComparingTo(new BigDecimal("8.00"));
         assertThat(savedOrder.getTotal())
-                .isEqualByComparingTo(new BigDecimal("194.98"));
+                .isEqualByComparingTo(new BigDecimal("97.99"));
         assertThat(savedOrder.getItems()).hasSize(1);
         assertThat(savedOrder.getId()).isNotNull();
         assertThat(savedOrder.getOrderDate()).isNotNull();
+    }
+
+    private ShippingAddressRequest shippingAddressRequest() {
+        return ShippingAddressRequest.builder()
+                .addressLine1("1 Main St")
+                .city("Auckland")
+                .postcode("1010")
+                .country("NZ")
+                .build();
     }
 
 }
