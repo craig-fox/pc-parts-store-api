@@ -15,6 +15,7 @@ import nz.fox.craig.customer.dto.CustomerRequest;
 import nz.fox.craig.customer.dto.CustomerResponse;
 import nz.fox.craig.customer.exception.CustomerAlreadyExistsException;
 import nz.fox.craig.customer.exception.CustomerNotFoundException;
+import nz.fox.craig.customer.fixture.CustomerTestFactory;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
 import nz.fox.craig.customer.repository.CustomerRepository;
@@ -48,7 +49,7 @@ class CustomerServiceTest {
     @Nested
     class RegisterCustomer {
         @Test
-        void registersCustomer() {
+        void registersCustomerWithPreferredName() {
             CustomerRequest request =
                     new CustomerRequest(
                             "Jane",
@@ -131,24 +132,13 @@ class CustomerServiceTest {
     class GetCustomer {
         @Test
         void getsAllCustomers() {
-            Customer customer1 =
-                    Customer.builder()
-                            .id(CUSTOMER_ID)
-                            .firstName("Jane")
-                            .lastName("Doe")
-                            .email("jane@example.com")
-                            .address("123 Main St")
-                            .password(PASSWORD)
-                            .build();
-            Customer customer2 =
-                    Customer.builder()
-                            .id(CUSTOMER_ID_2)
-                            .firstName("John")
-                            .lastName("Doe")
-                            .email("john@example.com")
-                            .address("456 Oak Ave")
-                            .password(PASSWORD)
-                            .build();
+        Customer customer1 = CustomerTestFactory.aCustomer();
+        customer1.setId(CUSTOMER_ID);
+        customer1.setFirstName("Jane");
+        
+        Customer customer2 = CustomerTestFactory.aCustomer();
+        customer2.setId(CUSTOMER_ID_2);
+        customer2.setFirstName("John");
 
             when(customerRepository.findAll()).thenReturn(List.of(customer1, customer2));
 
@@ -161,23 +151,16 @@ class CustomerServiceTest {
 
         @Test
         void getACustomer() {
-            Customer customer =
-                    Customer.builder()
-                            .id(CUSTOMER_ID)
-                            .firstName("Jane")
-                            .lastName("Doe")
-                            .email("jane@example.com")
-                            .address("123 Main St")
-                            .password(PASSWORD)
-                            .build();
+            Customer customer = CustomerTestFactory.aCustomer();
+            customer.setId(CUSTOMER_ID);
 
             when(customerRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(customer));
 
             CustomerResponse response = customerService.getCustomer(CUSTOMER_ID);
 
             assertThat(response.id()).isEqualTo(CUSTOMER_ID);
-            assertThat(response.firstName()).isEqualTo("Jane");
-            assertThat(response.lastName()).isEqualTo("Doe");
+            assertThat(response.firstName()).isEqualTo("Test");
+            assertThat(response.lastName()).isEqualTo("Customer");
 
             verify(securityService).verifyCurrentUser(CUSTOMER_ID);
         }
@@ -196,16 +179,8 @@ class CustomerServiceTest {
 
         @Test
         void getCustomersByStatus() {
-            Customer activeCustomer =
-                    Customer.builder()
-                            .id(CUSTOMER_ID)
-                            .firstName("Jane")
-                            .lastName("Doe")
-                            .email("jane@example.com")
-                            .address("123 Main St")
-                            .password(PASSWORD)
-                            .status(CustomerStatus.ACTIVE)
-                            .build();
+            Customer activeCustomer = CustomerTestFactory.aCustomer();
+            activeCustomer.setId(CUSTOMER_ID);
 
             when(customerRepository.findByStatus(CustomerStatus.ACTIVE))
                     .thenReturn(List.of(activeCustomer));
@@ -225,17 +200,11 @@ class CustomerServiceTest {
 
         @Test
         void getCustomerByEmail() {
-            Customer customer =
-                    Customer.builder()
-                            .id(CUSTOMER_ID)
-                            .firstName("Jane")
-                            .lastName("Doe")
-                            .preferredName("Jo")
-                            .email("jane@example.com")
-                            .address("123 Main St")
-                            .password(PASSWORD)
-                            .status(CustomerStatus.ACTIVE)
-                            .build();
+            Customer customer = CustomerTestFactory.aCustomer();
+            customer.setId(CUSTOMER_ID);
+            customer.setPreferredName("Jo");
+            customer.setEmail("jane@example.com");
+            customer.setPassword(PASSWORD);
 
             when(customerRepository.findByEmail("jane@example.com"))
                     .thenReturn(Optional.of(customer));
@@ -247,7 +216,7 @@ class CustomerServiceTest {
             assertThat(response.email()).isEqualTo("jane@example.com");
             assertThat(response.password()).isEqualTo(PASSWORD);
             assertThat(response.active()).isTrue();
-            assertThat(response.firstName()).isEqualTo("Jane");
+            assertThat(response.firstName()).isEqualTo("Test");
             assertThat(response.preferredName()).isEqualTo("Jo");
         }
 
@@ -284,15 +253,8 @@ class CustomerServiceTest {
                             "jane.smith@example.com",
                             "456 Oak Ave",
                             ENTERED_PASSWORD);
-            Customer existing =
-                    Customer.builder()
-                            .id(CUSTOMER_ID)
-                            .firstName("Jane")
-                            .lastName("Doe")
-                            .email("jane@example.com")
-                            .address("123 Main St")
-                            .password(PASSWORD)
-                            .build();
+            Customer existing = CustomerTestFactory.aCustomer();
+            existing.setId(CUSTOMER_ID);
             Customer updated =
                     Customer.builder()
                             .id(CUSTOMER_ID)
@@ -338,16 +300,9 @@ class CustomerServiceTest {
 
         @Test
         void activateCustomer() {
-            Customer customer =
-                    Customer.builder()
-                            .id(CUSTOMER_ID)
-                            .firstName("Jane")
-                            .lastName("Doe")
-                            .email("jane@example.com")
-                            .address("123 Main St")
-                            .password(PASSWORD)
-                            .status(CustomerStatus.INACTIVE)
-                            .build();
+            Customer customer = CustomerTestFactory.aCustomer();
+            customer.setId(CUSTOMER_ID);
+            customer.setStatus(CustomerStatus.INACTIVE);
 
             when(customerRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(customer));
 
@@ -359,17 +314,10 @@ class CustomerServiceTest {
 
         @Test
         void activateAlreadyActiveCustomer() {
-            Customer customer =
-                    Customer.builder()
-                            .id(CUSTOMER_ID)
-                            .firstName("Jane")
-                            .lastName("Doe")
-                            .email("jane@example.com")
-                            .address("123 Main St")
-                            .password(PASSWORD)
-                            .status(CustomerStatus.ACTIVE)
-                            .build();
-
+            Customer customer = CustomerTestFactory.aCustomer();
+            customer.setId(CUSTOMER_ID);
+            customer.setEmail("jane@example.com");
+            
             when(customerRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(customer));
 
             assertThatThrownBy(() -> customerService.activateCustomer(CUSTOMER_ID))
@@ -385,16 +333,8 @@ class CustomerServiceTest {
 
         @Test
         void deactivatesCustomer() {
-            Customer customer =
-                    Customer.builder()
-                            .id(CUSTOMER_ID)
-                            .firstName("Jane")
-                            .lastName("Doe")
-                            .email("jane@example.com")
-                            .address("123 Main St")
-                            .password(PASSWORD)
-                            .status(CustomerStatus.ACTIVE)
-                            .build();
+            Customer customer = CustomerTestFactory.aCustomer();
+            customer.setId(CUSTOMER_ID);
 
             when(customerRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(customer));
 
