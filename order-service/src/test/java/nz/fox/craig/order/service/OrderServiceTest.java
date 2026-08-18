@@ -39,6 +39,7 @@ import nz.fox.craig.order.exception.InsufficientStockException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
 import nz.fox.craig.order.exception.ProductNotFoundException;
+import nz.fox.craig.order.fixture.OrderFixtures;
 import nz.fox.craig.order.mapper.OrderMapper;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
@@ -64,7 +65,6 @@ class OrderServiceTest {
     private static final UUID ORDER_ID = UUID.randomUUID();
     private static final UUID PRODUCT_ID = UUID.randomUUID();
     private static final int DEFAULT_ORDER_QUANTITY = 1;
-    private static final int EXISTING_ORDER_QUANTITY = 2;
 
     @Mock private OrderRepository repository;
 
@@ -254,7 +254,7 @@ class OrderServiceTest {
         @Test
         void shouldReturnOrder() {
             // Arrange
-            Order order = existingOrder();
+            Order order = OrderFixtures.anOrder();
 
             OrderResponse expectedResponse =
                     OrderResponse.builder()
@@ -304,8 +304,8 @@ class OrderServiceTest {
         @Test
         void shouldReturnOrdersForAuthenticatedCustomer() {
             // Arrange
-            Order order1 = existingOrder();
-            Order order2 = existingOrder();
+            Order order1 = OrderFixtures.anOrder();
+            Order order2 = OrderFixtures.anOrder();
             order2.setId(UUID.randomUUID());
 
             OrderResponse response1 =
@@ -363,7 +363,7 @@ class OrderServiceTest {
         @Test
         void shouldCancelOrder() {
             // Arrange
-            Order existingOrder = existingOrder();
+            Order existingOrder = OrderFixtures.anOrder();
 
             OrderResponse expectedResponse =
                     OrderResponse.builder()
@@ -435,30 +435,8 @@ class OrderServiceTest {
                 .build();
     }
 
-    private Order existingOrder() {
-        Order order =
-                Order.builder()
-                        .id(ORDER_ID)
-                        .customerId(CUSTOMER_ID)
-                        .orderDate(LocalDateTime.now())
-                        .status(OrderStatus.PLACED)
-                        .subtotal(new BigDecimal("179.98"))
-                        .shipping(BigDecimal.ZERO)
-                        .total(new BigDecimal("179.98"))
-                        .build();
-
-        order.addItem(
-                OrderItem.builder()
-                        .productId(PRODUCT_ID)
-                        .productName("Gaming Mouse")
-                        .quantity(DEFAULT_ORDER_QUANTITY)
-                        .unitPrice(new BigDecimal("89.99"))
-                        .build());
-        return order;
-    }
-
     private Order cancelledOrder() {
-        Order order = existingOrder();
+        Order order = OrderFixtures.anOrder();
         order.setStatus(OrderStatus.CANCELLED);
         return order;
     }

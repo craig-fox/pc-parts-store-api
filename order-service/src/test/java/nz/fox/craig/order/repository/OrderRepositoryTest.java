@@ -5,13 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
+import nz.fox.craig.order.fixture.OrderFixtures;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
-import nz.fox.craig.order.model.ShippingAddress;
 import nz.fox.craig.test.AbstractPostgresTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +29,7 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldSaveOrder() {
-        final Order order = createOrder(UUID.randomUUID());
+        final Order order = OrderFixtures.anOrder();
         orderRepository.saveAndFlush(order);
         final Order found = orderRepository.findById(order.getId()).orElseThrow();
 
@@ -47,7 +47,7 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldSaveOrderWithItems() {
-        final Order order = createOrder(UUID.randomUUID());
+        final Order order = OrderFixtures.anOrder();
 
         addItemsToOrder(order);
         orderRepository.saveAndFlush(order);
@@ -60,9 +60,7 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
         final OrderItem item = found.getItems().getFirst();
 
         assertThat(item.getProductName()).isEqualTo("RTX 5070");
-
         assertThat(item.getUnitPrice()).isEqualByComparingTo("899.00");
-
         assertThat(item.getQuantity()).isEqualTo(1);
     }
 
@@ -70,8 +68,10 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
     void shouldFindOrdersByCustomerId() {
         final UUID customerId = UUID.randomUUID();
 
-        final Order order1 = createOrder(customerId);
-        final Order order2 = createOrder(customerId);
+        final Order order1 = OrderFixtures.anOrder();
+        final Order order2 = OrderFixtures.anOrder();
+        order1.setCustomerId(customerId);
+        order2.setCustomerId(customerId);
 
         orderRepository.save(order1);
         orderRepository.save(order2);
@@ -86,7 +86,7 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldRemoveItemFromOrder() {
-        final Order order = createOrder(UUID.randomUUID());
+        final Order order = OrderFixtures.anOrder();
         addItemsToOrder(order);
         orderRepository.save(order);
         final Order found = orderRepository.findById(order.getId()).orElseThrow();
@@ -113,8 +113,10 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
         final UUID customerId = UUID.randomUUID();
         final UUID otherCustomerId = UUID.randomUUID();
 
-        final Order customerOrder = createOrder(customerId);
-        final Order otherCustomerOrder = createOrder(otherCustomerId);
+        final Order customerOrder = OrderFixtures.anOrder();
+        customerOrder.setCustomerId(customerId);
+        final Order otherCustomerOrder = OrderFixtures.anOrder();
+        otherCustomerOrder.setCustomerId(otherCustomerId);
 
         orderRepository.save(customerOrder);
         orderRepository.save(otherCustomerOrder);
@@ -126,18 +128,6 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
                 .first()
                 .extracting(Order::getCustomerId)
                 .isEqualTo(customerId);
-    }
-
-    private Order createOrder(UUID customerId) {
-        return Order.builder()
-                .customerId(customerId)
-                .orderDate(LocalDateTime.now())
-                .status(OrderStatus.PLACED)
-                .subtotal(new BigDecimal("1000.00"))
-                .shipping(new BigDecimal("25.00"))
-                .total(new BigDecimal("1025.00"))
-                .shippingAddress(new ShippingAddress("1 Main St", "Auckland", "1010", "NZ"))
-                .build();
     }
 
     private OrderItem createOrderItem(

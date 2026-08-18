@@ -15,7 +15,7 @@ import nz.fox.craig.customer.dto.CustomerRequest;
 import nz.fox.craig.customer.dto.CustomerResponse;
 import nz.fox.craig.customer.exception.CustomerAlreadyExistsException;
 import nz.fox.craig.customer.exception.CustomerNotFoundException;
-import nz.fox.craig.customer.fixture.CustomerTestFactory;
+import nz.fox.craig.customer.fixture.CustomerFixtures;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
 import nz.fox.craig.customer.repository.CustomerRepository;
@@ -132,11 +132,11 @@ class CustomerServiceTest {
     class GetCustomer {
         @Test
         void getsAllCustomers() {
-        Customer customer1 = CustomerTestFactory.aCustomer();
+        Customer customer1 = CustomerFixtures.aCustomer();
         customer1.setId(CUSTOMER_ID);
         customer1.setFirstName("Jane");
         
-        Customer customer2 = CustomerTestFactory.aCustomer();
+        Customer customer2 = CustomerFixtures.aCustomer();
         customer2.setId(CUSTOMER_ID_2);
         customer2.setFirstName("John");
 
@@ -151,7 +151,7 @@ class CustomerServiceTest {
 
         @Test
         void getACustomer() {
-            Customer customer = CustomerTestFactory.aCustomer();
+            Customer customer = CustomerFixtures.aCustomer();
             customer.setId(CUSTOMER_ID);
 
             when(customerRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(customer));
@@ -179,7 +179,7 @@ class CustomerServiceTest {
 
         @Test
         void getCustomersByStatus() {
-            Customer activeCustomer = CustomerTestFactory.aCustomer();
+            Customer activeCustomer = CustomerFixtures.aCustomer();
             activeCustomer.setId(CUSTOMER_ID);
 
             when(customerRepository.findByStatus(CustomerStatus.ACTIVE))
@@ -200,7 +200,7 @@ class CustomerServiceTest {
 
         @Test
         void getCustomerByEmail() {
-            Customer customer = CustomerTestFactory.aCustomer();
+            Customer customer = CustomerFixtures.aCustomer();
             customer.setId(CUSTOMER_ID);
             customer.setPreferredName("Jo");
             customer.setEmail("jane@example.com");
@@ -253,7 +253,7 @@ class CustomerServiceTest {
                             "jane.smith@example.com",
                             "456 Oak Ave",
                             ENTERED_PASSWORD);
-            Customer existing = CustomerTestFactory.aCustomer();
+            Customer existing = CustomerFixtures.aCustomer();
             existing.setId(CUSTOMER_ID);
             Customer updated =
                     Customer.builder()
@@ -300,7 +300,7 @@ class CustomerServiceTest {
 
         @Test
         void activateCustomer() {
-            Customer customer = CustomerTestFactory.aCustomer();
+            Customer customer = CustomerFixtures.aCustomer();
             customer.setId(CUSTOMER_ID);
             customer.setStatus(CustomerStatus.INACTIVE);
 
@@ -314,7 +314,7 @@ class CustomerServiceTest {
 
         @Test
         void activateAlreadyActiveCustomer() {
-            Customer customer = CustomerTestFactory.aCustomer();
+            Customer customer = CustomerFixtures.aCustomer();
             customer.setId(CUSTOMER_ID);
             customer.setEmail("jane@example.com");
             
@@ -333,7 +333,7 @@ class CustomerServiceTest {
 
         @Test
         void deactivatesCustomer() {
-            Customer customer = CustomerTestFactory.aCustomer();
+            Customer customer = CustomerFixtures.aCustomer();
             customer.setId(CUSTOMER_ID);
 
             when(customerRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(customer));

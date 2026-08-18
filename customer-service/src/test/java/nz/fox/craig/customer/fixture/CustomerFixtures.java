@@ -5,9 +5,9 @@ import nz.fox.craig.customer.model.CustomerStatus;
 
 import java.util.UUID;
 
-public final class CustomerTestFactory {
+public final class CustomerFixtures {
 
-    private CustomerTestFactory() {
+    private CustomerFixtures() {
     }
 
     public static Customer aCustomer() {
