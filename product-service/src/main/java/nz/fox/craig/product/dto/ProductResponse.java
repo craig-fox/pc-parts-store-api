@@ -15,4 +15,4 @@ public record ProductResponse(
         BigDecimal price,
         Integer stockQuantity,
         BigDecimal weightKg,
-        String imageUrl) { }
+        String imageUrl) {}

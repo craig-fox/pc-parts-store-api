@@ -53,7 +53,6 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
 
-
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .sessionManagement(

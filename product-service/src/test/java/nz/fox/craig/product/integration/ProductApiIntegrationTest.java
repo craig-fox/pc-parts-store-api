@@ -14,7 +14,6 @@ import nz.fox.craig.product.utility.ProductIds;
 import nz.fox.craig.security.TokenService;
 import nz.fox.craig.test.AbstractPostgresTest;
 import nz.fox.craig.test.JwtTestFactory;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,7 +41,6 @@ class ProductApiIntegrationTest extends AbstractPostgresTest {
         String token =
                 JwtTestFactory.createToken(
                         customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
-
 
         mockMvc.perform(get("/api/products").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())

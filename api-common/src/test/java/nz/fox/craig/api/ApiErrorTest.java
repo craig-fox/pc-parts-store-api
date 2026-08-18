@@ -11,12 +11,7 @@ class ApiErrorTest {
     void shouldAllowNullValidationErrors() {
         ApiError error =
                 new ApiError(
-                        Instant.now(),
-                        400,
-                        "Bad Request",
-                        "Validation failed",
-                        null,
-                        "/api/test");
+                        Instant.now(), 400, "Bad Request", "Validation failed", null, "/api/test");
 
         assertThat(error.validationErrors()).isNull();
     }

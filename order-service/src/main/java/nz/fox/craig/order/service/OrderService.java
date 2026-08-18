@@ -1,5 +1,12 @@
 package nz.fox.craig.order.service;
 
+import static nz.fox.craig.order.shipping.ShippingPolicy.FREE_SHIPPING_THRESHOLD;
+import static nz.fox.craig.order.shipping.ShippingPolicy.HEAVY_SHIPPING;
+import static nz.fox.craig.order.shipping.ShippingPolicy.LIGHT_SHIPPING;
+import static nz.fox.craig.order.shipping.ShippingPolicy.LIGHT_WEIGHT_LIMIT;
+import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_SHIPPING;
+import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_WEIGHT_LIMIT;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,13 +32,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import static nz.fox.craig.order.shipping.ShippingPolicy.FREE_SHIPPING_THRESHOLD;
-import static nz.fox.craig.order.shipping.ShippingPolicy.LIGHT_SHIPPING;
-import static nz.fox.craig.order.shipping.ShippingPolicy.HEAVY_SHIPPING;
-import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_SHIPPING;
-import static nz.fox.craig.order.shipping.ShippingPolicy.LIGHT_WEIGHT_LIMIT;
-import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_WEIGHT_LIMIT;
 
 @Service
 @RequiredArgsConstructor
@@ -62,7 +62,6 @@ public class OrderService {
         final BigDecimal subtotal = calculateSubtotal(items);
         final BigDecimal totalWeight = calculateTotalWeight(items);
         final BigDecimal shipping = calculateShipping(subtotal, totalWeight);
-
 
         final Order order =
                 Order.builder()
@@ -127,15 +126,15 @@ public class OrderService {
         if (subtotal.compareTo(FREE_SHIPPING_THRESHOLD) >= 0) {
             return BigDecimal.ZERO;
         }
-    
+
         if (totalWeight.compareTo(LIGHT_WEIGHT_LIMIT) <= 0) {
             return LIGHT_SHIPPING;
         }
-    
+
         if (totalWeight.compareTo(STANDARD_WEIGHT_LIMIT) <= 0) {
             return STANDARD_SHIPPING;
         }
-    
+
         return HEAVY_SHIPPING;
     }
 

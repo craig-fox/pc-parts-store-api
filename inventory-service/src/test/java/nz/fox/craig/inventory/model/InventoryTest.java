@@ -132,23 +132,20 @@ class InventoryTest {
     void shouldReturnOutOfStockWhenQuantityOnHandIsZero() {
         Inventory inventory = new Inventory(UUID.randomUUID(), 0, 0);
 
-        assertThat(inventory.getStatus())
-                .isEqualTo(InventoryStatus.OUT_OF_STOCK);
+        assertThat(inventory.getStatus()).isEqualTo(InventoryStatus.OUT_OF_STOCK);
     }
 
     @Test
     void shouldReturnLowStockWhenAvailableQuantityIsFiveOrLess() {
         Inventory inventory = new Inventory(UUID.randomUUID(), 10, 5);
 
-        assertThat(inventory.getStatus())
-                .isEqualTo(InventoryStatus.LOW_STOCK);
+        assertThat(inventory.getStatus()).isEqualTo(InventoryStatus.LOW_STOCK);
     }
 
     @Test
     void shouldReturnInStockWhenAvailableQuantityIsGreaterThanFive() {
         Inventory inventory = new Inventory(UUID.randomUUID(), 10, 2);
 
-        assertThat(inventory.getStatus())
-                .isEqualTo(InventoryStatus.IN_STOCK);
+        assertThat(inventory.getStatus()).isEqualTo(InventoryStatus.IN_STOCK);
     }
 }

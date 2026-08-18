@@ -38,7 +38,7 @@ public class Inventory {
     @Column(nullable = false)
     private LocalDateTime lastUpdated;
 
-    protected Inventory() { }
+    protected Inventory() {}
 
     public Inventory(UUID productId, int quantityOnHand, int quantityReserved) {
         this.productId = productId;

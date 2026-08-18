@@ -10,8 +10,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 class TokenServiceTest {
 
-    private static final String SECRET =
-            "VGhpc0lzQVN1ZmZpY2llbnRMb25nU2VjcmV0S2V5Rm9ySldU";
+    private static final String SECRET = "VGhpc0lzQVN1ZmZpY2llbnRMb25nU2VjcmV0S2V5Rm9ySldU";
 
     private static final long EXPIRATION = 3600000L;
 
@@ -27,7 +26,9 @@ class TokenServiceTest {
 
     @Test
     void shouldGenerateValidToken() {
-        String token = tokenService.generateToken(SampleAuthenticatedUsers.authenticatedCustomerUser());;
+        String token =
+                tokenService.generateToken(SampleAuthenticatedUsers.authenticatedCustomerUser());
+        ;
 
         assertThat(token).isNotBlank();
         assertThat(tokenService.isTokenValid(token)).isTrue();
@@ -36,53 +37,47 @@ class TokenServiceTest {
     @Test
     void shouldExtractCustomerId() {
         UUID customerId = UUID.randomUUID();
-        String token = tokenService.generateToken(SampleAuthenticatedUsers.authenticatedCustomerUser(customerId));
+        String token =
+                tokenService.generateToken(
+                        SampleAuthenticatedUsers.authenticatedCustomerUser(customerId));
 
-        assertThat(tokenService.extractCustomerId(token))
-                .isEqualTo(customerId);
+        assertThat(tokenService.extractCustomerId(token)).isEqualTo(customerId);
     }
 
     @Test
     void shouldExtractEmail() {
-        String token = tokenService.generateToken(SampleAuthenticatedUsers.authenticatedCustomerUser());
+        String token =
+                tokenService.generateToken(SampleAuthenticatedUsers.authenticatedCustomerUser());
 
-        assertThat(tokenService.extractEmail(token))
-                .isEqualTo("test@example.com");
+        assertThat(tokenService.extractEmail(token)).isEqualTo("test@example.com");
     }
 
     @Test
     void shouldRejectInvalidToken() {
-        assertThat(tokenService.isTokenValid("not-a-valid-token"))
-                .isFalse();
+        assertThat(tokenService.isTokenValid("not-a-valid-token")).isFalse();
     }
 
     @Test
     void shouldRejectTokenSignedWithDifferentSecret() {
-     
 
-        String token = tokenService.generateToken(SampleAuthenticatedUsers.authenticatedCustomerUser());
+        String token =
+                tokenService.generateToken(SampleAuthenticatedUsers.authenticatedCustomerUser());
 
         ReflectionTestUtils.setField(
-                tokenService,
-                "secret",
-                "QW5vdGhlclZlcnlMb25nU2VjcmV0S2V5Rm9ySldU");
+                tokenService, "secret", "QW5vdGhlclZlcnlMb25nU2VjcmV0S2V5Rm9ySldU");
 
-        assertThat(tokenService.isTokenValid(token))
-                .isFalse();
+        assertThat(tokenService.isTokenValid(token)).isFalse();
     }
 
     @Test
     void shouldThrowWhenExtractingCustomerIdFromInvalidToken() {
-        assertThatThrownBy(() ->
-                tokenService.extractCustomerId("not-a-valid-token"))
+        assertThatThrownBy(() -> tokenService.extractCustomerId("not-a-valid-token"))
                 .isInstanceOf(RuntimeException.class);
     }
 
     @Test
     void shouldThrowWhenExtractingEmailFromInvalidToken() {
-        assertThatThrownBy(() ->
-                tokenService.extractEmail("not-a-valid-token"))
+        assertThatThrownBy(() -> tokenService.extractEmail("not-a-valid-token"))
                 .isInstanceOf(RuntimeException.class);
     }
-
 }

@@ -33,9 +33,7 @@ class HttpCustomerClientIntegrationTest {
     @BeforeEach
     void setUp() {
         RestClient restClient =
-                RestClient.builder()
-                        .baseUrl(mockWebServer.url("/").toString())
-                        .build();
+                RestClient.builder().baseUrl(mockWebServer.url("/").toString()).build();
 
         customerClient = new HttpCustomerClient(restClient);
     }
@@ -64,8 +62,7 @@ class HttpCustomerClientIntegrationTest {
                         .setBody(responseBody)
                         .addHeader("Content-Type", "application/json"));
 
-        AuthenticatedCustomer customer =
-                customerClient.findByEmail("jane@example.com");
+        AuthenticatedCustomer customer = customerClient.findByEmail("jane@example.com");
 
         assertThat(customer.id()).isEqualTo(customerId);
         assertThat(customer.email()).isEqualTo("jane@example.com");
@@ -77,7 +74,6 @@ class HttpCustomerClientIntegrationTest {
         RecordedRequest request = mockWebServer.takeRequest();
 
         assertThat(request.getMethod()).isEqualTo("GET");
-        assertThat(request.getPath())
-            .isEqualTo("/api/customers/email/jane%40example.com");
+        assertThat(request.getPath()).isEqualTo("/api/customers/email/jane%40example.com");
     }
 }

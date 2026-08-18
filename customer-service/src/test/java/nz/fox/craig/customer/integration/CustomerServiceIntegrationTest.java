@@ -14,7 +14,6 @@ import nz.fox.craig.dto.AuthenticatedUser;
 import nz.fox.craig.dto.Role;
 import nz.fox.craig.security.TokenService;
 import nz.fox.craig.test.AbstractPostgresTest;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;

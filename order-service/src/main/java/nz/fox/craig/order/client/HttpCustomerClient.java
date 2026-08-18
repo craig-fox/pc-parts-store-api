@@ -12,8 +12,7 @@ public class HttpCustomerClient implements CustomerClient {
 
     private final RestClient restClient;
 
-    public HttpCustomerClient(
-            @Qualifier("customerRestClient") RestClient restClient) {
+    public HttpCustomerClient(@Qualifier("customerRestClient") RestClient restClient) {
         this.restClient = restClient;
     }
 

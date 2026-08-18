@@ -1,20 +1,17 @@
 package nz.fox.craig.inventory.controller;
 
-
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import org.springframework.security.test.context.support.WithMockUser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.UUID;
-
 import nz.fox.craig.inventory.config.SecurityConfig;
 import nz.fox.craig.inventory.dto.InventoryReservationRequest;
 import nz.fox.craig.inventory.dto.InventoryResponse;
@@ -23,34 +20,27 @@ import nz.fox.craig.inventory.exception.InventoryNotFoundException;
 import nz.fox.craig.inventory.model.InventoryStatus;
 import nz.fox.craig.inventory.service.InventoryService;
 import nz.fox.craig.security.TokenService;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(InventoryController.class)
-@Import({
-        InventoryExceptionHandler.class,
-        SecurityConfig.class
-})
+@Import({InventoryExceptionHandler.class, SecurityConfig.class})
 class InventoryControllerTest {
 
-    @Autowired 
-    private MockMvc mockMvc;
+    @Autowired private MockMvc mockMvc;
 
-    @Autowired 
-    private ObjectMapper objectMapper;
+    @Autowired private ObjectMapper objectMapper;
 
-    @MockitoBean 
-    private InventoryService inventoryService;
+    @MockitoBean private InventoryService inventoryService;
 
-    @MockitoBean
-    private TokenService tokenService;
+    @MockitoBean private TokenService tokenService;
 
     private UUID productId;
     private InventoryResponse response;
