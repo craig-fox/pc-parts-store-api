@@ -1,11 +1,11 @@
 package nz.fox.craig.order.integration;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,7 +24,6 @@ import nz.fox.craig.test.JwtTestFactory;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -46,8 +45,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
     @Autowired private ObjectMapper objectMapper;
 
-    @Autowired
-    private OrderRepository orderRepository;
+    @Autowired private OrderRepository orderRepository;
 
     static MockWebServer mockWebServer;
 
@@ -117,15 +115,11 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                         customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
 
         OrderRequest request =
-                new OrderRequest(
-                        List.of(new OrderItemRequest(productId, 2)),
-                        shippingAddress());
+                new OrderRequest(List.of(new OrderItemRequest(productId, 2)), shippingAddress());
 
         // Customer does not exist
         mockWebServer.enqueue(
-                new MockResponse()
-                        .setResponseCode(404)
-                        .addHeader("Content-Length", "0"));
+                new MockResponse().setResponseCode(404).addHeader("Content-Length", "0"));
 
         mockMvc.perform(
                         post("/api/orders")
@@ -151,27 +145,19 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                         customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
 
         OrderRequest request =
-                new OrderRequest(
-                        List.of(new OrderItemRequest(productId, 2)),
-                        shippingAddress());
+                new OrderRequest(List.of(new OrderItemRequest(productId, 2)), shippingAddress());
 
         // Customer exists
         mockWebServer.enqueue(
-                new MockResponse()
-                        .setResponseCode(200)
-                        .addHeader("Content-Length", "0"));
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
 
         // Inventory reservation succeeds
         mockWebServer.enqueue(
-                new MockResponse()
-                        .setResponseCode(200)
-                        .addHeader("Content-Length", "0"));
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
 
         // Product does not exist
         mockWebServer.enqueue(
-                new MockResponse()
-                        .setResponseCode(404)
-                        .addHeader("Content-Length", "0"));
+                new MockResponse().setResponseCode(404).addHeader("Content-Length", "0"));
 
         mockMvc.perform(
                         post("/api/orders")
@@ -202,47 +188,41 @@ class OrderIntegrationTest extends AbstractPostgresTest {
     @Test
     @Timeout(10)
     void shouldRejectOrderWhenInventoryIsInsufficient() throws Exception {
-    
+
         UUID customerId = UUID.randomUUID();
         long initialOrderCount = orderRepository.count();
-    
+
         String token =
                 JwtTestFactory.createToken(
                         customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
-    
+
         OrderRequest request =
-                new OrderRequest(
-                        List.of(new OrderItemRequest(productId, 10)),
-                        shippingAddress());
-    
+                new OrderRequest(List.of(new OrderItemRequest(productId, 10)), shippingAddress());
+
         // Customer exists
         mockWebServer.enqueue(
-                new MockResponse()
-                        .setResponseCode(200)
-                        .addHeader("Content-Length", "0"));
-    
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
+
         // Inventory is insufficient
         mockWebServer.enqueue(
-                new MockResponse()
-                        .setResponseCode(409)
-                        .addHeader("Content-Length", "0"));
-    
+                new MockResponse().setResponseCode(409).addHeader("Content-Length", "0"));
+
         mockMvc.perform(
                         post("/api/orders")
                                 .header("Authorization", "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
-    
+
         // Customer validation
         RecordedRequest customerRequest = mockWebServer.takeRequest();
-    
+
         assertEquals("HEAD", customerRequest.getMethod());
         assertTrue(customerRequest.getPath().startsWith("/api/customers/"));
-    
+
         // Inventory reservation
         RecordedRequest inventoryRequest = mockWebServer.takeRequest();
-    
+
         assertEquals("POST", inventoryRequest.getMethod());
         assertTrue(inventoryRequest.getPath().startsWith("/api/inventory/"));
         assertTrue(inventoryRequest.getPath().endsWith("/reserve"));
@@ -259,19 +239,15 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 JwtTestFactory.createToken(
                         customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
 
-        OrderRequest request =
-                new OrderRequest(
-                        List.of(),
-                        shippingAddress());
+        OrderRequest request = new OrderRequest(List.of(), shippingAddress());
 
         mockMvc.perform(
                         post("/api/orders")
                                 .header("Authorization", "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(jsonPath("$.message").value("items: Items must not be empty"))
+                .andExpect(jsonPath("$.message").value("items: Items must not be empty"))
                 .andExpect(status().isBadRequest());
-
     }
 
     @Test
@@ -285,9 +261,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                         customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
 
         OrderRequest request =
-                new OrderRequest(
-                        List.of(new OrderItemRequest(productId, 0)),
-                        shippingAddress());
+                new OrderRequest(List.of(new OrderItemRequest(productId, 0)), shippingAddress());
 
         mockMvc.perform(
                         post("/api/orders")
@@ -307,12 +281,9 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 JwtTestFactory.createToken(
                         customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
 
-        OrderRequest request =
-                new OrderRequest(
-                        List.of(new OrderItemRequest(productId, 2)),
-                        null);
+        OrderRequest request = new OrderRequest(List.of(new OrderItemRequest(productId, 2)), null);
 
-        int requestCountBefore = mockWebServer.getRequestCount();                 
+        int requestCountBefore = mockWebServer.getRequestCount();
 
         mockMvc.perform(
                         post("/api/orders")
@@ -321,7 +292,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
 
-        assertEquals(requestCountBefore, mockWebServer.getRequestCount());   
+        assertEquals(requestCountBefore, mockWebServer.getRequestCount());
     }
 
     @Test
@@ -343,11 +314,9 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                         .build();
 
         OrderRequest request =
-                new OrderRequest(
-                        List.of(new OrderItemRequest(productId, 2)),
-                        invalidAddress);
+                new OrderRequest(List.of(new OrderItemRequest(productId, 2)), invalidAddress);
 
-        int requestCountBefore = mockWebServer.getRequestCount();                
+        int requestCountBefore = mockWebServer.getRequestCount();
 
         mockMvc.perform(
                         post("/api/orders")
@@ -356,7 +325,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
 
-        assertEquals(requestCountBefore, mockWebServer.getRequestCount());        
+        assertEquals(requestCountBefore, mockWebServer.getRequestCount());
     }
 
     @Test
@@ -374,7 +343,6 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
         assertEquals(requestCountBefore, mockWebServer.getRequestCount());
     }
-
 
     private ProductSnapshot productSnapshot() {
         return ProductSnapshot.builder()
@@ -397,30 +365,22 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
     private String createToken(UUID customerId) {
         return JwtTestFactory.createToken(
-                customerId,
-                "test@example.com",
-                jwtSecret,
-                Duration.ofHours(1));
+                customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
     }
-    
+
     private OrderRequest createOrderRequest() {
-        List<OrderItemRequest> itemRequests =
-                List.of(new OrderItemRequest(productId, 2));
-    
+        List<OrderItemRequest> itemRequests = List.of(new OrderItemRequest(productId, 2));
+
         return new OrderRequest(itemRequests, shippingAddress());
     }
 
     private void enqueueSuccessfulOrderDependencies() throws JsonProcessingException {
         mockWebServer.enqueue(
-                new MockResponse()
-                        .setResponseCode(200)
-                        .addHeader("Content-Length", "0"));
-    
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
+
         mockWebServer.enqueue(
-                new MockResponse()
-                        .setResponseCode(200)
-                        .addHeader("Content-Length", "0"));
-    
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
+
         mockWebServer.enqueue(
                 new MockResponse()
                         .setResponseCode(200)
@@ -432,14 +392,14 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         RecordedRequest customerRequest = mockWebServer.takeRequest();
         RecordedRequest inventoryRequest = mockWebServer.takeRequest();
         RecordedRequest productRequest = mockWebServer.takeRequest();
-    
+
         assertEquals("HEAD", customerRequest.getMethod());
         assertTrue(customerRequest.getPath().startsWith("/api/customers/"));
-    
+
         assertEquals("POST", inventoryRequest.getMethod());
         assertTrue(inventoryRequest.getPath().startsWith("/api/inventory/"));
         assertTrue(inventoryRequest.getPath().endsWith("/reserve"));
-    
+
         assertEquals("GET", productRequest.getMethod());
         assertTrue(productRequest.getPath().startsWith("/api/products/"));
     }

@@ -41,8 +41,7 @@ class InventoryMapperTest {
         Inventory secondInventory = new Inventory(secondProductId, 20, 5);
 
         List<InventoryResponse> responses =
-                inventoryMapper.toResponseList(
-                        List.of(firstInventory, secondInventory));
+                inventoryMapper.toResponseList(List.of(firstInventory, secondInventory));
 
         assertThat(responses).hasSize(2);
 

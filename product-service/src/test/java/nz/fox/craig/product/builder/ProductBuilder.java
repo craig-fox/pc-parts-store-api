@@ -18,7 +18,7 @@ public class ProductBuilder {
     private String imageUrl = "https://example.com/images/CPU-001.jpg";
     private boolean active = true;
 
-    private ProductBuilder() { }
+    private ProductBuilder() {}
 
     public static ProductBuilder aProduct() {
         return new ProductBuilder();

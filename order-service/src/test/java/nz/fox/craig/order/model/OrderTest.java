@@ -1,6 +1,5 @@
 package nz.fox.craig.order.model;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.UUID;
@@ -10,15 +9,14 @@ class OrderTest {
 
     @Test
     void shouldRemoveItemFromOrder() {
-        Order order = Order.builder()
-                .customerId(UUID.randomUUID())
-                .build();
+        Order order = Order.builder().customerId(UUID.randomUUID()).build();
 
-        OrderItem item = OrderItem.builder()
-                .productId(UUID.randomUUID())
-                .productName("Gaming Mouse")
-                .quantity(1)
-                .build();
+        OrderItem item =
+                OrderItem.builder()
+                        .productId(UUID.randomUUID())
+                        .productName("Gaming Mouse")
+                        .quantity(1)
+                        .build();
 
         order.addItem(item);
 

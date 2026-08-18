@@ -1,10 +1,9 @@
 package nz.fox.craig.product.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
-import nz.fox.craig.api.ApiError;
-
 import java.time.Instant;
 import java.util.Map;
+import nz.fox.craig.api.ApiError;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

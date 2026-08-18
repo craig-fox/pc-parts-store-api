@@ -1,22 +1,20 @@
 package nz.fox.craig.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import nz.fox.craig.dto.AuthenticatedUser;
 import nz.fox.craig.dto.Role;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,11 +77,10 @@ class JwtAuthenticationFilterTest {
         assertThat(principal.id()).isEqualTo(CUSTOMER_ID);
         assertThat(principal.email()).isEqualTo(EMAIL);
         assertThat(authentication.getAuthorities())
-            .extracting("authority")
-            .containsExactly("ROLE_CUSTOMER");
+                .extracting("authority")
+                .containsExactly("ROLE_CUSTOMER");
 
         verify(filterChain).doFilter(request, response);
-        
     }
 
     @Test
@@ -109,8 +106,6 @@ class JwtAuthenticationFilterTest {
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
-
- 
 
     @Test
     void shouldIgnoreInvalidJwt() throws Exception {
@@ -145,8 +140,7 @@ class JwtAuthenticationFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer jwt-token");
         when(tokenService.isTokenValid("jwt-token")).thenReturn(true);
         when(tokenService.extractCustomerId("jwt-token")).thenReturn(CUSTOMER_ID);
-        when(tokenService.extractEmail("jwt-token"))
-                .thenThrow(new JwtException("Invalid email"));
+        when(tokenService.extractEmail("jwt-token")).thenThrow(new JwtException("Invalid email"));
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
@@ -161,15 +155,11 @@ class JwtAuthenticationFilterTest {
 
         AuthenticatedUser existingUser =
                 new AuthenticatedUser(
-                        UUID.randomUUID(),
-                        "existing@example.com",
-                        Set.of(Role.ROLE_CUSTOMER));
+                        UUID.randomUUID(), "existing@example.com", Set.of(Role.ROLE_CUSTOMER));
 
         UsernamePasswordAuthenticationToken existingAuthentication =
                 new UsernamePasswordAuthenticationToken(
-                        existingUser,
-                        jwt,
-                        List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+                        existingUser, jwt, List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
 
         SecurityContextHolder.getContext().setAuthentication(existingAuthentication);
 
@@ -206,8 +196,7 @@ class JwtAuthenticationFilterTest {
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        assertThat(SecurityContextHolder.getContext().getAuthentication())
-                .isNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
 
         verify(tokenService).isTokenValid(jwt);
         verify(tokenService, never()).extractCustomerId(jwt);

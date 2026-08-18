@@ -39,22 +39,18 @@ class ProductRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldFindProductsByCategoryIgnoringCase() {
-        List<Product> products =
-                productRepository.findByCategoryIgnoreCase("cpu");
+        List<Product> products = productRepository.findByCategoryIgnoreCase("cpu");
 
         assertThat(products).isNotEmpty();
-        assertThat(products).allMatch(
-                product -> product.getCategory().equalsIgnoreCase("cpu"));
+        assertThat(products).allMatch(product -> product.getCategory().equalsIgnoreCase("cpu"));
     }
 
     @Test
     void shouldFindProductsByBrandIgnoringCase() {
-        List<Product> products =
-                productRepository.findByBrandIgnoreCase("amd");
+        List<Product> products = productRepository.findByBrandIgnoreCase("amd");
 
         assertThat(products).isNotEmpty();
-        assertThat(products).allMatch(
-                product -> product.getBrand().equalsIgnoreCase("amd"));
+        assertThat(products).allMatch(product -> product.getBrand().equalsIgnoreCase("amd"));
     }
 
     @Test
@@ -82,8 +78,7 @@ class ProductRepositoryTest extends AbstractPostgresTest {
         saved.setName("Updated Product");
         Product updated = productRepository.saveAndFlush(saved);
 
-        assertThat(updated.getUpdatedAt())
-                .isAfterOrEqualTo(originalUpdatedAt);
+        assertThat(updated.getUpdatedAt()).isAfterOrEqualTo(originalUpdatedAt);
     }
 
     private Product createProduct() {

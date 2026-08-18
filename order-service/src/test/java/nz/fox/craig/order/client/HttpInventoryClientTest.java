@@ -1,12 +1,11 @@
 package nz.fox.craig.order.client;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.mock;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 
 import java.util.UUID;
 import nz.fox.craig.order.dto.request.InventoryReservationRequest;
@@ -26,17 +25,13 @@ class HttpInventoryClientTest {
     private static final UUID PRODUCT_ID = UUID.randomUUID();
     private static final int QUANTITY = 3;
 
-    @Mock
-    private RestClient restClient;
+    @Mock private RestClient restClient;
 
-    @Mock
-    private RestClient.RequestBodyUriSpec requestBodyUriSpec;
+    @Mock private RestClient.RequestBodyUriSpec requestBodyUriSpec;
 
-    @Mock
-    private RestClient.RequestBodySpec requestBodySpec;
+    @Mock private RestClient.RequestBodySpec requestBodySpec;
 
-    @Mock
-    private RestClient.ResponseSpec responseSpec;
+    @Mock private RestClient.ResponseSpec responseSpec;
 
     private HttpInventoryClient client;
 
@@ -48,12 +43,9 @@ class HttpInventoryClientTest {
     @Test
     void shouldReleaseStock() {
         when(restClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(
-                eq("/api/inventory/{productId}/release"),
-                eq(PRODUCT_ID)))
+        when(requestBodyUriSpec.uri(eq("/api/inventory/{productId}/release"), eq(PRODUCT_ID)))
                 .thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON))
-                .thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
         when(requestBodySpec.body(any(InventoryReservationRequest.class)))
                 .thenReturn(requestBodySpec);
         when(requestBodySpec.retrieve()).thenReturn(responseSpec);
@@ -61,11 +53,9 @@ class HttpInventoryClientTest {
         client.releaseStock(PRODUCT_ID, QUANTITY);
 
         verify(restClient).post();
-        verify(requestBodyUriSpec)
-                .uri("/api/inventory/{productId}/release", PRODUCT_ID);
+        verify(requestBodyUriSpec).uri("/api/inventory/{productId}/release", PRODUCT_ID);
         verify(requestBodySpec).contentType(MediaType.APPLICATION_JSON);
-        verify(requestBodySpec)
-                .body(new InventoryReservationRequest(QUANTITY));
+        verify(requestBodySpec).body(new InventoryReservationRequest(QUANTITY));
         verify(requestBodySpec).retrieve();
         verify(responseSpec).toBodilessEntity();
     }
@@ -73,21 +63,17 @@ class HttpInventoryClientTest {
     @Test
     void shouldTranslateConflictWhenReservingStock() {
         when(restClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(
-                eq("/api/inventory/{productId}/reserve"),
-                eq(PRODUCT_ID)))
+        when(requestBodyUriSpec.uri(eq("/api/inventory/{productId}/reserve"), eq(PRODUCT_ID)))
                 .thenReturn(requestBodySpec);
         when(requestBodySpec.body(any(InventoryReservationRequest.class)))
                 .thenReturn(requestBodySpec);
         when(requestBodySpec.retrieve()).thenReturn(responseSpec);
-    
-        HttpClientErrorException.Conflict conflict =
-                mock(HttpClientErrorException.Conflict.class);
-    
+
+        HttpClientErrorException.Conflict conflict = mock(HttpClientErrorException.Conflict.class);
+
         when(responseSpec.toBodilessEntity()).thenThrow(conflict);
-    
-        assertThatThrownBy(
-                () -> client.reserveStock(PRODUCT_ID, QUANTITY))
+
+        assertThatThrownBy(() -> client.reserveStock(PRODUCT_ID, QUANTITY))
                 .isInstanceOf(InsufficientStockException.class);
     }
 }

@@ -17,8 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 class JwtPropagationInterceptorTest {
 
-    private final JwtPropagationInterceptor interceptor =
-            new JwtPropagationInterceptor();
+    private final JwtPropagationInterceptor interceptor = new JwtPropagationInterceptor();
 
     @AfterEach
     void clearSecurityContext() {
@@ -31,8 +30,7 @@ class JwtPropagationInterceptorTest {
 
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(
-                        SampleAuthenticatedUsers.authenticatedCustomerUser(),
-                        jwt);
+                        SampleAuthenticatedUsers.authenticatedCustomerUser(), jwt);
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -41,17 +39,14 @@ class JwtPropagationInterceptorTest {
         when(request.getHeaders()).thenReturn(headers);
 
         byte[] body = "request body".getBytes();
-        ClientHttpRequestExecution execution =
-                mock(ClientHttpRequestExecution.class);
+        ClientHttpRequestExecution execution = mock(ClientHttpRequestExecution.class);
         ClientHttpResponse response = mock(ClientHttpResponse.class);
 
         when(execution.execute(request, body)).thenReturn(response);
 
-        ClientHttpResponse result =
-                interceptor.intercept(request, body, execution);
+        ClientHttpResponse result = interceptor.intercept(request, body, execution);
 
-        assertThat(headers.getFirst(HttpHeaders.AUTHORIZATION))
-                .isEqualTo("Bearer " + jwt);
+        assertThat(headers.getFirst(HttpHeaders.AUTHORIZATION)).isEqualTo("Bearer " + jwt);
 
         assertThat(result).isSameAs(response);
         verify(execution).execute(request, body);
@@ -61,8 +56,7 @@ class JwtPropagationInterceptorTest {
     void shouldNotPropagateWhenCredentialsAreNotJwt() throws IOException {
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(
-                        SampleAuthenticatedUsers.authenticatedCustomerUser(),
-                        new Object());
+                        SampleAuthenticatedUsers.authenticatedCustomerUser(), new Object());
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -71,13 +65,11 @@ class JwtPropagationInterceptorTest {
         when(request.getHeaders()).thenReturn(headers);
 
         byte[] body = new byte[0];
-        ClientHttpRequestExecution execution =
-                mock(ClientHttpRequestExecution.class);
+        ClientHttpRequestExecution execution = mock(ClientHttpRequestExecution.class);
 
         interceptor.intercept(request, body, execution);
 
-        assertThat(headers.containsKey(HttpHeaders.AUTHORIZATION))
-                .isFalse();
+        assertThat(headers.containsKey(HttpHeaders.AUTHORIZATION)).isFalse();
 
         verify(execution).execute(request, body);
     }
@@ -89,13 +81,11 @@ class JwtPropagationInterceptorTest {
         when(request.getHeaders()).thenReturn(headers);
 
         byte[] body = new byte[0];
-        ClientHttpRequestExecution execution =
-                mock(ClientHttpRequestExecution.class);
+        ClientHttpRequestExecution execution = mock(ClientHttpRequestExecution.class);
 
         interceptor.intercept(request, body, execution);
 
-        assertThat(headers.containsKey(HttpHeaders.AUTHORIZATION))
-                .isFalse();
+        assertThat(headers.containsKey(HttpHeaders.AUTHORIZATION)).isFalse();
 
         verify(execution).execute(request, body);
     }

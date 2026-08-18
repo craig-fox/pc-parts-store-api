@@ -32,8 +32,7 @@ class CurrentUserTest {
 
     @Test
     void shouldThrowWhenAuthenticationIsMissing() {
-        assertThatThrownBy(currentUser::get)
-                .isInstanceOf(UnauthenticatedException.class);
+        assertThatThrownBy(currentUser::get).isInstanceOf(UnauthenticatedException.class);
     }
 
     @Test
@@ -44,8 +43,7 @@ class CurrentUserTest {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        assertThatThrownBy(currentUser::get)
-                .isInstanceOf(UnauthenticatedException.class);
+        assertThatThrownBy(currentUser::get).isInstanceOf(UnauthenticatedException.class);
     }
 
     @Test
@@ -53,16 +51,14 @@ class CurrentUserTest {
         UUID customerId = UUID.randomUUID();
         authenticate(SampleAuthenticatedUsers.authenticatedCustomerUser(customerId));
 
-        assertThat(currentUser.customerId())
-                .isEqualTo(customerId);
+        assertThat(currentUser.customerId()).isEqualTo(customerId);
     }
 
     @Test
     void shouldReturnEmail() {
         authenticate(SampleAuthenticatedUsers.authenticatedCustomerUser());
 
-        assertThat(currentUser.email())
-                .isEqualTo("test@example.com");
+        assertThat(currentUser.email()).isEqualTo("test@example.com");
     }
 
     private void authenticate(AuthenticatedUser user) {
@@ -72,5 +68,4 @@ class CurrentUserTest {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
-
 }

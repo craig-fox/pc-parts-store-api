@@ -263,13 +263,12 @@ class CustomerServiceTest {
 
         @Test
         void shouldThrowWhenCustomerDoesNotExist() {
-                UUID customerId = UUID.randomUUID();
+            UUID customerId = UUID.randomUUID();
 
-                when(customerRepository.findById(customerId))
-                        .thenReturn(Optional.empty());
+            when(customerRepository.findById(customerId)).thenReturn(Optional.empty());
 
-                assertThatThrownBy(() -> customerService.getCustomer(customerId))
-                        .isInstanceOf(CustomerNotFoundException.class);
+            assertThatThrownBy(() -> customerService.getCustomer(customerId))
+                    .isInstanceOf(CustomerNotFoundException.class);
         }
     }
 

@@ -1,9 +1,9 @@
 package nz.fox.craig.order.controller;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -111,14 +111,13 @@ class OrderControllerTest {
                                     .value("Customer not found with id: " + missingCustomerID));
         }
 
-
         @Test
         void insufficientStockReturns409() throws Exception {
             OrderRequest request = orderRequest(orderItems());
-        
+
             when(orderService.createOrder(any(OrderRequest.class)))
                     .thenThrow(new InsufficientStockException(PRODUCT_ID));
-        
+
             mockMvc.perform(
                             post("/api/orders")
                                     .contentType(MediaType.APPLICATION_JSON)
@@ -127,114 +126,106 @@ class OrderControllerTest {
                     .andExpect(
                             jsonPath("$.message")
                                     .value("Insufficient stock for product " + PRODUCT_ID));
-        
+
             verify(orderService).createOrder(any(OrderRequest.class));
         }
 
         @Test
         void productNotFoundReturns404() throws Exception {
-                OrderRequest request = orderRequest(orderItems());
+            OrderRequest request = orderRequest(orderItems());
 
-                when(orderService.createOrder(any(OrderRequest.class)))
-                        .thenThrow(new ProductNotFoundException(PRODUCT_ID));
+            when(orderService.createOrder(any(OrderRequest.class)))
+                    .thenThrow(new ProductNotFoundException(PRODUCT_ID));
 
-                mockMvc.perform(
-                                post("/api/orders")
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .content(objectMapper.writeValueAsString(request)))
-                        .andExpect(status().isNotFound())
-                        .andExpect(
-                                jsonPath("$.message")
-                                        .value("Product " + PRODUCT_ID + " not found"));
+            mockMvc.perform(
+                            post("/api/orders")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message").value("Product " + PRODUCT_ID + " not found"));
 
-                verify(orderService).createOrder(any(OrderRequest.class));
+            verify(orderService).createOrder(any(OrderRequest.class));
         }
 
         @Test
         void nullProductIdReturnsBadRequest() throws Exception {
-                OrderItemRequest item = OrderItemRequest.builder()
-                        .productId(null)
-                        .quantity(1)
-                        .build();
+            OrderItemRequest item = OrderItemRequest.builder().productId(null).quantity(1).build();
 
-                OrderRequest request = orderRequest(List.of(item));
+            OrderRequest request = orderRequest(List.of(item));
 
-                mockMvc.perform(
-                                post("/api/orders")
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .content(objectMapper.writeValueAsString(request)))
-                        .andExpect(status().isBadRequest())
-                        .andExpect(jsonPath("$.message").value("items[0].productId: must not be null"));
+            mockMvc.perform(
+                            post("/api/orders")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("items[0].productId: must not be null"));
 
-                verifyNoInteractions(orderService);
+            verifyNoInteractions(orderService);
         }
 
         @Test
         void nullQuantityReturnsBadRequest() throws Exception {
-                OrderItemRequest item = OrderItemRequest.builder()
-                        .productId(PRODUCT_ID)
-                        .quantity(null)
-                        .build();
+            OrderItemRequest item =
+                    OrderItemRequest.builder().productId(PRODUCT_ID).quantity(null).build();
 
-                OrderRequest request = orderRequest(List.of(item));
+            OrderRequest request = orderRequest(List.of(item));
 
-                mockMvc.perform(
-                                post("/api/orders")
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .content(objectMapper.writeValueAsString(request)))
-                        .andExpect(status().isBadRequest())
-                        .andExpect(jsonPath("$.message").value("items[0].quantity: must not be null"));
+            mockMvc.perform(
+                            post("/api/orders")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("items[0].quantity: must not be null"));
 
-                verifyNoInteractions(orderService);
+            verifyNoInteractions(orderService);
         }
 
         @Test
         void quantityLessThanOneReturnsBadRequest() throws Exception {
-                OrderItemRequest item = OrderItemRequest.builder()
-                        .productId(PRODUCT_ID)
-                        .quantity(0)
-                        .build();
+            OrderItemRequest item =
+                    OrderItemRequest.builder().productId(PRODUCT_ID).quantity(0).build();
 
-                OrderRequest request = orderRequest(List.of(item));
+            OrderRequest request = orderRequest(List.of(item));
 
-                mockMvc.perform(
-                                post("/api/orders")
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .content(objectMapper.writeValueAsString(request)))
-                        .andExpect(status().isBadRequest())
-                        .andExpect(
-                                jsonPath("$.message")
-                                        .value("items[0].quantity: must be greater than or equal to 1"));
+            mockMvc.perform(
+                            post("/api/orders")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(
+                            jsonPath("$.message")
+                                    .value(
+                                            "items[0].quantity: must be greater than or equal to 1"));
 
-                verifyNoInteractions(orderService);
+            verifyNoInteractions(orderService);
         }
 
         @Test
         void blankAddressLine1ReturnsBadRequest() throws Exception {
-                ShippingAddressRequest shippingAddress =
-                        ShippingAddressRequest.builder()
-                                .addressLine1("")
-                                .city("Auckland")
-                                .postcode("1010")
-                                .country("NZ")
-                                .build();
+            ShippingAddressRequest shippingAddress =
+                    ShippingAddressRequest.builder()
+                            .addressLine1("")
+                            .city("Auckland")
+                            .postcode("1010")
+                            .country("NZ")
+                            .build();
 
-                OrderRequest request =
-                        OrderRequest.builder()
-                                .items(orderItems())
-                                .shippingAddress(shippingAddress)
-                                .build();
+            OrderRequest request =
+                    OrderRequest.builder()
+                            .items(orderItems())
+                            .shippingAddress(shippingAddress)
+                            .build();
 
-                mockMvc.perform(
-                                post("/api/orders")
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .content(objectMapper.writeValueAsString(request)))
-                        .andExpect(status().isBadRequest())
-                        .andExpect(
-                                jsonPath("$.message")
-                                        .value("shippingAddress.addressLine1: must not be blank"));
+            mockMvc.perform(
+                            post("/api/orders")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(
+                            jsonPath("$.message")
+                                    .value("shippingAddress.addressLine1: must not be blank"));
 
-                verifyNoInteractions(orderService);
+            verifyNoInteractions(orderService);
         }
     }
 
@@ -319,8 +310,7 @@ class OrderControllerTest {
             mockMvc.perform(post("/api/orders/{id}/cancel", missingOrderID))
                     .andExpect(status().isNotFound())
                     .andExpect(
-                            jsonPath("$.message")
-                                    .value("Order " + missingOrderID + " not found"));
+                            jsonPath("$.message").value("Order " + missingOrderID + " not found"));
             verify(orderService).cancelOrder(missingOrderID);
         }
 
@@ -336,8 +326,6 @@ class OrderControllerTest {
                                     .value("Order " + ORDER_ID + " is already cancelled"));
             verify(orderService).cancelOrder(ORDER_ID);
         }
-
-        
     }
 
     private OrderResponse sampleResponse(OrderStatus status) {
@@ -354,10 +342,7 @@ class OrderControllerTest {
     }
 
     private OrderRequest orderRequest(List<OrderItemRequest> items) {
-        return OrderRequest.builder()
-                .items(items)
-                .shippingAddress(shippingAddress())
-                .build();
+        return OrderRequest.builder().items(items).shippingAddress(shippingAddress()).build();
     }
 
     private List<OrderItemRequest> orderItems() {
