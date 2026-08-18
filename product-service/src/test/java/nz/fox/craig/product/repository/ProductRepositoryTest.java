@@ -2,11 +2,10 @@ package nz.fox.craig.product.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
+import nz.fox.craig.product.fixture.ProductFixtures;
 import nz.fox.craig.product.model.Product;
 import nz.fox.craig.test.AbstractPostgresTest;
 import org.junit.jupiter.api.Test;
@@ -55,7 +54,7 @@ class ProductRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldPopulateFieldsWhenProductIsPersisted() {
-        Product product = createProduct();
+        Product product = ProductFixtures.aProduct();
 
         assertThat(product.getId()).isNull();
         assertThat(product.getCreatedAt()).isNull();
@@ -70,7 +69,7 @@ class ProductRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldUpdateUpdatedAtWhenProductIsUpdated() {
-        Product product = createProduct();
+        Product product = ProductFixtures.aProduct();
         Product saved = productRepository.saveAndFlush(product);
 
         Instant originalUpdatedAt = saved.getUpdatedAt();
@@ -81,20 +80,4 @@ class ProductRepositoryTest extends AbstractPostgresTest {
         assertThat(updated.getUpdatedAt()).isAfterOrEqualTo(originalUpdatedAt);
     }
 
-    private Product createProduct() {
-        Product product = new Product();
-
-        product.setSku("TEST-" + UUID.randomUUID());
-        product.setName("Test Product");
-        product.setDescription("Test product description");
-        product.setBrand("Test Brand");
-        product.setCategory("Test Category");
-        product.setPrice(new BigDecimal("99.99"));
-        product.setStockQuantity(10);
-        product.setWeightKg(new BigDecimal("1.50"));
-        product.setImageUrl("https://example.com/test.jpg");
-        product.setActive(true);
-
-        return product;
-    }
 }

@@ -10,16 +10,17 @@ public final class ProductFixtures {
 
     private ProductFixtures() {}
 
-    public static Product gamingMouse() {
+    public static Product aProduct() {
         return ProductBuilder.aProduct()
-                .withId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
-                .withSku("LOG-G502X")
-                .withName("Logitech G502 X Plus")
-                .withBrand("Logitech")
-                .withCategory("Peripherals")
-                .withPrice(new BigDecimal("249.99"))
-                .withStockQuantity(25)
-                .withWeightKg(new BigDecimal("0.11"))
+                .withSku("TEST-" + UUID.randomUUID())
+                .withName("Test Product")
+                .withDescription("Test product description")
+                .withBrand("Test Brand")
+                .withCategory("Test Category")
+                .withPrice(new BigDecimal("99.99"))
+                .withStockQuantity(10)
+                .withWeightKg(new BigDecimal("1.50"))
+                .withImageUrl("https://example.com/test.jpg")
                 .build();
     }
 
