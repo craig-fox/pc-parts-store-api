@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.Optional;
 
-import nz.fox.craig.customer.fixture.CustomerTestFactory;
+import nz.fox.craig.customer.fixture.CustomerFixtures;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
 import nz.fox.craig.test.AbstractPostgresTest;
@@ -126,7 +126,7 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
     }
 
     private Customer standardCustomer() {
-        Customer customer = CustomerTestFactory.aCustomer();
+        Customer customer = CustomerFixtures.aCustomer();
         customer.setEmail("jane@example.com");
         customer.setPassword(HASHED_PASSWORD);
         return customer;
