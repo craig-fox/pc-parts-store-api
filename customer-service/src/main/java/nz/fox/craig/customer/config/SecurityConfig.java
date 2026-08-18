@@ -3,6 +3,8 @@ package nz.fox.craig.customer.config;
 import java.util.List;
 import nz.fox.craig.security.JwtAuthenticationFilter;
 import nz.fox.craig.security.TokenService;
+
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -76,6 +78,7 @@ public class SecurityConfig {
                                                 "/swagger-ui/**",
                                                 "/swagger-ui.html")
                                         .permitAll()
+                                        .requestMatchers("/actuator/health").permitAll()
                                         .anyRequest()
                                         .authenticated())
                 .addFilterBefore(
