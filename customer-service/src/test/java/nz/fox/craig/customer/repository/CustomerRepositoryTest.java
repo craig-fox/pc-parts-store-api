@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Optional;
+
+import nz.fox.craig.customer.fixture.CustomerTestFactory;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
 import nz.fox.craig.test.AbstractPostgresTest;
@@ -27,18 +29,7 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
     class SaveAndUpdateCustomer {
         @Test
         void saveAndFindById() {
-
-            Customer customer =
-                    Customer.builder()
-                            .firstName("Jane")
-                            .lastName("Doe")
-                            .preferredName("Jenny")
-                            .email("jane@example.com")
-                            .address("123 Main St")
-                            .password(HASHED_PASSWORD)
-                            .build();
-
-            Customer saved = customerRepository.save(customer);
+            Customer saved = customerRepository.save(standardCustomer());
 
             assertThat(saved.getId()).isNotNull();
             assertThat(customerRepository.findById(saved.getId()))
@@ -46,10 +37,10 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
                     .get()
                     .satisfies(
                             found -> {
-                                assertThat(found.getFirstName()).isEqualTo("Jane");
-                                assertThat(found.getLastName()).isEqualTo("Doe");
+                                assertThat(found.getFirstName()).isEqualTo("Test");
+                                assertThat(found.getLastName()).isEqualTo("Customer");
                                 assertThat(found.getEmail()).isEqualTo("jane@example.com");
-                                assertThat(found.getAddress()).isEqualTo("123 Main St");
+                                assertThat(found.getAddress()).isEqualTo("123 Test Street");
                                 assertThat(found.getStatus()).isEqualTo(CustomerStatus.ACTIVE);
                                 assertThat(found.getPassword()).isEqualTo(HASHED_PASSWORD);
                             });
@@ -57,15 +48,7 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
 
         @Test
         void updateExistingCustomer() {
-            Customer customer =
-                    customerRepository.save(
-                            Customer.builder()
-                                    .firstName("Jane")
-                                    .lastName("Doe")
-                                    .email("jane@example.com")
-                                    .address("123 Main St")
-                                    .password(HASHED_PASSWORD)
-                                    .build());
+            Customer customer = standardCustomer();
 
             customer.setLastName("Smith");
             customer.setEmail("jane.smith@example.com");
@@ -83,26 +66,10 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
     class FindCustomers {
         @Test
         void findsAllCustomers() {
-            Customer jane =
-                    customerRepository.save(
-                            Customer.builder()
-                                    .firstName("Jane")
-                                    .lastName("Doe")
-                                    .email("jane@example.com")
-                                    .address("123 Main St")
-                                    .password(HASHED_PASSWORD)
-                                    .build());
-
-            Customer john =
-                    customerRepository.save(
-                            Customer.builder()
-                                    .firstName("John")
-                                    .lastName("Doe")
-                                    .email("john@example.com")
-                                    .address("456 Oak Ave")
-                                    .password(HASHED_PASSWORD)
-                                    .build());
-
+            Customer jane = standardCustomer();
+            Customer john = standardCustomer();
+            john.setEmail("john@example.com");
+            customerRepository.saveAll(List.of(jane, john));
             List<Customer> customers = customerRepository.findAll();
 
             assertThat(customers).extracting(Customer::getId).contains(jane.getId(), john.getId());
@@ -110,16 +77,8 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
 
         @Test
         void findsCustomerByEmail() {
-            Customer customer =
-                    customerRepository.save(
-                            Customer.builder()
-                                    .firstName("Jane")
-                                    .lastName("Doe")
-                                    .email("jane@example.com")
-                                    .address("123 Main St")
-                                    .password(HASHED_PASSWORD)
-                                    .build());
-
+            Customer customer = standardCustomer();
+            customerRepository.save(customer);
             Optional<Customer> result = customerRepository.findByEmail("jane@example.com");
 
             assertThat(result)
@@ -128,7 +87,7 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
                     .satisfies(
                             found -> {
                                 assertThat(found.getId()).isEqualTo(customer.getId());
-                                assertThat(found.getFirstName()).isEqualTo("Jane");
+                                assertThat(found.getFirstName()).isEqualTo("Test");
                                 assertThat(found.getEmail()).isEqualTo("jane@example.com");
                             });
         }
@@ -140,27 +99,14 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
 
         @Test
         void findsCustomersByStatus() {
-            Customer active =
-                    customerRepository.save(
-                            Customer.builder()
-                                    .firstName("Jane")
-                                    .lastName("Doe")
-                                    .email("jane@example.com")
-                                    .address("123 Main St")
-                                    .password(HASHED_PASSWORD)
-                                    .status(CustomerStatus.ACTIVE)
-                                    .build());
+            Customer active = standardCustomer();
 
-            Customer inactive =
-                    customerRepository.save(
-                            Customer.builder()
-                                    .firstName("John")
-                                    .lastName("Doe")
-                                    .email("john@example.com")
-                                    .address("456 Oak Ave")
-                                    .password(HASHED_PASSWORD)
-                                    .status(CustomerStatus.INACTIVE)
-                                    .build());
+            Customer inactive = standardCustomer();
+            inactive.setEmail("john@example.com");
+            inactive.setStatus(CustomerStatus.INACTIVE);
+
+            customerRepository.saveAll(List.of(active, inactive));
+
 
             List<Customer> activeCustomers = customerRepository.findByStatus(CustomerStatus.ACTIVE);
 
@@ -177,5 +123,13 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
                     .contains(inactive.getId())
                     .doesNotContain(active.getId());
         }
+    }
+
+    private Customer standardCustomer() {
+        Customer customer = CustomerTestFactory.aCustomer();
+        customer.setEmail("jane@example.com");
+        customer.setPassword(HASHED_PASSWORD);
+        return customer;
+
     }
 }
