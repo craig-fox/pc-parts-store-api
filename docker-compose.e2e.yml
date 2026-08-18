@@ -1,0 +1,23 @@
+services:
+
+  customer-postgres:
+    volumes:
+      - customer-e2e-data:/var/lib/postgresql/data
+
+  order-postgres:
+    volumes:
+      - order-e2e-data:/var/lib/postgresql/data
+
+  product-postgres:
+    volumes:
+      - product-e2e-data:/var/lib/postgresql/data
+
+  inventory-postgres:
+    volumes:
+      - inventory-e2e-data:/var/lib/postgresql/data
+
+volumes:
+  customer-e2e-data:
+  order-e2e-data:
+  product-e2e-data:
+  inventory-e2e-data:
