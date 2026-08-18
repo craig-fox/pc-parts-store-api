@@ -52,8 +52,8 @@ class ProductServiceTest {
     @Test
     void shouldReturnProductById() {
         // Arrange
-        Product product = ProductFixtures.gamingMouse();
-        ProductResponse expectedResponse = ProductResponseFixtures.gamingMouse();
+        Product product = ProductFixtures.aProduct();
+        ProductResponse expectedResponse = ProductResponseFixtures.aProductResponse();
 
         when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
         when(productMapper.toResponse(product)).thenReturn(expectedResponse);

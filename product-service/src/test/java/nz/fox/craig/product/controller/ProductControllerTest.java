@@ -52,7 +52,7 @@ public class ProductControllerTest {
 
     @Test
     void shouldReturnProductById() throws Exception {
-        ProductResponse response = ProductResponseFixtures.gamingMouse();
+        ProductResponse response = ProductResponseFixtures.aProductResponse();
 
         when(productService.getProductById(response.id())).thenReturn(response);
 
@@ -66,7 +66,7 @@ public class ProductControllerTest {
                 .andExpect(jsonPath("$.category").value(response.category()))
                 .andExpect(jsonPath("$.price").value(response.price()))
                 .andExpect(jsonPath("$.stockQuantity").value(response.stockQuantity()))
-                .andExpect(jsonPath("$.weightKg").value(response.weightKg()));
+                .andExpect(jsonPath("$.weightKg").value(response.weightKg().doubleValue()));
 
         verify(productService).getProductById(response.id());
     }

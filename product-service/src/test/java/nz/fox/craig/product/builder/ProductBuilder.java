@@ -65,6 +65,16 @@ public class ProductBuilder {
         return this;
     }
 
+    public ProductBuilder withDescription(String description) {
+        this.description = description;
+        return this;
+    }
+
+    public ProductBuilder withImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+        return this;
+    }
+
     public ProductBuilder inactive() {
         this.active = false;
         return this;
@@ -73,7 +83,6 @@ public class ProductBuilder {
     public Product build() {
         Product product = new Product();
 
-        product.setId(id);
         product.setSku(sku);
         product.setName(name);
         product.setDescription(description);

@@ -1,6 +1,8 @@
 package nz.fox.craig.product.fixture;
 
 import java.util.List;
+import java.util.UUID;
+
 import nz.fox.craig.product.builder.ProductResponseBuilder;
 import nz.fox.craig.product.dto.ProductResponse;
 import nz.fox.craig.product.model.Product;
@@ -9,11 +11,11 @@ public final class ProductResponseFixtures {
 
     private ProductResponseFixtures() {}
 
-    public static ProductResponse gamingMouse() {
-        Product product = ProductFixtures.gamingMouse();
+    public static ProductResponse aProductResponse() {
+        Product product = ProductFixtures.aProduct();
 
         return ProductResponseBuilder.aProductResponse()
-                .withId(product.getId())
+                .withId(UUID.randomUUID())
                 .withSku(product.getSku())
                 .withName(product.getName())
                 .withBrand(product.getBrand())
