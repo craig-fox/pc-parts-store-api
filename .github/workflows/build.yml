@@ -73,17 +73,17 @@ jobs:
         working-directory: pc-parts-store-e2e
         run: ./run-e2e.sh
 
-    docker:
-      needs: build
-      runs-on: ubuntu-latest
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
 
-      env:
-        JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
+    env:
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
 
-      steps:
-        - name: Check out repository
-          uses: actions/checkout@v4
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-        - name: Build Docker images
-          run: docker compose build
+      - name: Build Docker images
+        run: docker compose build
