@@ -85,5 +85,8 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Build application
+        run: mvn clean package -DskipTests
+
       - name: Build Docker images
         run: docker compose build
