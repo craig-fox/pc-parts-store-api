@@ -72,3 +72,34 @@ jobs:
       - name: Run E2E tests
         working-directory: pc-parts-store-e2e
         run: ./run-e2e.sh
+
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+
+    env:
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Check Java version
+        run: |
+          java -version
+          javac -version
+          mvn -version
+
+      - name: Build application
+        run: mvn clean package -DskipTests
+
+      - name: Build Docker images
+        run: docker compose build
