@@ -172,12 +172,45 @@ services:
       - "8085:8080"
     networks:
       - backend      
-  
+
+  sonarqube-postgres:
+    image: postgres:17
+    container_name: sonarqube-postgres
+    environment:
+      POSTGRES_DB: sonarqube
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar -d sonarqube"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - sonarqube-data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube
+    depends_on:
+      sonarqube-postgres:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-postgres:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    ports:
+      - "9000:9000"
+    networks:
+      - backend
+
 volumes:
   customer-data:
   order-data:
   product-data:
   inventory-data:
+  sonarqube-data:
 
 networks:
   backend:  

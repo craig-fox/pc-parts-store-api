@@ -2,7 +2,6 @@ package nz.fox.craig.customer.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -36,10 +35,8 @@ public class CustomerController {
     private final CustomerService customerService;
 
     @Operation(summary = "Register a new customer")
-    @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Customer registered"),
-        @ApiResponse(responseCode = "400", description = "Validation failed")
-    })
+    @ApiResponse(responseCode = "201", description = "Customer registered")
+    @ApiResponse(responseCode = "400", description = "Validation failed")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CustomerResponse createCustomer(@Valid @RequestBody CustomerRequest request) {
@@ -68,20 +65,16 @@ public class CustomerController {
     }
 
     @Operation(summary = "Retrieve details of a customer by ID")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Customer found"),
-        @ApiResponse(responseCode = "404", description = "Customer not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Customer found")
+    @ApiResponse(responseCode = "404", description = "Customer not found")
     @GetMapping("/{id}")
     public CustomerResponse getCustomer(@PathVariable UUID id) {
         return customerService.getCustomer(id);
     }
 
     @Operation(summary = "Retrieve details of a customer by email")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Customer found"),
-        @ApiResponse(responseCode = "404", description = "Customer not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Customer found")
+    @ApiResponse(responseCode = "404", description = "Customer not found")
     @GetMapping("/email/{email}")
     public CustomerAuthenticationResponse getCustomerByEmail(@PathVariable String email) {
         return customerService.getCustomerByEmail(email);

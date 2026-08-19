@@ -12,7 +12,7 @@ public record OrderRequest(
         @Valid @NotNull(message = "Shipping address is required")
                 ShippingAddressRequest shippingAddress) {
 
-    public OrderRequest {
-        items = List.copyOf(items);
-    }
+        public OrderRequest {
+                items = items == null ? null : List.copyOf(items);
+                }
 }
