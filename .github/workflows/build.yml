@@ -31,5 +31,14 @@ jobs:
             exit 1
           fi
 
+          if [ -n "$JWT_EXPIRATION" ]; then
+            echo "JWT_EXPIRATION is available"
+          else
+            echo "JWT_EXPIRATION is NOT available"
+            exit 1
+          fi
+
+      
+
       - name: Build
         run: mvn clean verify
