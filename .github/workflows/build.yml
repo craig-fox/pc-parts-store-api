@@ -18,5 +18,14 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Check JWT secret
+        run: |
+          if [ -n "$JWT_SECRET" ]; then
+            echo "JWT_SECRET is available"
+          else
+            echo "JWT_SECRET is NOT available"
+            exit 1
+          fi
+
       - name: Build
         run: mvn clean verify
