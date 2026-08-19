@@ -2,8 +2,11 @@ package nz.fox.craig.order.fixture;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import nz.fox.craig.order.model.Order;
+import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.model.ShippingAddress;
 
@@ -20,6 +23,16 @@ public final class OrderFixtures {
                 .shipping(new BigDecimal("25.00"))
                 .total(new BigDecimal("1025.00"))
                 .shippingAddress(new ShippingAddress("1 Main St", "Auckland", "1010", "NZ"))
+                .items(new ArrayList<>(List.of(anOrderItem())))
+                .build();
+    }
+
+    private static OrderItem anOrderItem() {
+        return OrderItem.builder()
+                .productId(UUID.randomUUID())
+                .productName("Test Product")
+                .quantity(1)
+                .unitPrice(new BigDecimal("1000.00"))
                 .build();
     }
 }

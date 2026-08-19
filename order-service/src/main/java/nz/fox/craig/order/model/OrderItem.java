@@ -13,15 +13,17 @@ import java.math.BigDecimal;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Entity
-@Table(name = "order_items")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Entity
+@Table(name = "order_items")
 public class OrderItem {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

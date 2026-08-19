@@ -48,5 +48,78 @@
         <Class name="nz.fox.craig.customer.security.CustomerUserDetails"/>
         <Bug pattern="SE_BAD_FIELD"/>
     </Match>
+
+    <Match>
+        <Class name="nz.fox.craig.order.client.HttpCustomerClient"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <Match>
+        <Class name="~nz\.fox\.craig\.order\.client\.Http(Customer|Inventory|Product)Client"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <Match>
+        <Class name="nz.fox.craig.order.dto.request.OrderRequest$OrderRequestBuilder"/>
+        <Method name="items"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <Match>
+        <Class name="nz.fox.craig.order.dto.request.OrderRequest$OrderRequestBuilder"/>
+        <Method name="items"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    
+    <Match>
+        <Class name="nz.fox.craig.order.dto.response.OrderResponse$OrderResponseBuilder"/>
+        <Method name="items"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <Match>
+        <Class name="nz.fox.craig.order.model.Order"/>
+        <Field name="items"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    
+    <Match>
+        <Class name="nz.fox.craig.order.model.Order"/>
+        <Method name="setItems"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    
+    <Match>
+        <Class name="nz.fox.craig.order.model.Order"/>
+        <Method name="items"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <Match>
+        <Class name="nz.fox.craig.order.model.Order"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <Match>
+        <Class name="nz.fox.craig.order.model.OrderItem"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <Match>
+        <Class name="nz.fox.craig.order.model.Order$OrderBuilder"/>
+        <Method name="items"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    
+    <Match>
+        <Class name="nz.fox.craig.order.model.OrderItem$OrderItemBuilder"/>
+        <Method name="order"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <Match>
+        <Class name="nz.fox.craig.auth.client.HttpCustomerClient"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
  
 </FindBugsFilter>

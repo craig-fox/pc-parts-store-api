@@ -39,6 +39,7 @@ import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
 import nz.fox.craig.order.exception.ProductNotFoundException;
 import nz.fox.craig.order.fixture.OrderFixtures;
+import nz.fox.craig.order.fixture.OrderResponseFixtures;
 import nz.fox.craig.order.mapper.OrderMapper;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
@@ -97,8 +98,7 @@ class OrderServiceTest {
             configureRepositoryToAssignIds();
             when(productClient.getProduct(PRODUCT_ID)).thenReturn(productSnapshot());
 
-            OrderResponse expectedResponse =
-                    OrderResponse.builder().id(ORDER_ID).status("PLACED").build();
+            OrderResponse expectedResponse = OrderResponseFixtures.anOrderResponse();
 
             when(orderMapper.toResponse(any(Order.class))).thenReturn(expectedResponse);
 
@@ -164,7 +164,7 @@ class OrderServiceTest {
             ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
 
             when(orderMapper.toResponse(orderCaptor.capture()))
-                    .thenReturn(OrderResponse.builder().id(ORDER_ID).status("PLACED").build());
+                    .thenReturn(OrderResponseFixtures.anOrderResponse());
 
             // Act
             orderService.createOrder(orderRequest());
@@ -187,7 +187,7 @@ class OrderServiceTest {
             ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
 
             when(orderMapper.toResponse(orderCaptor.capture()))
-                    .thenReturn(OrderResponse.builder().id(ORDER_ID).status("PLACED").build());
+                    .thenReturn(OrderResponseFixtures.anOrderResponse());
 
             // Act
             orderService.createOrder(orderRequest());
@@ -210,7 +210,7 @@ class OrderServiceTest {
             ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
 
             when(orderMapper.toResponse(orderCaptor.capture()))
-                    .thenReturn(OrderResponse.builder().id(ORDER_ID).status("PLACED").build());
+                    .thenReturn(OrderResponseFixtures.anOrderResponse());
 
             // Act
             orderService.createOrder(orderRequest());
@@ -236,7 +236,7 @@ class OrderServiceTest {
             ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
 
             when(orderMapper.toResponse(orderCaptor.capture()))
-                    .thenReturn(OrderResponse.builder().id(ORDER_ID).status("PLACED").build());
+                    .thenReturn(OrderResponseFixtures.anOrderResponse());
 
             // Act
             orderService.createOrder(orderRequest());
@@ -255,24 +255,7 @@ class OrderServiceTest {
             // Arrange
             Order order = OrderFixtures.anOrder();
 
-            OrderResponse expectedResponse =
-                    OrderResponse.builder()
-                            .id(ORDER_ID)
-                            .customerId(CUSTOMER_ID)
-                            .status(OrderStatus.PLACED.name())
-                            .subtotal(new BigDecimal("179.98"))
-                            .shipping(BigDecimal.ZERO)
-                            .total(new BigDecimal("179.98"))
-                            .items(
-                                    List.of(
-                                            OrderItemResponse.builder()
-                                                    .productId(PRODUCT_ID)
-                                                    .productName("Gaming Mouse")
-                                                    .quantity(DEFAULT_ORDER_QUANTITY)
-                                                    .unitPrice(new BigDecimal("89.99"))
-                                                    .lineTotal(new BigDecimal("179.98"))
-                                                    .build()))
-                            .build();
+            OrderResponse expectedResponse = OrderResponseFixtures.anOrderResponse();
 
             when(repository.findById(ORDER_ID)).thenReturn(Optional.of(order));
 
@@ -307,19 +290,9 @@ class OrderServiceTest {
             Order order2 = OrderFixtures.anOrder();
             order2.setId(UUID.randomUUID());
 
-            OrderResponse response1 =
-                    OrderResponse.builder()
-                            .id(order1.getId())
-                            .customerId(CUSTOMER_ID)
-                            .status(OrderStatus.PLACED.name())
-                            .build();
+            OrderResponse response1 = OrderResponseFixtures.anOrderResponse();
 
-            OrderResponse response2 =
-                    OrderResponse.builder()
-                            .id(order2.getId())
-                            .customerId(CUSTOMER_ID)
-                            .status(OrderStatus.PLACED.name())
-                            .build();
+            OrderResponse response2 = OrderResponseFixtures.anOrderResponse();
 
             when(repository.findByCustomerIdOrderByOrderDateDesc(CUSTOMER_ID))
                     .thenReturn(List.of(order1, order2));
