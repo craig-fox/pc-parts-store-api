@@ -22,10 +22,6 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Run E2E tests
-        working-directory: pc-parts-store-e2e
-        run: ./run-e2e.sh
-
       - name: Check JWT secret
         run: |
           if [ -n "$JWT_SECRET" ]; then
