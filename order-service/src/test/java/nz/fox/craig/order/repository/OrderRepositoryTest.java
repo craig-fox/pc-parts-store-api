@@ -90,14 +90,14 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
         addItemsToOrder(order);
         orderRepository.save(order);
         final Order found = orderRepository.findById(order.getId()).orElseThrow();
-        assertThat(found.getItems()).hasSize(2);
+        assertThat(found.getItems()).hasSize(3);
         found.getItems().removeFirst();
         orderRepository.save(found);
         entityManager.flush();
         entityManager.clear();
         final Order reloaded = orderRepository.findById(found.getId()).orElseThrow();
         final OrderItem item = reloaded.getItems().getFirst();
-        assertThat(reloaded.getItems()).hasSize(1);
+        assertThat(reloaded.getItems()).hasSize(2);
         assertThat(item.getOrder()).isNotNull();
         assertThat(item.getOrder().getId()).isEqualTo(found.getId());
     }

@@ -10,4 +10,9 @@ import lombok.Builder;
 public record OrderRequest(
         @Valid @NotEmpty(message = "Items must not be empty") List<OrderItemRequest> items,
         @Valid @NotNull(message = "Shipping address is required")
-                ShippingAddressRequest shippingAddress) {}
+                ShippingAddressRequest shippingAddress) {
+
+    public OrderRequest {
+        items = List.copyOf(items);
+    }
+}
