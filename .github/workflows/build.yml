@@ -1,0 +1,74 @@
+name: Build
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Check JWT secret
+        run: |
+          if [ -n "$JWT_SECRET" ]; then
+            echo "JWT_SECRET is available"
+          else
+            echo "JWT_SECRET is NOT available"
+            exit 1
+          fi
+
+          if [ -n "$JWT_EXPIRATION" ]; then
+            echo "JWT_EXPIRATION is available"
+          else
+            echo "JWT_EXPIRATION is NOT available"
+            exit 1
+          fi
+
+      - name: Build
+        run: mvn clean verify
+
+  e2e:
+    needs: build
+    runs-on: ubuntu-latest
+
+    env:
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
+
+    steps:
+      - name: Check out API
+        uses: actions/checkout@v4
+        with:
+          path: pc-parts-store-api
+
+      - name: Check out E2E tests
+        uses: actions/checkout@v4
+        with:
+          repository: craig-fox/pc-parts-store-e2e
+          ref: 1.1.0
+          path: pc-parts-store-e2e
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Run E2E tests
+        working-directory: pc-parts-store-e2e
+        run: ./run-e2e.sh
