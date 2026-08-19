@@ -64,18 +64,17 @@ class AuthenticationServiceTest {
 
         @Test
         void shouldRejectUnknownEmail() {
-
+        
             String email = "unknown@example.com";
-
+        
             when(customerClient.findByEmail(email)).thenThrow(new InvalidCredentialsException());
-
-            assertThatThrownBy(
-                            () ->
-                                    authenticationService.login(
-                                            new LoginRequest(email, LOGIN_PASSWORD)))
+        
+            LoginRequest request = new LoginRequest(email, LOGIN_PASSWORD);
+        
+            assertThatThrownBy(() -> authenticationService.login(request))
                     .isInstanceOf(InvalidCredentialsException.class)
                     .hasMessage("Invalid email or password");
-
+        
             verify(customerClient).findByEmail(email);
             verify(passwordEncoder, never()).matches(any(), any());
             verify(tokenService, never()).generateToken(any());
@@ -88,11 +87,11 @@ class AuthenticationServiceTest {
 
             when(customerClient.findByEmail(customer.email())).thenReturn(customer);
             when(passwordEncoder.matches(LOGIN_PASSWORD, customer.password())).thenReturn(false);
+            LoginRequest request = new LoginRequest(customer.email(), LOGIN_PASSWORD);
 
             assertThatThrownBy(
                             () ->
-                                    authenticationService.login(
-                                            new LoginRequest(customer.email(), LOGIN_PASSWORD)))
+                                    authenticationService.login(request))
                     .isInstanceOf(InvalidCredentialsException.class)
                     .hasMessage("Invalid email or password");
 
@@ -107,11 +106,11 @@ class AuthenticationServiceTest {
             AuthenticatedCustomer customer = authenticatedCustomer(false);
 
             when(customerClient.findByEmail(customer.email())).thenReturn(customer);
+            LoginRequest request = new LoginRequest(customer.email(), LOGIN_PASSWORD);
 
             assertThatThrownBy(
                             () ->
-                                    authenticationService.login(
-                                            new LoginRequest(customer.email(), LOGIN_PASSWORD)))
+                                    authenticationService.login(request))
                     .isInstanceOf(CustomerInactiveException.class)
                     .hasMessage("Customer account is inactive");
 

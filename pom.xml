@@ -38,6 +38,10 @@
         <plantuml.version>1.2026.3</plantuml.version>
         <spotbugs.version>4.8.6.4</spotbugs.version>
         <findsecbugs.version>1.13.0</findsecbugs.version>
+        <sonar.maven.plugin.version>5.5.0.6356</sonar.maven.plugin.version>
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+        <sonar.projectKey>pc-parts-store-api</sonar.projectKey>
+        <sonar.projectName>pc-parts-store-api</sonar.projectName>
     </properties>
 
     <dependencyManagement>
@@ -222,6 +226,11 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar.maven.plugin.version}</version>
             </plugin>
         </plugins>
         <pluginManagement>
