@@ -6,9 +6,9 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.response.OrderResponse;
+import nz.fox.craig.order.service.OrderCreationResult;
 import nz.fox.craig.order.service.OrderService;
 
-import org.hibernate.annotations.Parameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,10 +30,14 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(
-        @RequestHeader("Idempotency-Key") String idempotencyKey, 
-        @Valid @RequestBody OrderRequest request) {
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(idempotencyKey, request));
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @Valid @RequestBody OrderRequest request) {
+    
+        OrderCreationResult result = orderService.createOrder(idempotencyKey, request);
+    
+        HttpStatus status = result.created() ? HttpStatus.CREATED : HttpStatus.OK;
+    
+        return ResponseEntity.status(status).body(result.order());
     }
 
     @GetMapping("/{id}")
