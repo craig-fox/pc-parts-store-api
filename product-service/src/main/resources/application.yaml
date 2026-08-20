@@ -2,21 +2,16 @@ spring:
   application:
     name: product-service
 
-  datasource:
-      url: jdbc:postgresql://localhost:5433/productdb
-      username: product
-      password: product
-
   jpa:
     hibernate:
       ddl-auto: validate
-    open-in-view: false 
+    open-in-view: false
 
   flyway:
     enabled: true
 
 server:
-  port: ${SERVER_PORT:8083}
+  port: ${SERVER_PORT:8080}
 
 jwt:
   secret: ${JWT_SECRET}
