@@ -4,9 +4,9 @@
 
 PC Parts Store API is a Spring Boot microservices backend for the PC Parts Store. It provides the core customer, product, inventory, ordering, and authentication capabilities used by the UI.
 
-This application is intended to run alongside the [PC Parts Store UI](https://github.com/craig-fox/pc-parts-store-ui.git). End-to-end tests are available in the [PC Parts Store E2E repository](https://github.com/craig-fox/pc-parts-store-e2e.git).
+This application is intended to run alongside the [PC Parts Store UI](https://github.com/craig-fox/pc-parts-store-ui.git). End-to-end tests are maintained in the [PC Parts Store E2E repository](https://github.com/craig-fox/pc-parts-store-e2e.git).
 
-## Architecture diagram
+## Architecture
 
 The services run as Docker containers on a shared backend network. Each data-owning active service has its own PostgreSQL database. The order service communicates with the customer, product, and inventory services when processing orders.
 
@@ -36,10 +36,16 @@ Active modules:
 
 ### Prerequisites
 
+- Java 21
+- Maven
 - Docker Desktop (or Docker Engine with Docker Compose)
 - A value for the `JWT_SECRET` environment variable
 
-Set `JWT_SECRET` before attempting to launch the containers. Generate a suitable value with:
+### JWT secret
+
+The services require a JWT secret. Do not commit the secret to the repository.
+
+Generate a suitable value with:
 
 ```sh
 openssl rand -base64 32
@@ -63,11 +69,54 @@ $env:JWT_SECRET = "paste-the-generated-value-here"
 export JWT_SECRET='paste-the-generated-value-here'
 ```
 
-For Windows Command Prompt, use `set JWT_SECRET=paste-the-generated-value-here` instead. Keep the same secret while the services are running so that tokens issued by the authentication service can be verified by the other services.
+For Windows Command Prompt:
 
-## Running a service
+```cmd
+set JWT_SECRET=paste-the-generated-value-here
+```
 
-Use Docker Compose from the repository root. With Docker Compose v2, run `docker compose`; if your installation uses the older standalone command, replace it with `docker-compose` in the examples below.
+Keep the same secret while the services are running so that tokens issued by the authentication service can be verified by the other services.
+
+## Configuration
+
+The services use Spring profiles to distinguish between environments:
+
+- `dev` — local development and Docker Compose.
+- `test` — test execution; integration tests use Testcontainers where applicable.
+- `prod` — production configuration, with environment-specific values supplied externally.
+
+The Docker Compose development environment activates the `dev` profile automatically.
+
+Secrets and environment-specific values are supplied through environment variables rather than being committed to the repository. Depending on the service and environment, these include:
+
+- `JWT_SECRET`
+- `JWT_EXPIRATION`
+- `SPRING_DATASOURCE_URL`
+- `SPRING_DATASOURCE_USERNAME`
+- `SPRING_DATASOURCE_PASSWORD`
+- Service base URLs such as `CUSTOMER_SERVICE_URL`, `PRODUCT_SERVICE_URL`, and `INVENTORY_SERVICE_URL`
+
+Production configuration does not provide local database fallbacks, so the required production values must be supplied by the deployment environment.
+
+## Running and Testing
+
+### Quick start
+
+Start the complete development environment:
+
+```sh
+./scripts/start.sh
+```
+
+Run the complete Maven verification:
+
+```sh
+./scripts/test.sh
+```
+
+### Start individual or selected services
+
+Use Docker Compose from the repository root.
 
 Launch one service and the dependencies defined for it:
 
@@ -81,23 +130,38 @@ Launch multiple services by listing their names:
 docker compose up --build customer-service product-service authentication-service
 ```
 
-Launch the complete available stack in the background:
+Launch the complete stack in the background:
 
 ```sh
 docker compose up --build -d
 ```
 
-Stop the stack with `docker compose down`. Add `-v` only when you also want to remove the PostgreSQL data volumes.
-
-## Running all tests
-
-Run the full Maven test suite from the repository root:
+Stop the stack:
 
 ```sh
-mvn test
+docker compose down
 ```
 
-This command requires Maven to be installed. Individual services also include Maven wrappers if you prefer to run their tests from the corresponding service directory.
+Add `-v` only when you also want to remove the PostgreSQL data volumes.
+
+### End-to-end tests
+
+End-to-end tests are maintained in the [PC Parts Store E2E repository](https://github.com/craig-fox/pc-parts-store-e2e.git).
+
+The E2E environment uses Docker Compose with separate PostgreSQL volumes so that E2E data is isolated from development data. The E2E suite uses Cucumber and is also executed by GitHub Actions.
+
+### CI/CD and code quality
+
+GitHub Actions runs the following checks:
+
+- Maven build and tests
+- Checkstyle
+- SpotBugs
+- JaCoCo coverage checks
+- End-to-end tests
+- Docker image builds
+
+SonarQube is available for local static analysis.
 
 ## Future work
 

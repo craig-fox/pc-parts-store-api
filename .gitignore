@@ -23,5 +23,6 @@ target/
 .env
 .env.*
 
-# Maven Wrapper (if you don't commit it)
-!.mvn/wrapper/maven-wrapper.jar
+# Temporary files
+*.tmp
+*.swp
