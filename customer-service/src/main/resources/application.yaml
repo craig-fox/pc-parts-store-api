@@ -2,11 +2,6 @@ spring:
   application:
     name: customer-service
 
-  datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/customerdb}
-    username: ${DB_USERNAME:customer}
-    password: ${DB_PASSWORD:customer}
-
   jpa:
     hibernate:
       ddl-auto: validate
@@ -14,9 +9,8 @@ spring:
   flyway:
     enabled: true
 
-
 server:
-  port: ${SERVER_PORT:8081}
+  port: ${SERVER_PORT:8080}
 
 jwt:
   secret: ${JWT_SECRET}
