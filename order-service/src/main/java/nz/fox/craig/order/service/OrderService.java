@@ -9,9 +9,11 @@ import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_WEIGHT_LIMIT;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import nz.fox.craig.dto.AuthenticatedUser;
 import nz.fox.craig.order.client.CustomerClient;
 import nz.fox.craig.order.client.InventoryClient;
@@ -32,8 +34,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class OrderService {
 
@@ -47,12 +51,23 @@ public class OrderService {
     public OrderResponse createOrder(OrderRequest request) {
         UUID customerId = getAuthenticatedCustomerId();
         validateCustomer(customerId);
-        for (OrderItemRequest item : request.items()) {
-            inventoryClient.reserveStock(item.productId(), item.quantity());
+    
+        List<OrderItemRequest> reservedItems = new ArrayList<>();
+    
+        try {
+            for (OrderItemRequest item : request.items()) {
+                inventoryClient.reserveStock(item.productId(), item.quantity());
+                reservedItems.add(item);
+            }
+    
+            final Order order = assembleOrder(request, customerId);
+            final Order savedOrder = orderRepository.save(order);
+    
+            return orderMapper.toResponse(savedOrder);
+        } catch (RuntimeException ex) {
+            releaseReservedStock(reservedItems);
+            throw ex;
         }
-        final Order order = assembleOrder(request, customerId);
-        final Order savedOrder = orderRepository.save(order);
-        return orderMapper.toResponse(savedOrder);
     }
 
     private Order assembleOrder(OrderRequest request, UUID customerId) {
@@ -82,6 +97,20 @@ public class OrderService {
         items.forEach(order::addItem);
 
         return order;
+    }
+
+    private void releaseReservedStock(List<OrderItemRequest> reservedItems) {
+        for (OrderItemRequest item : reservedItems) {
+            try {
+                inventoryClient.releaseStock(item.productId(), item.quantity());
+            } catch (RestClientException ex) {
+                log.warn(
+                        "Failed to release item {}. {}",
+                        item.productId(),
+                        ex.getMessage(),
+                        ex);
+            }
+        }
     }
 
     private UUID getAuthenticatedCustomerId() {
