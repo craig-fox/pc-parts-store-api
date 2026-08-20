@@ -1,6 +1,7 @@
 package nz.fox.craig.order.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -62,17 +63,18 @@ class OrderControllerTest {
                 OrderRequest request = orderRequest(orderItems());
                 OrderResponse response = OrderResponseFixtures.anOrderResponse();
             
-                when(orderService.createOrder(any(OrderRequest.class))).thenReturn(response);
+                when(orderService.createOrder(anyString(), any(OrderRequest.class))).thenReturn(response);
             
                 mockMvc.perform(
                                 post("/api/orders")
+                                        .header("Idempotency-Key", UUID.randomUUID().toString())
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .content(objectMapper.writeValueAsString(request)))
                         .andExpect(status().isCreated())
                         .andExpect(jsonPath("$.id").value(response.id().toString()))
                         .andExpect(jsonPath("$.items").isArray());
             
-                verify(orderService).createOrder(any(OrderRequest.class));
+                verify(orderService).createOrder(anyString(), any(OrderRequest.class));
             }
 
         @Test
@@ -81,8 +83,9 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(objectMapper.writeValueAsString(request)))
+                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value("items: Items must not be empty"));
         }
@@ -92,13 +95,14 @@ class OrderControllerTest {
             var missingCustomerID = UUID.randomUUID();
             OrderRequest request = orderRequest(orderItems());
 
-            when(orderService.createOrder(any(OrderRequest.class)))
+            when(orderService.createOrder(anyString(), any(OrderRequest.class)))
                     .thenThrow(new CustomerNotFoundException(missingCustomerID));
 
             mockMvc.perform(
                             post("/api/orders")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(objectMapper.writeValueAsString(request)))
+                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isNotFound())
                     .andExpect(
                             jsonPath("$.message")
@@ -109,36 +113,38 @@ class OrderControllerTest {
         void insufficientStockReturns409() throws Exception {
             OrderRequest request = orderRequest(orderItems());
 
-            when(orderService.createOrder(any(OrderRequest.class)))
+            when(orderService.createOrder(anyString(), any(OrderRequest.class)))
                     .thenThrow(new InsufficientStockException(PRODUCT_ID));
 
             mockMvc.perform(
                             post("/api/orders")
-                                    .contentType(MediaType.APPLICATION_JSON)
+                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict())
                     .andExpect(
                             jsonPath("$.message")
                                     .value("Insufficient stock for product " + PRODUCT_ID));
 
-            verify(orderService).createOrder(any(OrderRequest.class));
+            verify(orderService).createOrder(anyString(),any(OrderRequest.class));
         }
 
         @Test
         void productNotFoundReturns404() throws Exception {
             OrderRequest request = orderRequest(orderItems());
 
-            when(orderService.createOrder(any(OrderRequest.class)))
+            when(orderService.createOrder(anyString(), any(OrderRequest.class)))
                     .thenThrow(new ProductNotFoundException(PRODUCT_ID));
 
             mockMvc.perform(
                             post("/api/orders")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(objectMapper.writeValueAsString(request)))
+                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("Product " + PRODUCT_ID + " not found"));
 
-            verify(orderService).createOrder(any(OrderRequest.class));
+            verify(orderService).createOrder(anyString(), any(OrderRequest.class));
         }
 
         @Test
@@ -149,8 +155,9 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(objectMapper.writeValueAsString(request)))
+                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value("items[0].productId: must not be null"));
 
@@ -166,7 +173,8 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                    .contentType(MediaType.APPLICATION_JSON)
+                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value("items[0].quantity: must not be null"));
@@ -183,8 +191,9 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(objectMapper.writeValueAsString(request)))
+                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(
                             jsonPath("$.message")
@@ -212,8 +221,9 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(objectMapper.writeValueAsString(request)))
+                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(
                             jsonPath("$.message")
@@ -221,6 +231,7 @@ class OrderControllerTest {
 
             verifyNoInteractions(orderService);
         }
+
     }
 
     @Nested

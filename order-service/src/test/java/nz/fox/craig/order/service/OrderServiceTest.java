@@ -65,6 +65,7 @@ class OrderServiceTest {
     private static final UUID ORDER_ID = UUID.randomUUID();
     private static final UUID PRODUCT_ID = UUID.randomUUID();
     private static final int DEFAULT_ORDER_QUANTITY = 1;
+    private static final String idempotencyKey = UUID.randomUUID().toString();
 
     @Mock private OrderRepository repository;
 
@@ -103,7 +104,7 @@ class OrderServiceTest {
             when(orderMapper.toResponse(any(Order.class))).thenReturn(expectedResponse);
 
             // Act
-            OrderResponse response = orderService.createOrder(orderRequest());
+            OrderResponse response = orderService.createOrder(idempotencyKey, orderRequest());
 
             // Assert
             Order savedOrder = verifyCreateOrderInteractions();
@@ -118,7 +119,7 @@ class OrderServiceTest {
                     .when(inventoryClient)
                     .reserveStock(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
 
-            assertThatThrownBy(() -> orderService.createOrder(orderRequest()))
+            assertThatThrownBy(() -> orderService.createOrder(idempotencyKey, orderRequest()))
                     .isInstanceOf(InsufficientStockException.class);
 
             verify(repository, never()).save(any());
@@ -135,7 +136,7 @@ class OrderServiceTest {
                     .when(customerClient)
                     .validateCustomerExists(CUSTOMER_ID);
 
-            assertThrows(CustomerNotFoundException.class, () -> orderService.createOrder(request));
+            assertThrows(CustomerNotFoundException.class, () -> orderService.createOrder(idempotencyKey, request));
 
             verify(repository, never()).save(any());
         }
@@ -146,7 +147,7 @@ class OrderServiceTest {
                     .thenThrow(new ProductNotFoundException(PRODUCT_ID));
             doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
 
-            assertThatThrownBy(() -> orderService.createOrder(orderRequest()))
+            assertThatThrownBy(() -> orderService.createOrder(idempotencyKey, orderRequest()))
                     .isInstanceOf(ProductNotFoundException.class);
 
             verify(repository, never()).save(any());
@@ -167,7 +168,7 @@ class OrderServiceTest {
                     .thenReturn(OrderResponseFixtures.anOrderResponse());
 
             // Act
-            orderService.createOrder(orderRequest());
+            orderService.createOrder(idempotencyKey, orderRequest());
 
             // Assert
             Order order = orderCaptor.getValue();
@@ -190,7 +191,7 @@ class OrderServiceTest {
                     .thenReturn(OrderResponseFixtures.anOrderResponse());
 
             // Act
-            orderService.createOrder(orderRequest());
+            orderService.createOrder(idempotencyKey, orderRequest());
 
             // Assert
             Order order = orderCaptor.getValue();
@@ -213,7 +214,7 @@ class OrderServiceTest {
                     .thenReturn(OrderResponseFixtures.anOrderResponse());
 
             // Act
-            orderService.createOrder(orderRequest());
+            orderService.createOrder(idempotencyKey, orderRequest());
 
             // Assert
             Order order = orderCaptor.getValue();
@@ -239,7 +240,7 @@ class OrderServiceTest {
                     .thenReturn(OrderResponseFixtures.anOrderResponse());
 
             // Act
-            orderService.createOrder(orderRequest());
+            orderService.createOrder(idempotencyKey, orderRequest());
 
             // Assert
             Order order = orderCaptor.getValue();

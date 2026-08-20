@@ -48,7 +48,7 @@ public class OrderService {
     private final OrderMapper orderMapper;
 
     @Transactional
-    public OrderResponse createOrder(OrderRequest request) {
+    public OrderResponse createOrder(String idempotencyKey, OrderRequest request) {
         UUID customerId = getAuthenticatedCustomerId();
         validateCustomer(customerId);
     

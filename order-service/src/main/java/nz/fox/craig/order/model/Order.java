@@ -12,6 +12,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,7 +28,12 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "orders")
+@Table(
+    name = "orders",
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "uk_orders_customer_idempotency_key",
+            columnNames = {"customer_id", "idempotency_key"}))
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -35,6 +42,12 @@ public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(name = "idempotency_key", nullable = false)
+    private String idempotencyKey;
+
+    @Column(name = "idempotency_request_hash", nullable = false, length = 64)
+    private String idempotencyRequestHash;
 
     @Column(name = "customer_id", nullable = false)
     private UUID customerId;

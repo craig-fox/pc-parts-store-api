@@ -92,6 +92,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         mockMvc.perform(
                         post("/api/orders")
                                 .header("Authorization", "Bearer " + token)
+                                .header("Idempotency-Key", UUID.randomUUID().toString())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -419,6 +420,24 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         assertTrue(releaseRequest.getPath().contains(firstProductId.toString()));
 
         assertThat(orderRepository.count()).isEqualTo(initialOrderCount);
+    }
+
+
+    @Test
+    void shouldRejectOrderCreationWithoutIdempotencyKey() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        OrderRequest request = new OrderRequest(List.of(new OrderItemRequest(productId, 2)), null);
+
+        String token =
+                JwtTestFactory.createToken(
+                        customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
+        
+        mockMvc.perform(
+                post("/api/orders")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 
     private void enqueueResponses() {
