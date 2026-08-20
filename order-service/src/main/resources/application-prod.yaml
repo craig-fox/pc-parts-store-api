@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+services:
+  customer:
+    base-url: ${CUSTOMER_SERVICE_URL}
+
+  product:
+    base-url: ${PRODUCT_SERVICE_URL}
+
+  inventory:
+    base-url: ${INVENTORY_SERVICE_URL}

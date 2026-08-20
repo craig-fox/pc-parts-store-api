@@ -2,11 +2,6 @@ spring:
   application:
     name: order-service
 
-  datasource:
-      url: jdbc:postgresql://localhost:5434/orderdb
-      username: order
-      password: order
-
   jpa:
     hibernate:
       ddl-auto: validate
@@ -15,11 +10,11 @@ spring:
     enabled: true
 
 server:
-  port: ${SERVER_PORT:8082}
+  port: ${SERVER_PORT:8080}
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:3600000} 
+  expiration: ${JWT_EXPIRATION:3600000}
 
 services:
   customer:
@@ -29,6 +24,6 @@ services:
     base-url: ${PRODUCT_SERVICE_URL:http://localhost:8083}
 
   inventory:
-    base-url: ${INVENTORY_SERVICE_URL:http://localhost:8084}  
+    base-url: ${INVENTORY_SERVICE_URL:http://localhost:8084}
 
 

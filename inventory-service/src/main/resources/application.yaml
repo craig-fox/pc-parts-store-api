@@ -1,18 +1,16 @@
 spring:
   application:
     name: inventory-service
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5435/inventorydb}
-    username: ${SPRING_DATASOURCE_USERNAME:inventory}
-    password: ${SPRING_DATASOURCE_PASSWORD:inventory}
+
   jpa:
     hibernate:
       ddl-auto: validate
+
   flyway:
     enabled: true
 
 server:
-  port: ${SERVER_PORT:8084}
+  port: ${SERVER_PORT:8080}
 
 jwt:
   secret: ${JWT_SECRET}

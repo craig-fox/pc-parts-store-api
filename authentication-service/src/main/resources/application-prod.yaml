@@ -1,0 +1,2 @@
+customer-service:
+  base-url: ${CUSTOMER_SERVICE_URL}
