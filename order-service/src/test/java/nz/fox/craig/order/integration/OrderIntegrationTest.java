@@ -23,9 +23,11 @@ import nz.fox.craig.test.AbstractPostgresTest;
 import nz.fox.craig.test.JwtTestFactory;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.QueueDispatcher;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,13 +62,18 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         registry.add("services.product.base-url", () -> mockWebServer.url("/").toString());
         registry.add("services.inventory.base-url", () -> mockWebServer.url("/").toString());
     }
-
+    
     @BeforeAll
     static void startServer() throws IOException {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
     }
 
+    @BeforeEach
+    void resetMockWebServer() {
+        mockWebServer.setDispatcher(new QueueDispatcher());
+    }
+    
     @AfterAll
     static void stopServer() throws IOException {
         mockWebServer.shutdown();
@@ -81,7 +88,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         OrderRequest request = createOrderRequest();
 
         enqueueSuccessfulOrderDependencies();
-
+      
         mockMvc.perform(
                         post("/api/orders")
                                 .header("Authorization", "Bearer " + token)
@@ -159,6 +166,10 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         mockWebServer.enqueue(
                 new MockResponse().setResponseCode(404).addHeader("Content-Length", "0"));
 
+        // Inventory reservation is released after product lookup fails
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
+
         mockMvc.perform(
                         post("/api/orders")
                                 .header("Authorization", "Bearer " + token)
@@ -166,23 +177,31 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
 
-        // First downstream call: customer validation
+             
+
+        //First downstream call: customer validation
         RecordedRequest customerRequest = mockWebServer.takeRequest();
 
         assertEquals("HEAD", customerRequest.getMethod());
         assertTrue(customerRequest.getPath().startsWith("/api/customers/"));
 
-        // Second downstream call: inventory reservation
+        //Second downstream call: inventory reservation
         RecordedRequest inventoryRequest = mockWebServer.takeRequest();
 
         assertTrue(inventoryRequest.getPath().startsWith("/api/inventory/"));
         assertTrue(inventoryRequest.getPath().endsWith("/reserve"));
 
-        // Third downstream call: product lookup
+        //Third downstream call: product lookup
         RecordedRequest productRequest = mockWebServer.takeRequest();
 
         assertEquals("GET", productRequest.getMethod());
         assertTrue(productRequest.getPath().startsWith("/api/products/"));
+
+        RecordedRequest releaseRequest = mockWebServer.takeRequest();
+
+        assertEquals("POST", releaseRequest.getMethod());
+        assertTrue(releaseRequest.getPath().startsWith("/api/inventory/"));
+        assertTrue(releaseRequest.getPath().endsWith("/release"));
     }
 
     @Test
@@ -344,6 +363,85 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         assertEquals(requestCountBefore, mockWebServer.getRequestCount());
     }
 
+    @Test
+    @Timeout(10)
+    void shouldReleasePreviouslyReservedStockWhenLaterReservationFails() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID firstProductId = UUID.randomUUID();
+        UUID secondProductId = UUID.randomUUID();
+
+        long initialOrderCount = orderRepository.count();
+
+        String token =
+                JwtTestFactory.createToken(
+                        customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
+
+        OrderRequest request =
+                new OrderRequest(
+                        List.of(
+                                new OrderItemRequest(firstProductId, 2),
+                                new OrderItemRequest(secondProductId, 1)),
+                        shippingAddress());
+
+        enqueueResponses();
+        mockMvc.perform(
+                        post("/api/orders")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict());
+
+        // Customer validation
+        RecordedRequest customerRequest = mockWebServer.takeRequest();
+
+        assertEquals("HEAD", customerRequest.getMethod());
+        assertTrue(customerRequest.getPath().startsWith("/api/customers/"));
+
+        // First reservation
+        RecordedRequest firstReservation = mockWebServer.takeRequest();
+
+        assertEquals("POST", firstReservation.getMethod());
+        assertTrue(firstReservation.getPath().endsWith("/reserve"));
+        assertTrue(firstReservation.getPath().contains(firstProductId.toString()));
+
+        // Failed second reservation
+        RecordedRequest secondReservation = mockWebServer.takeRequest();
+
+        assertEquals("POST", secondReservation.getMethod());
+        assertTrue(secondReservation.getPath().endsWith("/reserve"));
+        assertTrue(secondReservation.getPath().contains(secondProductId.toString()));
+
+        // Compensation for first reservation
+        RecordedRequest releaseRequest = mockWebServer.takeRequest();
+
+        assertEquals("POST", releaseRequest.getMethod());
+        assertTrue(releaseRequest.getPath().endsWith("/release"));
+        assertTrue(releaseRequest.getPath().contains(firstProductId.toString()));
+
+        assertThat(orderRepository.count()).isEqualTo(initialOrderCount);
+    }
+
+    private void enqueueResponses() {
+        // Customer exists
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
+
+        // First inventory reservation succeeds
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
+
+        // Second inventory reservation fails
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(409).addHeader("Content-Length", "0"));
+
+        // First reservation is released
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
+
+    }
+
+   
+
     private ProductSnapshot productSnapshot() {
         return ProductSnapshot.builder()
                 .id(productId)
@@ -353,6 +451,8 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 .active(true)
                 .build();
     }
+
+    
 
     private ShippingAddressRequest shippingAddress() {
         return ShippingAddressRequest.builder()
