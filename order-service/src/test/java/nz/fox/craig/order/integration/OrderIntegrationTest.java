@@ -26,7 +26,6 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.QueueDispatcher;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -384,22 +383,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                                 new OrderItemRequest(secondProductId, 1)),
                         shippingAddress());
 
-        // Customer exists
-        mockWebServer.enqueue(
-                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
-
-        // First inventory reservation succeeds
-        mockWebServer.enqueue(
-                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
-
-        // Second inventory reservation fails
-        mockWebServer.enqueue(
-                new MockResponse().setResponseCode(409).addHeader("Content-Length", "0"));
-
-        // First reservation is released
-        mockWebServer.enqueue(
-                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
-
+        enqueueResponses();
         mockMvc.perform(
                         post("/api/orders")
                                 .header("Authorization", "Bearer " + token)
@@ -436,6 +420,27 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
         assertThat(orderRepository.count()).isEqualTo(initialOrderCount);
     }
+
+    private void enqueueResponses() {
+        // Customer exists
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
+
+        // First inventory reservation succeeds
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
+
+        // Second inventory reservation fails
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(409).addHeader("Content-Length", "0"));
+
+        // First reservation is released
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
+
+    }
+
+   
 
     private ProductSnapshot productSnapshot() {
         return ProductSnapshot.builder()

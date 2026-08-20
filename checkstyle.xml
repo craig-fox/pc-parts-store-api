@@ -5,7 +5,12 @@
 
 <module name="Checker">
 
+  
     <module name="TreeWalker">
+
+        <module name="SuppressionXpathFilter">
+            <property name="file" value="suppressions.xml"/>
+        </module>
 
         <!-- ===== High ROI: things the compiler can't catch ===== -->
 
