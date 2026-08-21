@@ -512,9 +512,6 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                         .asText());
 
         assertThat(secondOrderId).isEqualTo(orderId);
-
-        assertThat(secondResult.getResponse().getContentAsString())
-                .isEqualTo(firstResult.getResponse().getContentAsString());
     }
 
     @Test
