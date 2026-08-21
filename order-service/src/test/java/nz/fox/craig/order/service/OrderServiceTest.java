@@ -76,6 +76,9 @@ class OrderServiceTest {
 
     @Mock private OrderMapper orderMapper;
 
+    @Mock
+    private OrderPersistenceService orderPersistenceService;
+
     @InjectMocks private OrderService orderService;
 
     @BeforeEach
@@ -457,7 +460,7 @@ class OrderServiceTest {
     }
 
     private void configureRepositoryToAssignIds() {
-        when(repository.save(any(Order.class)))
+        when(orderPersistenceService.save(any(Order.class)))
                 .thenAnswer(
                         invocation -> {
                             Order order = invocation.getArgument(0);
@@ -487,7 +490,8 @@ class OrderServiceTest {
 
         verify(productClient).getProduct(PRODUCT_ID);
 
-        verify(repository).save(captor.capture());
+        verify(orderPersistenceService).save(captor.capture());
+        
 
         Order savedOrder = captor.getValue();
 

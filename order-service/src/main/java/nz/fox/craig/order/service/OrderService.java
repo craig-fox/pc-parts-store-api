@@ -39,6 +39,8 @@ import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.model.ShippingAddress;
 import nz.fox.craig.order.repository.OrderRepository;
+
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -55,6 +57,7 @@ public class OrderService {
     private final ProductClient productClient;
     private final InventoryClient inventoryClient;
     private final OrderMapper orderMapper;
+    private final OrderPersistenceService orderPersistenceService;
 
     @Transactional
     public OrderCreationResult createOrder(String idempotencyKey, OrderRequest request) {
@@ -82,18 +85,22 @@ public class OrderService {
             }
     
             final Order order = assembleOrder(request, customerId, idempotencyKey, requestHash);
-            //order.setIdempotencyKey(idempotencyKey);
-            //order.setIdempotencyRequestHash(requestHash);
-    
-            final Order savedOrder = orderRepository.save(order);
+            final Order savedOrder = orderPersistenceService.save(order);
     
             return new OrderCreationResult(
                     orderMapper.toResponse(savedOrder),
                     true);
+        } catch (DataIntegrityViolationException ex) {
+            releaseReservedStock(reservedItems);
+            return handleConcurrentOrder(
+                    customerId,
+                    idempotencyKey,
+                    requestHash,
+                    ex);
         } catch (RuntimeException ex) {
             releaseReservedStock(reservedItems);
             throw ex;
-        }
+                }
     }
 
     private Order assembleOrder(OrderRequest request, 
@@ -128,6 +135,25 @@ public class OrderService {
         items.forEach(order::addItem);
 
         return order;
+    }
+
+    private OrderCreationResult handleConcurrentOrder(
+        UUID customerId,
+        String idempotencyKey,
+        String requestHash,
+        DataIntegrityViolationException ex) {
+
+        Optional<Order> existingOrder =
+                orderRepository.findByCustomerIdAndIdempotencyKey(
+                        customerId, idempotencyKey);
+
+        if (existingOrder.isEmpty()) {
+            throw ex;
+        }
+
+        return new OrderCreationResult(
+                handleExistingOrder(existingOrder.get(), requestHash),
+                false);
     }
 
     private void releaseReservedStock(List<OrderItemRequest> reservedItems) {
@@ -247,7 +273,9 @@ public class OrderService {
 
     private OrderResponse handleExistingOrder(Order order, String requestHash) {
 
-        if (!order.getIdempotencyRequestHash().equals(requestHash)) {
+        if (!MessageDigest.isEqual(
+                order.getIdempotencyRequestHash().getBytes(StandardCharsets.UTF_8),
+                requestHash.getBytes(StandardCharsets.UTF_8))) {
             throw new IdempotencyKeyReuseException(order.getIdempotencyKey());
         }
     
