@@ -62,6 +62,11 @@ jobs:
           ref: 1.1.0
           path: pc-parts-store-e2e
 
+      - name: Check JWT configuration
+        run: |
+          echo "JWT_SECRET length: ${#JWT_SECRET}"
+          echo "JWT_EXPIRATION: ${JWT_EXPIRATION}"
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
