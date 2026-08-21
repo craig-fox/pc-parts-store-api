@@ -10,7 +10,7 @@
     </parent>
     <groupId>nz.fox.craig</groupId>
     <artifactId>pc-parts-store-api</artifactId>
-    <version>1.0.0</version>
+    <version>1.11</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -36,6 +36,12 @@
         <jjwt.version>0.13.0</jjwt.version>
         <springdoc.version>2.8.9</springdoc.version>
         <plantuml.version>1.2026.3</plantuml.version>
+        <spotbugs.version>4.8.6.4</spotbugs.version>
+        <findsecbugs.version>1.13.0</findsecbugs.version>
+        <sonar.maven.plugin.version>5.5.0.6356</sonar.maven.plugin.version>
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+        <sonar.projectKey>pc-parts-store-api</sonar.projectKey>
+        <sonar.projectName>pc-parts-store-api</sonar.projectName>
     </properties>
 
     <dependencyManagement>
@@ -193,6 +199,38 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs.version}</version>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>Medium</threshold>
+                    <xmlOutput>true</xmlOutput>
+                    <excludeFilterFile>${maven.multiModuleProjectDirectory}/config/spotbugs-exclude.xml</excludeFilterFile>
+                    <plugins>
+                        <plugin>
+                            <groupId>com.h3xstream.findsecbugs</groupId>
+                            <artifactId>findsecbugs-plugin</artifactId>
+                            <version>${findsecbugs.version}</version>
+                        </plugin>
+                    </plugins>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>spotbugs-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar.maven.plugin.version}</version>
             </plugin>
         </plugins>
         <pluginManagement>

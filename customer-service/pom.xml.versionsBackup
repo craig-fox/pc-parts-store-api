@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>nz.fox.craig</groupId>
 		<artifactId>pc-parts-store-api</artifactId>
-		<version>1.0.0</version>
+		<version>1.11</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<groupId>nz.fox.craig</groupId>
@@ -109,32 +109,6 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-			
-			<plugin>
-				<groupId>com.github.spotbugs</groupId>
-				<artifactId>spotbugs-maven-plugin</artifactId>
-				<version>4.8.6.4</version>
-				<configuration>
-					<effort>Max</effort>
-					<threshold>Medium</threshold>
-					<xmlOutput>true</xmlOutput>
-					<excludeFilterFile>${project.basedir}/spotbugs-exclude.xml</excludeFilterFile>
-					<plugins>
-						<plugin>
-							<groupId>com.h3xstream.findsecbugs</groupId>
-							<artifactId>findsecbugs-plugin</artifactId>
-							<version>1.13.0</version>
-						</plugin>
-					</plugins>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>check</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>

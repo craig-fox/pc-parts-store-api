@@ -5,13 +5,17 @@
 	<parent>
 		<groupId>nz.fox.craig</groupId>
 		<artifactId>pc-parts-store-api</artifactId>
-		<version>1.0.0</version>
+		<version>1.11</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<groupId>nz.fox.craig</groupId>
 	<artifactId>authentication-service</artifactId>
 	<name>authentication-service</name>
 	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
