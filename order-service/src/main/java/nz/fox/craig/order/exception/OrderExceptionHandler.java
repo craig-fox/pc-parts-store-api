@@ -23,6 +23,12 @@ public class OrderExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(MESSAGE, ex.getMessage()));
     }
 
+    @ExceptionHandler(IdempotencyKeyReuseException.class)
+    public ResponseEntity<Map<String, String>> handleIdempotencyKeyReuse(
+            IdempotencyKeyReuseException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(MESSAGE, ex.getMessage()));
+    }
+
     @ExceptionHandler(CustomerNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleCustomerNotFound(
             CustomerNotFoundException ex) {

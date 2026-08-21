@@ -39,7 +39,6 @@ import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
 import nz.fox.craig.order.exception.ProductNotFoundException;
 import nz.fox.craig.order.fixture.OrderFixtures;
-import nz.fox.craig.order.fixture.OrderResponseFixtures;
 import nz.fox.craig.order.mapper.OrderMapper;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
@@ -65,6 +64,7 @@ class OrderServiceTest {
     private static final UUID ORDER_ID = UUID.randomUUID();
     private static final UUID PRODUCT_ID = UUID.randomUUID();
     private static final int DEFAULT_ORDER_QUANTITY = 1;
+    private static final String idempotencyKey = UUID.randomUUID().toString();
 
     @Mock private OrderRepository repository;
 
@@ -75,6 +75,9 @@ class OrderServiceTest {
     @Mock private InventoryClient inventoryClient;
 
     @Mock private OrderMapper orderMapper;
+
+    @Mock
+    private OrderPersistenceService orderPersistenceService;
 
     @InjectMocks private OrderService orderService;
 
@@ -98,12 +101,13 @@ class OrderServiceTest {
             configureRepositoryToAssignIds();
             when(productClient.getProduct(PRODUCT_ID)).thenReturn(productSnapshot());
 
-            OrderResponse expectedResponse = OrderResponseFixtures.anOrderResponse();
+            OrderResponse expectedResponse = OrderFixtures.anOrderResponse();
 
             when(orderMapper.toResponse(any(Order.class))).thenReturn(expectedResponse);
 
             // Act
-            OrderResponse response = orderService.createOrder(orderRequest());
+            OrderCreationResult result = orderService.createOrder(idempotencyKey, orderRequest());
+            OrderResponse response = result.order();
 
             // Assert
             Order savedOrder = verifyCreateOrderInteractions();
@@ -118,7 +122,7 @@ class OrderServiceTest {
                     .when(inventoryClient)
                     .reserveStock(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
 
-            assertThatThrownBy(() -> orderService.createOrder(orderRequest()))
+            assertThatThrownBy(() -> orderService.createOrder(idempotencyKey, orderRequest()))
                     .isInstanceOf(InsufficientStockException.class);
 
             verify(repository, never()).save(any());
@@ -130,12 +134,12 @@ class OrderServiceTest {
 
         @Test
         void shouldThrowWhenCustomerDoesNotExist() {
-            OrderRequest request = orderRequest();
+            OrderRequest request = OrderFixtures.anOrderRequest();
             doThrow(new CustomerNotFoundException(CUSTOMER_ID))
                     .when(customerClient)
                     .validateCustomerExists(CUSTOMER_ID);
 
-            assertThrows(CustomerNotFoundException.class, () -> orderService.createOrder(request));
+            assertThrows(CustomerNotFoundException.class, () -> orderService.createOrder(idempotencyKey, request));
 
             verify(repository, never()).save(any());
         }
@@ -146,7 +150,7 @@ class OrderServiceTest {
                     .thenThrow(new ProductNotFoundException(PRODUCT_ID));
             doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
 
-            assertThatThrownBy(() -> orderService.createOrder(orderRequest()))
+            assertThatThrownBy(() -> orderService.createOrder(idempotencyKey, orderRequest()))
                     .isInstanceOf(ProductNotFoundException.class);
 
             verify(repository, never()).save(any());
@@ -164,10 +168,10 @@ class OrderServiceTest {
             ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
 
             when(orderMapper.toResponse(orderCaptor.capture()))
-                    .thenReturn(OrderResponseFixtures.anOrderResponse());
+                    .thenReturn(OrderFixtures.anOrderResponse());
 
             // Act
-            orderService.createOrder(orderRequest());
+            orderService.createOrder(idempotencyKey, orderRequest());
 
             // Assert
             Order order = orderCaptor.getValue();
@@ -187,10 +191,10 @@ class OrderServiceTest {
             ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
 
             when(orderMapper.toResponse(orderCaptor.capture()))
-                    .thenReturn(OrderResponseFixtures.anOrderResponse());
+                    .thenReturn(OrderFixtures.anOrderResponse());
 
             // Act
-            orderService.createOrder(orderRequest());
+            orderService.createOrder(idempotencyKey, orderRequest());
 
             // Assert
             Order order = orderCaptor.getValue();
@@ -210,10 +214,10 @@ class OrderServiceTest {
             ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
 
             when(orderMapper.toResponse(orderCaptor.capture()))
-                    .thenReturn(OrderResponseFixtures.anOrderResponse());
+                    .thenReturn(OrderFixtures.anOrderResponse());
 
             // Act
-            orderService.createOrder(orderRequest());
+            orderService.createOrder(idempotencyKey, orderRequest());
 
             // Assert
             Order order = orderCaptor.getValue();
@@ -236,10 +240,10 @@ class OrderServiceTest {
             ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
 
             when(orderMapper.toResponse(orderCaptor.capture()))
-                    .thenReturn(OrderResponseFixtures.anOrderResponse());
+                    .thenReturn(OrderFixtures.anOrderResponse());
 
             // Act
-            orderService.createOrder(orderRequest());
+            orderService.createOrder(idempotencyKey, orderRequest());
 
             // Assert
             Order order = orderCaptor.getValue();
@@ -255,7 +259,7 @@ class OrderServiceTest {
             // Arrange
             Order order = OrderFixtures.anOrder();
 
-            OrderResponse expectedResponse = OrderResponseFixtures.anOrderResponse();
+            OrderResponse expectedResponse = OrderFixtures.anOrderResponse();
 
             when(repository.findById(ORDER_ID)).thenReturn(Optional.of(order));
 
@@ -290,9 +294,9 @@ class OrderServiceTest {
             Order order2 = OrderFixtures.anOrder();
             order2.setId(UUID.randomUUID());
 
-            OrderResponse response1 = OrderResponseFixtures.anOrderResponse();
+            OrderResponse response1 = OrderFixtures.anOrderResponse();
 
-            OrderResponse response2 = OrderResponseFixtures.anOrderResponse();
+            OrderResponse response2 = OrderFixtures.anOrderResponse();
 
             when(repository.findByCustomerIdOrderByOrderDateDesc(CUSTOMER_ID))
                     .thenReturn(List.of(order1, order2));
@@ -456,7 +460,7 @@ class OrderServiceTest {
     }
 
     private void configureRepositoryToAssignIds() {
-        when(repository.save(any(Order.class)))
+        when(orderPersistenceService.save(any(Order.class)))
                 .thenAnswer(
                         invocation -> {
                             Order order = invocation.getArgument(0);
@@ -486,7 +490,8 @@ class OrderServiceTest {
 
         verify(productClient).getProduct(PRODUCT_ID);
 
-        verify(repository).save(captor.capture());
+        verify(orderPersistenceService).save(captor.capture());
+        
 
         Order savedOrder = captor.getValue();
 

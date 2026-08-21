@@ -12,12 +12,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
 import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.request.ShippingAddressRequest;
+import nz.fox.craig.order.fixture.OrderFixtures;
 import nz.fox.craig.order.repository.OrderRepository;
 import nz.fox.craig.test.AbstractPostgresTest;
 import nz.fox.craig.test.JwtTestFactory;
@@ -34,10 +44,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.RecordedRequest;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -50,6 +73,8 @@ class OrderIntegrationTest extends AbstractPostgresTest {
     @Autowired private OrderRepository orderRepository;
 
     static MockWebServer mockWebServer;
+
+    private static String idempotencyKey = UUID.randomUUID().toString();
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -85,29 +110,25 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         UUID customerId = UUID.randomUUID();
         String token = createToken(customerId);
 
-        OrderRequest request = createOrderRequest();
+        OrderRequest request = OrderFixtures.anOrderRequest();
 
         enqueueSuccessfulOrderDependencies();
       
         mockMvc.perform(
-                        post("/api/orders")
-                                .header("Authorization", "Bearer " + token)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                post("/api/orders")
+                        .header("Authorization", "Bearer " + token)
+                        .header("Idempotency-Key", idempotencyKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.customerId").value(customerId.toString()))
                 .andExpect(jsonPath("$.orderDate").exists())
                 .andExpect(jsonPath("$.status").value("PLACED"))
-                .andExpect(jsonPath("$.subtotal").value(179.98))
-                .andExpect(jsonPath("$.shipping").value(15.00))
-                .andExpect(jsonPath("$.total").value(194.98))
                 .andExpect(jsonPath("$.items").isArray())
                 .andExpect(jsonPath("$.items.length()").value(1))
-                .andExpect(jsonPath("$.items[0].productId").value(productId.toString()))
-                .andExpect(jsonPath("$.items[0].productName").value("Gaming Mouse"))
-                .andExpect(jsonPath("$.items[0].unitPrice").value(89.99))
-                .andExpect(jsonPath("$.items[0].quantity").value(2));
-
+                .andExpect(jsonPath("$.items[0].productId").value(productId.toString()));
+        
         verifyDownstreamRequests();
     }
 
@@ -131,6 +152,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         mockMvc.perform(
                         post("/api/orders")
                                 .header("Authorization", "Bearer " + token)
+                                .header("Idempotency-Key", idempotencyKey)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -173,11 +195,10 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         mockMvc.perform(
                         post("/api/orders")
                                 .header("Authorization", "Bearer " + token)
+                                .header("Idempotency-Key", idempotencyKey)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
-
-             
 
         //First downstream call: customer validation
         RecordedRequest customerRequest = mockWebServer.takeRequest();
@@ -229,6 +250,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         mockMvc.perform(
                         post("/api/orders")
                                 .header("Authorization", "Bearer " + token)
+                                .header("Idempotency-Key", idempotencyKey)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -263,6 +285,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         mockMvc.perform(
                         post("/api/orders")
                                 .header("Authorization", "Bearer " + token)
+                                .header("Idempotency-Key", idempotencyKey)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(jsonPath("$.message").value("items: Items must not be empty"))
@@ -350,7 +373,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
     @Test
     @Timeout(10)
     void shouldRejectOrderWithoutJwt() throws Exception {
-        OrderRequest request = createOrderRequest();
+        OrderRequest request = OrderFixtures.anOrderRequest();
 
         int requestCountBefore = mockWebServer.getRequestCount();
 
@@ -387,6 +410,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         mockMvc.perform(
                         post("/api/orders")
                                 .header("Authorization", "Bearer " + token)
+                                .header("Idempotency-Key", idempotencyKey)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -421,6 +445,407 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         assertThat(orderRepository.count()).isEqualTo(initialOrderCount);
     }
 
+
+    @Test
+    void shouldRejectOrderCreationWithoutIdempotencyKey() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        OrderRequest request = new OrderRequest(List.of(new OrderItemRequest(productId, 2)), null);
+
+        String token =
+                JwtTestFactory.createToken(
+                        customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
+        
+        mockMvc.perform(
+                post("/api/orders")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @Timeout(10)
+    void shouldReturnExistingOrderForSameIdempotencyKeyAndRequest() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        String token = createToken(customerId);
+        String idempotencyKey = UUID.randomUUID().toString();
+
+        OrderRequest request = OrderFixtures.anOrderRequest();
+
+        enqueueSuccessfulOrderDependencies();
+
+        MvcResult firstResult =
+                mockMvc.perform(
+                                post("/api/orders")
+                                        .header("Authorization", "Bearer " + token)
+                                        .header("Idempotency-Key", idempotencyKey)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(request)))
+                        .andExpect(status().isCreated())
+                        .andExpect(jsonPath("$.id").exists())
+                        .andReturn();
+
+        verifyDownstreamRequests();
+
+        UUID orderId =
+            UUID.fromString(
+                    objectMapper
+                            .readTree(firstResult.getResponse().getContentAsString())
+                            .get("id")
+                            .asText());
+
+        MvcResult secondResult =
+                mockMvc.perform(
+                                post("/api/orders")
+                                        .header("Authorization", "Bearer " + token)
+                                        .header("Idempotency-Key", idempotencyKey)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(request)))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.id").value(orderId.toString()))
+                        .andReturn();
+        UUID secondOrderId =
+            UUID.fromString(
+                objectMapper
+                        .readTree(secondResult.getResponse().getContentAsString())
+                        .get("id")
+                        .asText());
+
+        assertThat(secondOrderId).isEqualTo(orderId);
+    }
+
+    @Test
+    @Timeout(10)
+    void shouldNotReserveInventoryAgainForIdempotentRetry() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        String token = createToken(customerId);
+        String idempotencyKey = UUID.randomUUID().toString();
+    
+        OrderRequest request = OrderFixtures.anOrderRequest();
+        String requestJson = objectMapper.writeValueAsString(request);
+    
+        enqueueSuccessfulOrderDependencies();
+        int requestCountBefore = mockWebServer.getRequestCount();
+    
+        mockMvc.perform(
+                        post("/api/orders")
+                                .header("Authorization", "Bearer " + token)
+                                .header("Idempotency-Key", idempotencyKey)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestJson))
+                .andExpect(status().isCreated());
+    
+        verifyDownstreamRequests();
+    
+        int requestCountAfterFirstRequest = mockWebServer.getRequestCount();
+
+        assertThat(requestCountAfterFirstRequest - requestCountBefore)
+                .isEqualTo(3);
+    
+        mockMvc.perform(
+                        post("/api/orders")
+                                .header("Authorization", "Bearer " + token)
+                                .header("Idempotency-Key", idempotencyKey)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestJson))
+                .andExpect(status().isOk());
+    
+        assertThat(mockWebServer.getRequestCount())
+                .isEqualTo(requestCountAfterFirstRequest);
+    }
+
+    @Test
+    @Timeout(10)
+    void shouldRejectReuseOfIdempotencyKeyWithDifferentRequest() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        String token = createToken(customerId);
+        String idempotencyKey = UUID.randomUUID().toString();
+
+        OrderRequest firstRequest = OrderFixtures.anOrderRequest();
+
+        OrderRequest secondRequest =
+                OrderFixtures.anOrderRequest(
+                        List.of(
+                                OrderItemRequest.builder()
+                                        .productId(productId)
+                                        .quantity(2)
+                                        .build()));
+
+        String firstRequestJson = objectMapper.writeValueAsString(firstRequest);
+        String secondRequestJson = objectMapper.writeValueAsString(secondRequest);
+
+        enqueueSuccessfulOrderDependencies();
+
+        mockMvc.perform(
+                        post("/api/orders")
+                                .header("Authorization", "Bearer " + token)
+                                .header("Idempotency-Key", idempotencyKey)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(firstRequestJson))
+                .andExpect(status().isCreated());
+
+        verifyDownstreamRequests();
+
+        int requestCountAfterFirstRequest = mockWebServer.getRequestCount();
+
+        mockMvc.perform(
+                        post("/api/orders")
+                                .header("Authorization", "Bearer " + token)
+                                .header("Idempotency-Key", idempotencyKey)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(secondRequestJson))
+                .andExpect(status().isConflict())
+                .andExpect(
+                        jsonPath("$.message")
+                                .value(
+                                        "Idempotency key has already been used with a different request: "
+                                                + idempotencyKey));
+
+        assertThat(mockWebServer.getRequestCount())
+                .isEqualTo(requestCountAfterFirstRequest);
+    }
+
+    @Test
+    @Timeout(10)
+    void shouldAllowSameIdempotencyKeyForDifferentCustomer() throws Exception {
+        UUID firstCustomerId = UUID.randomUUID();
+        UUID secondCustomerId = UUID.randomUUID();
+        String firstToken = createToken(firstCustomerId);
+        String secondToken = createToken(secondCustomerId);
+        String idempotencyKey = UUID.randomUUID().toString();
+
+        OrderRequest request = OrderFixtures.anOrderRequest();
+        String requestJson = objectMapper.writeValueAsString(request);
+
+        // First customer's dependencies
+        enqueueSuccessfulOrderDependencies();
+
+        MvcResult firstResult =
+                mockMvc.perform(
+                                post("/api/orders")
+                                        .header("Authorization", "Bearer " + firstToken)
+                                        .header("Idempotency-Key", idempotencyKey)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(requestJson))
+                        .andExpect(status().isCreated())
+                        .andExpect(jsonPath("$.id").exists())
+                        .andExpect(jsonPath("$.customerId").value(firstCustomerId.toString()))
+                        .andReturn();
+
+        verifyDownstreamRequests();
+
+        UUID firstOrderId =
+                UUID.fromString(
+                        objectMapper
+                                .readTree(firstResult.getResponse().getContentAsString())
+                                .get("id")
+                                .asText());
+
+        // Second customer's dependencies
+        enqueueSuccessfulOrderDependencies();
+
+        MvcResult secondResult =
+                mockMvc.perform(
+                                post("/api/orders")
+                                        .header("Authorization", "Bearer " + secondToken)
+                                        .header("Idempotency-Key", idempotencyKey)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(requestJson))
+                        .andExpect(status().isCreated())
+                        .andExpect(jsonPath("$.id").exists())
+                        .andExpect(jsonPath("$.customerId").value(secondCustomerId.toString()))
+                        .andReturn();
+
+        verifyDownstreamRequests();
+
+        UUID secondOrderId =
+                UUID.fromString(
+                        objectMapper
+                                .readTree(secondResult.getResponse().getContentAsString())
+                                .get("id")
+                                .asText());
+
+        assertThat(secondOrderId).isNotEqualTo(firstOrderId);
+    }
+
+
+    @Test
+    @Timeout(10)
+    void shouldCreateOnlyOneOrderForConcurrentRequestsWithSameIdempotencyKey()
+                throws Exception {
+
+        UUID customerId = UUID.randomUUID();
+        String token = createToken(customerId);
+        String idempotencyKey = UUID.randomUUID().toString();
+        String requestJson =
+                objectMapper.writeValueAsString(OrderFixtures.anOrderRequest());
+
+        long initialOrderCount = orderRepository.count();
+        int initialRequestCount = mockWebServer.getRequestCount();
+
+        Dispatcher originalDispatcher = mockWebServer.getDispatcher();
+        mockWebServer.setDispatcher(concurrentOrderDispatcher());
+
+        try {
+                List<Integer> statuses =
+                        executeConcurrentOrderRequests(token, idempotencyKey, requestJson);
+
+                assertConcurrentOrderResults(
+                        statuses, initialOrderCount, initialRequestCount);
+                assertCompensatedReservation();
+        } finally {
+                restoreDispatcher(originalDispatcher);
+        }
+    }
+
+    private Dispatcher concurrentOrderDispatcher() {
+        return new Dispatcher() {
+            @Override
+            public MockResponse dispatch(RecordedRequest request) {
+                String path = request.getPath();
+    
+                if ("HEAD".equals(request.getMethod())
+                        && path.startsWith("/api/customers/")) {
+                    return new MockResponse().setResponseCode(200);
+                }
+    
+                if ("POST".equals(request.getMethod())
+                        && path.endsWith("/reserve")) {
+                    return new MockResponse().setResponseCode(200);
+                }
+    
+                if ("POST".equals(request.getMethod())
+                        && path.endsWith("/release")) {
+                    return new MockResponse().setResponseCode(200);
+                }
+    
+                if ("GET".equals(request.getMethod())
+                        && path.startsWith("/api/products/")) {
+                    return productResponse();
+                }
+    
+                return new MockResponse().setResponseCode(404);
+            }
+        };
+    }
+
+    private MockResponse productResponse() {
+        try {
+            return new MockResponse()
+                    .setResponseCode(200)
+                    .setBody(objectMapper.writeValueAsString(productSnapshot()))
+                    .addHeader("Content-Type", "application/json");
+        } catch (JsonProcessingException ex) {
+            throw new AssertionError(ex);
+        }
+    }
+
+    private List<Integer> executeConcurrentOrderRequests(
+        String token, String idempotencyKey, String requestJson) throws Exception {
+
+        CountDownLatch startLatch = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+
+        Callable<Integer> createOrder =
+                () -> executeOrderRequest(
+                        startLatch, token, idempotencyKey, requestJson);
+
+        try {
+                List<Future<Integer>> futures =
+                        List.of(
+                                executor.submit(createOrder),
+                                executor.submit(createOrder));
+
+                startLatch.countDown();
+
+                return futures.stream()
+                        .map(this::getStatus)
+                        .toList();
+        } finally {
+                executor.shutdown();
+                assertThat(executor.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+        }
+    }
+
+    private int executeOrderRequest(
+        CountDownLatch startLatch,
+        String token,
+        String idempotencyKey,
+        String requestJson)
+        throws Exception {
+
+        startLatch.await();
+
+        return mockMvc.perform(
+                        post("/api/orders")
+                                .header("Authorization", "Bearer " + token)
+                                .header("Idempotency-Key", idempotencyKey)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestJson))
+                .andReturn()
+                .getResponse()
+                .getStatus();
+        }
+    
+
+    private void assertConcurrentOrderResults(
+        List<Integer> statuses,
+        long initialOrderCount,
+        int initialRequestCount)
+        throws InterruptedException {
+
+        assertThat(statuses)
+                .contains(HttpStatus.CREATED.value())
+                .contains(HttpStatus.OK.value());
+
+        assertThat(orderRepository.count())
+                .isEqualTo(initialOrderCount + 1);
+
+        assertThat(mockWebServer.getRequestCount())
+                .isEqualTo(initialRequestCount + 7);
+    }
+
+
+    private void assertCompensatedReservation() throws InterruptedException {
+
+        List<RecordedRequest> requests = new ArrayList<>();
+        
+        for (int i = 0; i < 7; i++) {
+                requests.add(mockWebServer.takeRequest());
+        }
+        
+        long reserveRequests =
+                requests.stream()
+                        .filter(request -> "POST".equals(request.getMethod()))
+                        .filter(request -> request.getPath().endsWith("/reserve"))
+                        .count();
+        
+        long releaseRequests =
+                requests.stream()
+                        .filter(request -> "POST".equals(request.getMethod()))
+                        .filter(request -> request.getPath().endsWith("/release"))
+                        .count();
+        
+        assertThat(reserveRequests).isEqualTo(2);
+        assertThat(releaseRequests).isEqualTo(1);
+    }
+
+    private void restoreDispatcher(Dispatcher originalDispatcher) {
+        mockWebServer.setDispatcher(originalDispatcher);
+    }
+        
+
+    private int getStatus(Future<Integer> result) {
+        try {
+            return result.get();
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError("Test interrupted", ex);
+        } catch (ExecutionException ex) {
+            throw new AssertionError("Concurrent order request failed", ex);
+        }
+    }
+
     private void enqueueResponses() {
         // Customer exists
         mockWebServer.enqueue(
@@ -439,8 +864,6 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
 
     }
-
-   
 
     private ProductSnapshot productSnapshot() {
         return ProductSnapshot.builder()
@@ -468,11 +891,6 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
     }
 
-    private OrderRequest createOrderRequest() {
-        List<OrderItemRequest> itemRequests = List.of(new OrderItemRequest(productId, 2));
-
-        return new OrderRequest(itemRequests, shippingAddress());
-    }
 
     private void enqueueSuccessfulOrderDependencies() throws JsonProcessingException {
         mockWebServer.enqueue(

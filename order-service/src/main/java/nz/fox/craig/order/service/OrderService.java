@@ -7,10 +7,18 @@ import static nz.fox.craig.order.shipping.ShippingPolicy.LIGHT_WEIGHT_LIMIT;
 import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_SHIPPING;
 import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_WEIGHT_LIMIT;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+import java.util.stream.Collectors;
+import nz.fox.craig.order.dto.request.ShippingAddressRequest;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +30,7 @@ import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.response.OrderResponse;
+import nz.fox.craig.order.exception.IdempotencyKeyReuseException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
 import nz.fox.craig.order.mapper.OrderMapper;
@@ -30,6 +39,8 @@ import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.model.ShippingAddress;
 import nz.fox.craig.order.repository.OrderRepository;
+
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -46,10 +57,23 @@ public class OrderService {
     private final ProductClient productClient;
     private final InventoryClient inventoryClient;
     private final OrderMapper orderMapper;
+    private final OrderPersistenceService orderPersistenceService;
 
     @Transactional
-    public OrderResponse createOrder(OrderRequest request) {
+    public OrderCreationResult createOrder(String idempotencyKey, OrderRequest request) {
         UUID customerId = getAuthenticatedCustomerId();
+        String requestHash = hashOrderRequest(request);
+    
+        Optional<Order> existingOrder =
+                orderRepository.findByCustomerIdAndIdempotencyKey(
+                        customerId, idempotencyKey);
+    
+        if (existingOrder.isPresent()) {
+            return new OrderCreationResult(
+                    handleExistingOrder(existingOrder.get(), requestHash),
+                    false);
+        }
+    
         validateCustomer(customerId);
     
         List<OrderItemRequest> reservedItems = new ArrayList<>();
@@ -60,17 +84,29 @@ public class OrderService {
                 reservedItems.add(item);
             }
     
-            final Order order = assembleOrder(request, customerId);
-            final Order savedOrder = orderRepository.save(order);
+            final Order order = assembleOrder(request, customerId, idempotencyKey, requestHash);
+            final Order savedOrder = orderPersistenceService.save(order);
     
-            return orderMapper.toResponse(savedOrder);
+            return new OrderCreationResult(
+                    orderMapper.toResponse(savedOrder),
+                    true);
+        } catch (DataIntegrityViolationException ex) {
+            releaseReservedStock(reservedItems);
+            return handleConcurrentOrder(
+                    customerId,
+                    idempotencyKey,
+                    requestHash,
+                    ex);
         } catch (RuntimeException ex) {
             releaseReservedStock(reservedItems);
             throw ex;
-        }
+                }
     }
 
-    private Order assembleOrder(OrderRequest request, UUID customerId) {
+    private Order assembleOrder(OrderRequest request, 
+                                UUID customerId, 
+                                String idempotencyKey, 
+                                String idempotencyHash) {
 
         final List<OrderItem> items = buildOrderItems(request);
 
@@ -81,6 +117,8 @@ public class OrderService {
         final Order order =
                 Order.builder()
                         .customerId(customerId)
+                        .idempotencyKey(idempotencyKey)
+                        .idempotencyRequestHash(idempotencyHash)
                         .orderDate(LocalDateTime.now())
                         .status(OrderStatus.PLACED)
                         .subtotal(subtotal)
@@ -97,6 +135,25 @@ public class OrderService {
         items.forEach(order::addItem);
 
         return order;
+    }
+
+    private OrderCreationResult handleConcurrentOrder(
+        UUID customerId,
+        String idempotencyKey,
+        String requestHash,
+        DataIntegrityViolationException ex) {
+
+        Optional<Order> existingOrder =
+                orderRepository.findByCustomerIdAndIdempotencyKey(
+                        customerId, idempotencyKey);
+
+        if (existingOrder.isEmpty()) {
+            throw ex;
+        }
+
+        return new OrderCreationResult(
+                handleExistingOrder(existingOrder.get(), requestHash),
+                false);
     }
 
     private void releaseReservedStock(List<OrderItemRequest> reservedItems) {
@@ -178,6 +235,53 @@ public class OrderService {
         return subtotal.add(shipping);
     }
 
+    private String hashOrderRequest(OrderRequest request) {
+
+        String canonicalRequest =
+                request.items().stream()
+                        .map(this::canonicalItem)
+                        .collect(Collectors.joining("|"))
+                        + "|"
+                        + canonicalAddress(request.shippingAddress());
+    
+        return sha256(canonicalRequest);
+    }
+    
+    private String canonicalItem(OrderItemRequest item) {
+        return item.productId() + ":" + item.quantity();
+    }
+    
+    private String canonicalAddress(ShippingAddressRequest address) {
+        return String.join(
+                ":",
+                address.addressLine1(),
+                address.city(),
+                address.postcode(),
+                address.country());
+    }
+    
+    private String sha256(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+    
+            return HexFormat.of()
+                    .formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 algorithm unavailable", ex);
+        }
+    }
+
+    private OrderResponse handleExistingOrder(Order order, String requestHash) {
+
+        if (!MessageDigest.isEqual(
+                order.getIdempotencyRequestHash().getBytes(StandardCharsets.UTF_8),
+                requestHash.getBytes(StandardCharsets.UTF_8))) {
+            throw new IdempotencyKeyReuseException(order.getIdempotencyKey());
+        }
+    
+        return orderMapper.toResponse(order);
+    }
+
     @Transactional(readOnly = true)
     public OrderResponse getOrder(UUID id) {
 
@@ -205,6 +309,13 @@ public class OrderService {
         }
     }
 
+    private Optional<Order> findExistingOrder(
+        UUID customerId, String idempotencyKey) {
+
+    return orderRepository.findByCustomerIdAndIdempotencyKey(
+            customerId, idempotencyKey);
+    }
+
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrdersForAuthenticatedCustomer() {
         UUID customerId = getAuthenticatedCustomerId();
@@ -213,4 +324,6 @@ public class OrderService {
                 .map(orderMapper::toResponse)
                 .toList();
     }
+
+    
 }
