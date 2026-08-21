@@ -59,13 +59,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: craig-fox/pc-parts-store-e2e
-          ref: main
+          ref: 1.1.1
           path: pc-parts-store-e2e
-
-      - name: Check JWT configuration
-        run: |
-          echo "JWT_SECRET length: ${#JWT_SECRET}"
-          echo "JWT_EXPIRATION: ${JWT_EXPIRATION}"
 
       - name: Set up Java
         uses: actions/setup-java@v4
