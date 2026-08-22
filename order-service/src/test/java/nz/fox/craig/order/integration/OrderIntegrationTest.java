@@ -51,16 +51,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import okhttp3.mockwebserver.Dispatcher;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.RecordedRequest;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -86,6 +77,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         registry.add("services.customer.base-url", () -> mockWebServer.url("/").toString());
         registry.add("services.product.base-url", () -> mockWebServer.url("/").toString());
         registry.add("services.inventory.base-url", () -> mockWebServer.url("/").toString());
+        registry.add("services.payment.base-url", () -> mockWebServer.url("/").toString());
     }
     
     @BeforeAll
@@ -124,7 +116,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.customerId").value(customerId.toString()))
                 .andExpect(jsonPath("$.orderDate").exists())
-                .andExpect(jsonPath("$.status").value("PLACED"))
+                .andExpect(jsonPath("$.status").value("PAID"))
                 .andExpect(jsonPath("$.items").isArray())
                 .andExpect(jsonPath("$.items.length()").value(1))
                 .andExpect(jsonPath("$.items[0].productId").value(productId.toString()));
@@ -540,7 +532,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         int requestCountAfterFirstRequest = mockWebServer.getRequestCount();
 
         assertThat(requestCountAfterFirstRequest - requestCountBefore)
-                .isEqualTo(3);
+                .isEqualTo(4);
     
         mockMvc.perform(
                         post("/api/orders")
@@ -723,6 +715,11 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                         && path.startsWith("/api/products/")) {
                     return productResponse();
                 }
+
+                if ("POST".equals(request.getMethod())
+                        && "/api/payments".equals(path)) {
+                    return new MockResponse().setResponseCode(201);
+                }
     
                 return new MockResponse().setResponseCode(404);
             }
@@ -802,7 +799,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
                 .isEqualTo(initialOrderCount + 1);
 
         assertThat(mockWebServer.getRequestCount())
-                .isEqualTo(initialRequestCount + 7);
+                .isEqualTo(initialRequestCount + 8);
     }
 
 
@@ -810,8 +807,8 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
         List<RecordedRequest> requests = new ArrayList<>();
         
-        for (int i = 0; i < 7; i++) {
-                requests.add(mockWebServer.takeRequest());
+        for (int i = 0; i < 8; i++) {
+            requests.add(mockWebServer.takeRequest());
         }
         
         long reserveRequests =
@@ -893,23 +890,33 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
 
     private void enqueueSuccessfulOrderDependencies() throws JsonProcessingException {
+        // Customer
         mockWebServer.enqueue(
                 new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
 
+        // Inventory
         mockWebServer.enqueue(
                 new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
 
+        // Product
         mockWebServer.enqueue(
                 new MockResponse()
                         .setResponseCode(200)
                         .setBody(objectMapper.writeValueAsString(productSnapshot()))
                         .addHeader("Content-Type", "application/json"));
+
+        // Payment
+        mockWebServer.enqueue(
+                new MockResponse()
+                        .setResponseCode(201)
+                        .addHeader("Content-Length", "0"));
     }
 
     private void verifyDownstreamRequests() throws InterruptedException {
         RecordedRequest customerRequest = mockWebServer.takeRequest();
         RecordedRequest inventoryRequest = mockWebServer.takeRequest();
         RecordedRequest productRequest = mockWebServer.takeRequest();
+        RecordedRequest paymentRequest = mockWebServer.takeRequest();
 
         assertEquals("HEAD", customerRequest.getMethod());
         assertTrue(customerRequest.getPath().startsWith("/api/customers/"));
@@ -920,5 +927,8 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
         assertEquals("GET", productRequest.getMethod());
         assertTrue(productRequest.getPath().startsWith("/api/products/"));
+
+        assertEquals("POST", paymentRequest.getMethod());
+        assertEquals("/api/payments", paymentRequest.getPath());
     }
 }

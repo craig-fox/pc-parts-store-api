@@ -16,8 +16,13 @@ services:
     volumes:
       - inventory-e2e-data:/var/lib/postgresql/data
 
+  payment-postgres:
+    volumes:
+      - payment-e2e-data:/var/lib/postgresql/data
+
 volumes:
   customer-e2e-data:
   order-e2e-data:
   product-e2e-data:
   inventory-e2e-data:
+  payment-e2e-data:

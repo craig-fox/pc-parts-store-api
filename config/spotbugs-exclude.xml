@@ -121,5 +121,10 @@
         <Class name="nz.fox.craig.auth.client.HttpCustomerClient"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
+
+    <Match>
+        <Class name="nz.fox.craig.order.client.HttpPaymentClient"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
  
 </FindBugsFilter>

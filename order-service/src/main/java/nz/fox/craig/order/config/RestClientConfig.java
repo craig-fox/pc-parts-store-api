@@ -45,4 +45,16 @@ public class RestClientConfig {
                 .requestInterceptor(jwtPropagationInterceptor)
                 .build();
     }
+
+    @Bean(name = "paymentRestClient")
+    RestClient paymentRestClient(
+            RestClient.Builder builder,
+            PaymentServiceProperties properties,
+            JwtPropagationInterceptor jwtPropagationInterceptor) {
+
+        return builder.baseUrl(properties.baseUrl())
+                .requestInterceptor(jwtPropagationInterceptor)
+                .build();
+    }
+
 }
