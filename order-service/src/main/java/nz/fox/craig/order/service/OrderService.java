@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import nz.fox.craig.dto.AuthenticatedUser;
 import nz.fox.craig.order.client.CustomerClient;
 import nz.fox.craig.order.client.InventoryClient;
+import nz.fox.craig.order.client.PaymentClient;
 import nz.fox.craig.order.client.ProductClient;
 import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
@@ -56,6 +57,7 @@ public class OrderService {
     private final CustomerClient customerClient;
     private final ProductClient productClient;
     private final InventoryClient inventoryClient;
+    private final PaymentClient paymentClient;
     private final OrderMapper orderMapper;
     private final OrderPersistenceService orderPersistenceService;
 
@@ -83,13 +85,25 @@ public class OrderService {
                 inventoryClient.reserveStock(item.productId(), item.quantity());
                 reservedItems.add(item);
             }
-    
-            final Order order = assembleOrder(request, customerId, idempotencyKey, requestHash);
+        
+            final Order order =
+                    assembleOrder(request, customerId, idempotencyKey, requestHash);
+        
             final Order savedOrder = orderPersistenceService.save(order);
-    
+        
+            paymentClient.processPayment(
+                    savedOrder.getId(),
+                    customerId,
+                    savedOrder.getTotal(),
+                    "NZD");
+        
+            savedOrder.setStatus(OrderStatus.PAID);
+            final Order paidOrder = orderPersistenceService.save(savedOrder);
+        
             return new OrderCreationResult(
-                    orderMapper.toResponse(savedOrder),
+                    orderMapper.toResponse(paidOrder),
                     true);
+
         } catch (DataIntegrityViolationException ex) {
             releaseReservedStock(reservedItems);
             return handleConcurrentOrder(
@@ -100,7 +114,7 @@ public class OrderService {
         } catch (RuntimeException ex) {
             releaseReservedStock(reservedItems);
             throw ex;
-                }
+        }
     }
 
     private Order assembleOrder(OrderRequest request, 
@@ -307,13 +321,6 @@ public class OrderService {
         if (order.getStatus() == OrderStatus.CANCELLED) {
             throw new OrderAlreadyCancelledException(order.getId());
         }
-    }
-
-    private Optional<Order> findExistingOrder(
-        UUID customerId, String idempotencyKey) {
-
-    return orderRepository.findByCustomerIdAndIdempotencyKey(
-            customerId, idempotencyKey);
     }
 
     @Transactional(readOnly = true)

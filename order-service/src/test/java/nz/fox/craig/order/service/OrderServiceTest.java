@@ -9,6 +9,7 @@ import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_WEIGHT_LIMIT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -16,6 +17,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,6 +28,7 @@ import nz.fox.craig.dto.AuthenticatedUser;
 import nz.fox.craig.dto.Role;
 import nz.fox.craig.order.client.CustomerClient;
 import nz.fox.craig.order.client.InventoryClient;
+import nz.fox.craig.order.client.PaymentClient;
 import nz.fox.craig.order.client.ProductClient;
 import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
@@ -57,8 +60,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+
+
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
+
+    private record SavedOrders(Order placed, Order paid) {}
 
     private static final UUID CUSTOMER_ID = UUID.randomUUID();
     private static final UUID ORDER_ID = UUID.randomUUID();
@@ -66,20 +73,28 @@ class OrderServiceTest {
     private static final int DEFAULT_ORDER_QUANTITY = 1;
     private static final String idempotencyKey = UUID.randomUUID().toString();
 
-    @Mock private OrderRepository repository;
+    @Mock 
+    private OrderRepository repository;
 
-    @Mock private CustomerClient customerClient;
+    @Mock 
+    private CustomerClient customerClient;
 
-    @Mock private ProductClient productClient;
+    @Mock 
+    private ProductClient productClient;
 
-    @Mock private InventoryClient inventoryClient;
+    @Mock 
+    private InventoryClient inventoryClient;
+
+    @Mock
+    private PaymentClient paymentClient;
 
     @Mock private OrderMapper orderMapper;
 
     @Mock
     private OrderPersistenceService orderPersistenceService;
 
-    @InjectMocks private OrderService orderService;
+    @InjectMocks 
+    private OrderService orderService;
 
     @BeforeEach
     void setUpSecurityContext() {
@@ -106,14 +121,27 @@ class OrderServiceTest {
             when(orderMapper.toResponse(any(Order.class))).thenReturn(expectedResponse);
 
             // Act
-            OrderCreationResult result = orderService.createOrder(idempotencyKey, orderRequest());
+            OrderCreationResult result =
+                    orderService.createOrder(idempotencyKey, orderRequest());
+
             OrderResponse response = result.order();
 
             // Assert
-            Order savedOrder = verifyCreateOrderInteractions();
-            assertSavedOrder(savedOrder);
+            SavedOrders savedOrders = verifyCreateOrderInteractions();
+
+            assertSavedOrder(savedOrders.paid());
+
+
+            assertThat(savedOrders.paid().getId())
+                    .isEqualTo(savedOrders.placed().getId());
 
             assertThat(response).isSameAs(expectedResponse);
+
+            verify(paymentClient).processPayment(
+                    eq(savedOrders.placed().getId()),
+                    eq(CUSTOMER_ID),
+                    eq(new BigDecimal("97.99")),
+                    eq("NZD"));
         }
 
         @Test
@@ -464,11 +492,7 @@ class OrderServiceTest {
                 .thenAnswer(
                         invocation -> {
                             Order order = invocation.getArgument(0);
-
-                            if (order.getId() == null) {
-                                order.setId(UUID.randomUUID());
-                            }
-
+    
                             order.getItems()
                                     .forEach(
                                             item -> {
@@ -476,41 +500,45 @@ class OrderServiceTest {
                                                     item.setId(UUID.randomUUID());
                                                 }
                                             });
-
+    
                             return order;
                         });
     }
 
-    private Order verifyCreateOrderInteractions() {
+    private SavedOrders verifyCreateOrderInteractions() {
         ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
-
+    
         verify(customerClient).validateCustomerExists(CUSTOMER_ID);
-
         verify(inventoryClient).reserveStock(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
-
         verify(productClient).getProduct(PRODUCT_ID);
-
-        verify(orderPersistenceService).save(captor.capture());
-        
-
-        Order savedOrder = captor.getValue();
-
-        verify(orderMapper).toResponse(savedOrder);
-
-        return savedOrder;
+    
+        verify(orderPersistenceService, times(2)).save(captor.capture());
+    
+        List<Order> savedOrders = captor.getAllValues();
+    
+        assertThat(savedOrders).hasSize(2);
+    
+        Order placedOrder = savedOrders.get(0);
+        Order paidOrder = savedOrders.get(1);
+    
+        assertThat(paidOrder.getId()).isEqualTo(placedOrder.getId());
+    
+        verify(orderMapper).toResponse(paidOrder);
+    
+        return new SavedOrders(placedOrder, paidOrder);
     }
 
     private void assertSavedOrder(Order savedOrder) {
         OrderItem item = savedOrder.getItems().getFirst();
-
+    
         assertThat(item.getProductId()).isEqualTo(PRODUCT_ID);
         assertThat(item.getProductName()).isEqualTo("Gaming Mouse");
         assertThat(item.getUnitPrice()).isEqualByComparingTo(new BigDecimal("89.99"));
         assertThat(item.getQuantity()).isEqualTo(1);
         assertThat(item.getLineTotal()).isEqualByComparingTo(new BigDecimal("89.99"));
-
+    
         assertThat(savedOrder.getCustomerId()).isEqualTo(CUSTOMER_ID);
-        assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PLACED);
+        assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PAID);
         assertThat(savedOrder.getSubtotal()).isEqualByComparingTo(new BigDecimal("89.99"));
         assertThat(savedOrder.getShipping()).isEqualByComparingTo(new BigDecimal("8.00"));
         assertThat(savedOrder.getTotal()).isEqualByComparingTo(new BigDecimal("97.99"));
