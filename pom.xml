@@ -22,6 +22,7 @@
         <module>security-common</module>
         <module>authentication-service</module>
         <module>payment-service</module>
+        <module>shipping-service</module>
         <module>test-support</module>
     </modules>
 
