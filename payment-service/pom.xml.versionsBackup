@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>nz.fox.craig</groupId>
 		<artifactId>pc-parts-store-api</artifactId>
-		<version>1.1.2</version>
+		<version>1.1.1</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<groupId>nz.fox.craig</groupId>
 	<artifactId>payment-service</artifactId>
-	<version>1.1.2</version>
+	<version>1.1.1</version>
 	<properties>
 		<java.version>21</java.version>
 	</properties>

@@ -9,12 +9,12 @@
     <parent>
         <groupId>nz.fox.craig</groupId>
         <artifactId>pc-parts-store-api</artifactId>
-        <version>1.1.1</version>
+        <version>1.1.2</version>
     </parent>
 
     <artifactId>api-common</artifactId>
     <name>api-common</name>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
     <description>Shared API DTOs and error responses</description>
 
     <dependencies>
