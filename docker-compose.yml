@@ -85,6 +85,8 @@ services:
       - "5436:5432"
     volumes:
       - payment-data:/var/lib/postgresql/data
+    networks:
+      - backend
 
   customer-service:
     build:
@@ -146,6 +148,7 @@ services:
       CUSTOMER_SERVICE_URL: http://customer-service:8080
       PRODUCT_SERVICE_URL: http://product-service:8080
       INVENTORY_SERVICE_URL: http://inventory-service:8080
+      PAYMENT_SERVICE_URL: http://payment-service:8080
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
       SPRING_PROFILES_ACTIVE: dev
@@ -205,6 +208,8 @@ services:
       JWT_EXPIRATION: ${JWT_EXPIRATION:-3600000}
     ports:
       - "8086:8080"
+    networks:
+      - backend
 
   sonarqube-postgres:
     image: postgres:17
