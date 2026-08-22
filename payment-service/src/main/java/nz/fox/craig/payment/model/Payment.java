@@ -11,7 +11,6 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,6 +21,7 @@ import lombok.Setter;
 public class Payment {
 
     @Id
+    @Column(nullable = false)
     private UUID id;
 
     @Column(nullable = false)
