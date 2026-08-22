@@ -74,6 +74,18 @@ services:
     networks:
       - backend
 
+  payment-postgres:
+    image: postgres:17
+    container_name: payment-postgres
+    environment:
+      POSTGRES_DB: paymentdb
+      POSTGRES_USER: payment
+      POSTGRES_PASSWORD: payment
+    ports:
+      - "5436:5432"
+    volumes:
+      - payment-data:/var/lib/postgresql/data
+
   customer-service:
     build:
       context: ./customer-service
@@ -216,6 +228,7 @@ volumes:
   product-data:
   inventory-data:
   sonarqube-data:
+  payment-data:
 
 networks:
   backend:  
