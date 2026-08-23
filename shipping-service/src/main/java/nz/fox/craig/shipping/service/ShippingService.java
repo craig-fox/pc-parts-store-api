@@ -3,6 +3,8 @@ package nz.fox.craig.shipping.service;
 import lombok.RequiredArgsConstructor;
 import nz.fox.craig.shipping.exception.ShippingQuoteExpiredException;
 import nz.fox.craig.shipping.exception.ShippingQuoteNotFoundException;
+import nz.fox.craig.shipping.mapper.ShippingMapper;
+import nz.fox.craig.shipping.dto.ShippingAddressRequest;
 import nz.fox.craig.shipping.exception.ShipmentNotFoundException;
 import nz.fox.craig.shipping.model.ShippingAddress;
 import nz.fox.craig.shipping.model.ShippingMethod;
@@ -27,10 +29,11 @@ public class ShippingService {
     private final ShippingQuoteRepository shippingQuoteRepository;
     private final ShipmentRepository shipmentRepository;
     private final ShippingRateCalculator shippingRateCalculator;
+    private final ShippingMapper shippingMapper;
 
     public ShippingQuote calculateQuote(
             UUID orderId,
-            ShippingAddress destination,
+            ShippingAddressRequest destinationRequest,
             BigDecimal weightKg,
             ShippingMethod shippingMethod) {
 
@@ -40,10 +43,12 @@ public class ShippingService {
         );
 
         LocalDateTime now = LocalDateTime.now();
+        ShippingAddress address = shippingMapper.fromAddressDto(destinationRequest);
+       
 
         ShippingQuote quote = ShippingQuote.builder()
                 .orderId(orderId)
-                .destination(destination)
+                .destination(address)
                 .weightKg(weightKg)
                 .shippingMethod(shippingMethod)
                 .price(rate.price())
@@ -98,4 +103,5 @@ public class ShippingService {
     public List<Shipment> getShipmentsForOrder(UUID orderId) {
         return shipmentRepository.findByOrderId(orderId);
     }
+
 }

@@ -2,9 +2,10 @@ package nz.fox.craig.shipping.service;
 
 import nz.fox.craig.shipping.exception.ShippingQuoteExpiredException;
 import nz.fox.craig.shipping.exception.ShippingQuoteNotFoundException;
+import nz.fox.craig.shipping.dto.ShippingAddressRequest;
 import nz.fox.craig.shipping.exception.ShipmentNotFoundException;
 import nz.fox.craig.shipping.fixture.ShippingFixture;
-import nz.fox.craig.shipping.model.ShippingAddress;
+import nz.fox.craig.shipping.mapper.ShippingMapper;
 import nz.fox.craig.shipping.model.ShippingMethod;
 import nz.fox.craig.shipping.model.ShippingQuote;
 import nz.fox.craig.shipping.model.Shipment;
@@ -40,14 +41,15 @@ class ShippingServiceTest {
     @Mock
     private ShippingRateCalculator shippingRateCalculator;
 
+    @Mock ShippingMapper shippingMapper;
+
     @InjectMocks
     private ShippingService shippingService;
 
     @Test
     void shouldCalculateAndSaveStandardShippingQuote() {
         UUID orderId = UUID.randomUUID();
-        ShippingAddress address = ShippingFixture.shippingAddress();
-
+       
         when(shippingQuoteRepository.save(any(ShippingQuote.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -63,16 +65,16 @@ class ShippingServiceTest {
                         5
                 ));
 
-        
+        when(shippingMapper.fromAddressDto(any(ShippingAddressRequest.class))).thenCallRealMethod();
         ShippingQuote quote = shippingService.calculateQuote(
                 orderId,
-                address,
+                ShippingFixture.shippingAddressRequest(),
                 weight,
                 ShippingMethod.STANDARD
         );
 
         assertThat(quote.getOrderId()).isEqualTo(orderId);
-        assertThat(quote.getDestination()).isEqualTo(address);
+        assertThat(quote.getDestination()).usingRecursiveComparison().isEqualTo(ShippingFixture.shippingAddress());
         assertThat(quote.getWeightKg()).isEqualByComparingTo("2.500");
         assertThat(quote.getShippingMethod()).isEqualTo(ShippingMethod.STANDARD);
         assertThat(quote.getPrice()).isEqualByComparingTo("25.00");
@@ -106,7 +108,7 @@ class ShippingServiceTest {
 
         ShippingQuote quote = shippingService.calculateQuote(
                 orderId,
-                ShippingFixture.shippingAddress(),
+                ShippingFixture.shippingAddressRequest(),
                 new BigDecimal("2.500"),
                 ShippingMethod.EXPRESS
         );

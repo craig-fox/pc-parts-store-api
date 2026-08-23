@@ -3,6 +3,8 @@ package nz.fox.craig.shipping.fixture;
 import nz.fox.craig.shipping.model.ShippingAddress;
 import nz.fox.craig.shipping.model.ShippingMethod;
 import nz.fox.craig.shipping.model.ShippingQuote;
+import nz.fox.craig.shipping.dto.ShippingAddressRequest;
+import nz.fox.craig.shipping.mapper.ShippingMapper;
 import nz.fox.craig.shipping.model.Shipment;
 import nz.fox.craig.shipping.model.ShipmentStatus;
 
@@ -22,6 +24,14 @@ public final class ShippingFixture {
                 "1010",
                 "NZ"
         );
+    }
+
+    public static ShippingAddressRequest toAddressRequest(ShippingAddress address) {
+        return new ShippingMapper().toAddressDto(address);
+    }
+
+    public static ShippingAddressRequest shippingAddressRequest() {
+        return toAddressRequest(shippingAddress());
     }
 
     public static ShippingQuote shippingQuote(UUID orderId) {

@@ -88,6 +88,25 @@ services:
     networks:
       - backend
 
+  shipping-postgres:
+    image: postgres:17
+    container_name: shipping-postgres
+    environment:
+      POSTGRES_DB: shippingdb
+      POSTGRES_USER: shipping
+      POSTGRES_PASSWORD: shipping
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shipping -d shippingdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5437:5432"
+    volumes:
+      - shipping-data:/var/lib/postgresql/data
+    networks:
+      - backend
+
   customer-service:
     build:
       context: ./customer-service
@@ -211,6 +230,26 @@ services:
     networks:
       - backend
 
+  shipping-service:
+    build:
+      context: ./shipping-service
+    container_name: shipping-service
+    depends_on:
+      shipping-postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://shipping-postgres:5432/shippingdb
+      SPRING_DATASOURCE_USERNAME: shipping
+      SPRING_DATASOURCE_PASSWORD: shipping
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-3600000}
+    ports:
+      - "8087:8080"
+    networks:
+      - backend
+
   sonarqube-postgres:
     image: postgres:17
     container_name: sonarqube-postgres
@@ -250,6 +289,7 @@ volumes:
   inventory-data:
   sonarqube-data:
   payment-data:
+  shipping-data:
 
 networks:
   backend:  
