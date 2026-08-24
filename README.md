@@ -19,8 +19,11 @@ Active modules:
 - `product-service` — manages the product catalogue and product information.
 - `inventory-service` — tracks stock and inventory availability.
 - `authentication-service` — authenticates users and issues JWTs for access to protected API endpoints.
+- `shipping-service` — calculates shipping costs based on weight, price and shipping method (standard or express)
+- `payment-service` - handles payments for orders by collating total costs
 
-`payment-service`, `notification-service`, and `shipping-service` are currently stubs. They are planned for development in a later phase.
+`notification-service` is a stub, which is planned for development in a later version.
+Providers and APIs for `payment-service` and `shipping-service` will be developed in a later version
 
 ## Technology
 
