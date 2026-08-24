@@ -168,6 +168,7 @@ services:
       PRODUCT_SERVICE_URL: http://product-service:8080
       INVENTORY_SERVICE_URL: http://inventory-service:8080
       PAYMENT_SERVICE_URL: http://payment-service:8080
+      SHIPPING_SERVICE_URL: http://shipping-service:8080
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
       SPRING_PROFILES_ACTIVE: dev
