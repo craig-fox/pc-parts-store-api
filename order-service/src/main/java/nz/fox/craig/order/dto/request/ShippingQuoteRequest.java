@@ -6,9 +6,10 @@ import java.util.UUID;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import lombok.Builder;
 import nz.fox.craig.api.ShippingMethod;
 
-
+@Builder
 public record ShippingQuoteRequest(
 
     @NotNull
