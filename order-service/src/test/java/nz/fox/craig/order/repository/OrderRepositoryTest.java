@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-import nz.fox.craig.order.fixture.OrderFixtures;
+import nz.fox.craig.order.fixture.OrderFixture;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
@@ -29,7 +29,7 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldSaveOrder() {
-        final Order order = OrderFixtures.anOrder();
+        final Order order = OrderFixture.anOrder();
         orderRepository.saveAndFlush(order);
         final Order found = orderRepository.findById(order.getId()).orElseThrow();
 
@@ -47,7 +47,7 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldSaveOrderWithItems() {
-        final Order order = OrderFixtures.anOrder();
+        final Order order = OrderFixture.anOrder();
 
         addItemsToOrder(order);
         orderRepository.saveAndFlush(order);
@@ -68,8 +68,8 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
     void shouldFindOrdersByCustomerId() {
         final UUID customerId = UUID.randomUUID();
 
-        final Order order1 = OrderFixtures.anOrder();
-        final Order order2 = OrderFixtures.anOrder();
+        final Order order1 = OrderFixture.anOrder();
+        final Order order2 = OrderFixture.anOrder();
         order1.setCustomerId(customerId);
         order2.setCustomerId(customerId);
 
@@ -86,7 +86,7 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldRemoveItemFromOrder() {
-        final Order order = OrderFixtures.anOrder();
+        final Order order = OrderFixture.anOrder();
         addItemsToOrder(order);
         orderRepository.save(order);
         final Order found = orderRepository.findById(order.getId()).orElseThrow();
@@ -113,9 +113,9 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
         final UUID customerId = UUID.randomUUID();
         final UUID otherCustomerId = UUID.randomUUID();
 
-        final Order customerOrder = OrderFixtures.anOrder();
+        final Order customerOrder = OrderFixture.anOrder();
         customerOrder.setCustomerId(customerId);
-        final Order otherCustomerOrder = OrderFixtures.anOrder();
+        final Order otherCustomerOrder = OrderFixture.anOrder();
         otherCustomerOrder.setCustomerId(otherCustomerId);
 
         orderRepository.save(customerOrder);

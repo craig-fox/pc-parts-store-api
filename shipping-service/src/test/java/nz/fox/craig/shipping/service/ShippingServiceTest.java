@@ -2,11 +2,11 @@ package nz.fox.craig.shipping.service;
 
 import nz.fox.craig.shipping.exception.ShippingQuoteExpiredException;
 import nz.fox.craig.shipping.exception.ShippingQuoteNotFoundException;
+import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.shipping.dto.ShippingAddressRequest;
 import nz.fox.craig.shipping.exception.ShipmentNotFoundException;
 import nz.fox.craig.shipping.fixture.ShippingFixture;
 import nz.fox.craig.shipping.mapper.ShippingMapper;
-import nz.fox.craig.shipping.model.ShippingMethod;
 import nz.fox.craig.shipping.model.ShippingQuote;
 import nz.fox.craig.shipping.model.Shipment;
 import nz.fox.craig.shipping.repository.ShippingQuoteRepository;

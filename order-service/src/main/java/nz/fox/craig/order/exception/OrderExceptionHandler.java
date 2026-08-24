@@ -57,4 +57,9 @@ public class OrderExceptionHandler {
     public ResponseEntity<Map<String, String>> handleProductNotFound(ProductNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(MESSAGE, ex.getMessage()));
     }
+
+    @ExceptionHandler(ShippingServiceUnavailableException.class)
+    public ResponseEntity<Map<String, String>> handleShippingServiceUnavailable(ShippingServiceUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of(MESSAGE, ex.getMessage()));
+    }
 }

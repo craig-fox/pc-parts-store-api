@@ -55,7 +55,7 @@
     </Match>
 
     <Match>
-        <Class name="~nz\.fox\.craig\.order\.client\.Http(Customer|Inventory|Product)Client"/>
+        <Class name="~nz\.fox\.craig\.order\.client\.Http(Customer|Inventory|Product|Payment|Shipping)Client"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
 

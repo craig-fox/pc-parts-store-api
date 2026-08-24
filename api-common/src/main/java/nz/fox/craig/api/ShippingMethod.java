@@ -1,4 +1,4 @@
-package nz.fox.craig.shipping.model;
+package nz.fox.craig.api;
 
 public enum ShippingMethod {
     STANDARD,

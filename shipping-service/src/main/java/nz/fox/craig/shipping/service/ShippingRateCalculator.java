@@ -1,7 +1,8 @@
 package nz.fox.craig.shipping.service;
 
-import nz.fox.craig.shipping.model.ShippingMethod;
 import org.springframework.stereotype.Component;
+
+import nz.fox.craig.api.ShippingMethod;
 
 import java.math.BigDecimal;
 import java.util.List;
