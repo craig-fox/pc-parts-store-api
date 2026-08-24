@@ -38,5 +38,15 @@
     "name": "services.shipping.base-url",
     "type": "java.lang.String",
     "description": "A description for 'services.shipping.base-url'"
+  },
+  {
+    "name": "service-client.connect-timeout",
+    "type": "java.lang.String",
+    "description": "A description for 'service-client.connect-timeout'"
+  },
+  {
+    "name": "service-client.read-timeout",
+    "type": "java.lang.String",
+    "description": "A description for 'service-client.read-timeout'"
   }
 ]}

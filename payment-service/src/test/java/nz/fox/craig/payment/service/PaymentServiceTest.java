@@ -4,10 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import nz.fox.craig.payment.dto.CreatePaymentRequest;
 import nz.fox.craig.payment.dto.PaymentResponse;
@@ -53,6 +55,7 @@ class PaymentServiceTest {
         Payment savedPayment = createPayment();
 
         when(paymentRepository.save(any(Payment.class))).thenReturn(savedPayment);
+        when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
 
         PaymentResponse response = paymentService.createPayment(request);
 
@@ -64,6 +67,7 @@ class PaymentServiceTest {
         assertThat(response.status()).isEqualTo(PaymentStatus.COMPLETED);
         assertThat(response.createdAt()).isEqualTo(savedPayment.getCreatedAt());
         assertThat(response.updatedAt()).isEqualTo(savedPayment.getUpdatedAt());
+       
     }
 
     @Test
@@ -127,6 +131,32 @@ class PaymentServiceTest {
         assertThat(responses).isEmpty();
 
         verify(paymentRepository).findByCustomerId(customerId);
+    }
+
+    @Test
+    void shouldReturnExistingPaymentWhenPaymentAlreadyExistsForOrder() {
+        CreatePaymentRequest request = new CreatePaymentRequest(
+                orderId,
+                customerId,
+                new BigDecimal("149.99"),
+                "NZD");
+    
+        Payment existingPayment = createPayment();
+    
+        when(paymentRepository.findByOrderId(orderId))
+                .thenReturn(Optional.of(existingPayment));
+    
+        PaymentResponse response = paymentService.createPayment(request);
+    
+        assertThat(response.id()).isEqualTo(paymentId);
+        assertThat(response.orderId()).isEqualTo(orderId);
+        assertThat(response.customerId()).isEqualTo(customerId);
+        assertThat(response.amount()).isEqualByComparingTo("149.99");
+        assertThat(response.currency()).isEqualTo("NZD");
+        assertThat(response.status()).isEqualTo(PaymentStatus.COMPLETED);
+    
+        verify(paymentRepository).findByOrderId(orderId);
+        verify(paymentRepository, never()).save(any(Payment.class));
     }
 
     private Payment createPayment() {

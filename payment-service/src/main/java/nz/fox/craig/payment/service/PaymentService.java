@@ -19,15 +19,24 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse createPayment(CreatePaymentRequest request) {
+    
+        return paymentRepository.findByOrderId(request.orderId())
+                .map(this::toResponse)
+                .orElseGet(() -> createNewPayment(request));
+    }
+    
+    private PaymentResponse createNewPayment(CreatePaymentRequest request) {
+    
         Payment payment = new Payment();
+    
         payment.setOrderId(request.orderId());
         payment.setCustomerId(request.customerId());
         payment.setAmount(request.amount());
         payment.setCurrency(request.currency());
         payment.setStatus(PaymentStatus.COMPLETED);
-
+    
         Payment savedPayment = paymentRepository.save(payment);
-
+    
         return toResponse(savedPayment);
     }
 

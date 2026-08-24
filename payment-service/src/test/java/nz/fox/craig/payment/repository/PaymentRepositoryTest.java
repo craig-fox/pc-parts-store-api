@@ -1,6 +1,7 @@
 package nz.fox.craig.payment.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
@@ -53,5 +55,21 @@ class PaymentRepositoryTest extends AbstractPostgresTest {
         payment.setCurrency("NZD");
         payment.setStatus(PaymentStatus.COMPLETED);
         return payment;
+    }
+
+    @Test
+    void shouldRejectDuplicateOrderId() {
+        UUID orderId = UUID.randomUUID();
+
+        Payment firstPayment = createPayment(UUID.randomUUID());
+        firstPayment.setOrderId(orderId);
+
+        Payment secondPayment = createPayment(UUID.randomUUID());
+        secondPayment.setOrderId(orderId);
+
+        paymentRepository.saveAndFlush(firstPayment);
+
+        assertThatThrownBy(() -> paymentRepository.saveAndFlush(secondPayment))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 }
