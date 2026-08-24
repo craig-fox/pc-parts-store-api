@@ -1,6 +1,7 @@
 package nz.fox.craig.order.config;
 
 import nz.fox.craig.security.JwtPropagationInterceptor;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
@@ -50,6 +51,17 @@ public class RestClientConfig {
     RestClient paymentRestClient(
             RestClient.Builder builder,
             PaymentServiceProperties properties,
+            JwtPropagationInterceptor jwtPropagationInterceptor) {
+
+        return builder.baseUrl(properties.baseUrl())
+                .requestInterceptor(jwtPropagationInterceptor)
+                .build();
+    }
+
+    @Bean(name = "shippingRestClient")
+    RestClient shippingRestClient(
+            RestClient.Builder builder,
+            ShippingServiceProperties properties,
             JwtPropagationInterceptor jwtPropagationInterceptor) {
 
         return builder.baseUrl(properties.baseUrl())

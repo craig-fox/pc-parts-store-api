@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.request.ShippingAddressRequest;
@@ -16,12 +17,12 @@ import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.model.ShippingAddress;
 
-public final class OrderFixtures {
+public final class OrderFixture {
 
-    private static final UUID PRODUCT_ID =
+    public static final UUID FIXTURE_PRODUCT_ID =
             UUID.fromString("1b0d0fa6-52e1-4acd-8286-892bc29f8b3a");
 
-    private OrderFixtures() {}
+    private OrderFixture() {}
 
     public static Order anOrder() {
         return Order.builder()
@@ -39,20 +40,25 @@ public final class OrderFixtures {
     }
 
     public static OrderRequest anOrderRequest() {
-        return anOrderRequest(orderItems());
+        return anOrderRequest(ShippingMethod.STANDARD, orderItems());
     }
 
-    public static OrderRequest anOrderRequest(List<OrderItemRequest> items) {
+    public static OrderRequest anOrderRequest(ShippingMethod shippingMethod) {
+        return anOrderRequest(shippingMethod, orderItems());
+    }
+
+    public static OrderRequest anOrderRequest(ShippingMethod shippingMethod, List<OrderItemRequest> items) {
         return OrderRequest.builder()
                 .items(items)
                 .shippingAddress(shippingAddress())
+                .shippingMethod(shippingMethod)
                 .build();
     }
 
     public static List<OrderItemRequest> orderItems(int quantity) {
         return List.of(
                 OrderItemRequest.builder()
-                        .productId(PRODUCT_ID)
+                        .productId(FIXTURE_PRODUCT_ID)
                         .quantity(quantity)
                         .build());
     }
@@ -111,7 +117,7 @@ public final class OrderFixtures {
 
     private static OrderItemResponse anOrderItemResponse() {
         return OrderItemResponse.builder()
-                .productId(UUID.randomUUID())
+                .productId(FIXTURE_PRODUCT_ID)
                 .productName("Test Product")
                 .quantity(1)
                 .unitPrice(new BigDecimal("1000.00"))
@@ -122,7 +128,7 @@ public final class OrderFixtures {
 
     private static OrderItem anOrderItem() {
         return OrderItem.builder()
-                .productId(UUID.randomUUID())
+                .productId(FIXTURE_PRODUCT_ID)
                 .productName("Test Product")
                 .quantity(1)
                 .unitPrice(new BigDecimal("1000.00"))

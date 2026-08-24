@@ -1,7 +1,7 @@
 package nz.fox.craig.shipping.repository;
 
+import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.shipping.fixture.ShippingFixture;
-import nz.fox.craig.shipping.model.ShippingMethod;
 import nz.fox.craig.shipping.model.ShippingQuote;
 import nz.fox.craig.test.AbstractPostgresTest;
 import org.junit.jupiter.api.Test;

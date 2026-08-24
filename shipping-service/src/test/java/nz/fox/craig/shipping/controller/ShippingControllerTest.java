@@ -1,12 +1,13 @@
 package nz.fox.craig.shipping.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.shipping.dto.CreateShipmentRequest;
 import nz.fox.craig.shipping.dto.ShippingAddressRequest;
 import nz.fox.craig.shipping.dto.ShippingQuoteRequest;
 import nz.fox.craig.shipping.exception.ShippingExceptionHandler;
 import nz.fox.craig.shipping.model.ShippingAddress;
-import nz.fox.craig.shipping.model.ShippingMethod;
 import nz.fox.craig.shipping.model.ShippingQuote;
 import nz.fox.craig.shipping.model.Shipment;
 import nz.fox.craig.shipping.model.ShipmentStatus;

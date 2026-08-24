@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.shipping.model.ShipmentStatus;
-import nz.fox.craig.shipping.model.ShippingMethod;
 
 public record ShipmentResponse(
     UUID id,

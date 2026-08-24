@@ -1,11 +1,5 @@
 package nz.fox.craig.order.service;
 
-import static nz.fox.craig.order.shipping.ShippingPolicy.FREE_SHIPPING_THRESHOLD;
-import static nz.fox.craig.order.shipping.ShippingPolicy.HEAVY_SHIPPING;
-import static nz.fox.craig.order.shipping.ShippingPolicy.LIGHT_SHIPPING;
-import static nz.fox.craig.order.shipping.ShippingPolicy.LIGHT_WEIGHT_LIMIT;
-import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_SHIPPING;
-import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_WEIGHT_LIMIT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -24,16 +18,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+
+import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.dto.AuthenticatedUser;
 import nz.fox.craig.dto.Role;
 import nz.fox.craig.order.client.CustomerClient;
 import nz.fox.craig.order.client.InventoryClient;
 import nz.fox.craig.order.client.PaymentClient;
 import nz.fox.craig.order.client.ProductClient;
+import nz.fox.craig.order.client.ShippingClient;
 import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.request.ShippingAddressRequest;
+import nz.fox.craig.order.dto.request.ShippingQuoteRequest;
 import nz.fox.craig.order.dto.response.OrderItemResponse;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
@@ -41,7 +39,8 @@ import nz.fox.craig.order.exception.InsufficientStockException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
 import nz.fox.craig.order.exception.ProductNotFoundException;
-import nz.fox.craig.order.fixture.OrderFixtures;
+import nz.fox.craig.order.fixture.OrderFixture;
+import nz.fox.craig.order.fixture.ShippingFixture;
 import nz.fox.craig.order.mapper.OrderMapper;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
@@ -88,6 +87,9 @@ class OrderServiceTest {
     @Mock
     private PaymentClient paymentClient;
 
+    @Mock
+    private ShippingClient shippingClient;
+
     @Mock private OrderMapper orderMapper;
 
     @Mock
@@ -115,8 +117,10 @@ class OrderServiceTest {
             doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
             configureRepositoryToAssignIds();
             when(productClient.getProduct(PRODUCT_ID)).thenReturn(productSnapshot());
+            when(shippingClient.calculateQuote(any(ShippingQuoteRequest.class)))
+                .thenReturn(ShippingFixture.shippingQuoteResponse(ShippingMethod.STANDARD, BigDecimal.valueOf(15.00)));
 
-            OrderResponse expectedResponse = OrderFixtures.anOrderResponse();
+            OrderResponse expectedResponse = OrderFixture.anOrderResponse();
 
             when(orderMapper.toResponse(any(Order.class))).thenReturn(expectedResponse);
 
@@ -135,13 +139,17 @@ class OrderServiceTest {
             assertThat(savedOrders.paid().getId())
                     .isEqualTo(savedOrders.placed().getId());
 
+                    
+
             assertThat(response).isSameAs(expectedResponse);
 
             verify(paymentClient).processPayment(
-                    eq(savedOrders.placed().getId()),
-                    eq(CUSTOMER_ID),
-                    eq(new BigDecimal("97.99")),
-                    eq("NZD"));
+                eq(savedOrders.placed().getId()),
+                eq(CUSTOMER_ID),
+                eq(new BigDecimal("104.99")),
+                eq("NZD"));
+
+            verify(shippingClient).calculateQuote(any(ShippingQuoteRequest.class));
         }
 
         @Test
@@ -162,7 +170,7 @@ class OrderServiceTest {
 
         @Test
         void shouldThrowWhenCustomerDoesNotExist() {
-            OrderRequest request = OrderFixtures.anOrderRequest();
+            OrderRequest request = OrderFixture.anOrderRequest();
             doThrow(new CustomerNotFoundException(CUSTOMER_ID))
                     .when(customerClient)
                     .validateCustomerExists(CUSTOMER_ID);
@@ -185,99 +193,138 @@ class OrderServiceTest {
         }
 
         @Test
-        void shouldProvideFreeShippingWhenSubtotalMeetsThreshold() {
-            // Arrange
-            doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
-            configureRepositoryToAssignIds();
+        void shouldUseShippingQuoteForOrderShippingCost() {
 
-            when(productClient.getProduct(PRODUCT_ID))
-                    .thenReturn(productSnapshot(FREE_SHIPPING_THRESHOLD, BigDecimal.ONE));
+            doNothing().when(customerClient)
+                    .validateCustomerExists(CUSTOMER_ID);
 
-            ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
-
-            when(orderMapper.toResponse(orderCaptor.capture()))
-                    .thenReturn(OrderFixtures.anOrderResponse());
-
-            // Act
-            orderService.createOrder(idempotencyKey, orderRequest());
-
-            // Assert
-            Order order = orderCaptor.getValue();
-
-            assertThat(order.getShipping()).isEqualByComparingTo(BigDecimal.ZERO);
-        }
-
-        @Test
-        void shouldCalculateLightShipping() {
-            // Arrange
-            doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
-            configureRepositoryToAssignIds();
-
-            when(productClient.getProduct(PRODUCT_ID))
-                    .thenReturn(productSnapshot(new BigDecimal("100.00"), LIGHT_WEIGHT_LIMIT));
-
-            ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
-
-            when(orderMapper.toResponse(orderCaptor.capture()))
-                    .thenReturn(OrderFixtures.anOrderResponse());
-
-            // Act
-            orderService.createOrder(idempotencyKey, orderRequest());
-
-            // Assert
-            Order order = orderCaptor.getValue();
-
-            assertThat(order.getShipping()).isEqualByComparingTo(LIGHT_SHIPPING);
-        }
-
-        @Test
-        void shouldCalculateStandardShipping() {
-            // Arrange
-            doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
-            configureRepositoryToAssignIds();
-
-            when(productClient.getProduct(PRODUCT_ID))
-                    .thenReturn(productSnapshot(new BigDecimal("100.00"), STANDARD_WEIGHT_LIMIT));
-
-            ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
-
-            when(orderMapper.toResponse(orderCaptor.capture()))
-                    .thenReturn(OrderFixtures.anOrderResponse());
-
-            // Act
-            orderService.createOrder(idempotencyKey, orderRequest());
-
-            // Assert
-            Order order = orderCaptor.getValue();
-
-            assertThat(order.getShipping()).isEqualByComparingTo(STANDARD_SHIPPING);
-        }
-
-        @Test
-        void shouldCalculateHeavyShipping() {
-            // Arrange
-            doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
             configureRepositoryToAssignIds();
 
             when(productClient.getProduct(PRODUCT_ID))
                     .thenReturn(
                             productSnapshot(
                                     new BigDecimal("100.00"),
-                                    STANDARD_WEIGHT_LIMIT.add(new BigDecimal("0.01"))));
+                                    new BigDecimal("0.50")));
 
-            ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
+            when(shippingClient.calculateQuote(any(ShippingQuoteRequest.class)))
+                    .thenReturn(
+                            ShippingFixture.shippingQuoteResponse(
+                                    ShippingMethod.STANDARD,
+                                    new BigDecimal("15.00")));
+
+            ArgumentCaptor<Order> orderCaptor =
+                    ArgumentCaptor.forClass(Order.class);
 
             when(orderMapper.toResponse(orderCaptor.capture()))
-                    .thenReturn(OrderFixtures.anOrderResponse());
+                    .thenReturn(OrderFixture.anOrderResponse());
 
-            // Act
             orderService.createOrder(idempotencyKey, orderRequest());
 
-            // Assert
             Order order = orderCaptor.getValue();
 
-            assertThat(order.getShipping()).isEqualByComparingTo(HEAVY_SHIPPING);
+            assertThat(order.getShipping())
+                    .isEqualByComparingTo("15.00");
         }
+
+
+        @Test
+        void shouldSendRequestedShippingMethodToShippingService() {
+
+            doNothing().when(customerClient)
+                    .validateCustomerExists(CUSTOMER_ID);
+
+            when(orderPersistenceService.save(any(Order.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+
+            when(productClient.getProduct(OrderFixture.FIXTURE_PRODUCT_ID))
+                    .thenReturn(productSnapshot());
+
+            when(shippingClient.calculateQuote(any(ShippingQuoteRequest.class)))
+                    .thenReturn(
+                            ShippingFixture.shippingQuoteResponse(
+                                    ShippingMethod.EXPRESS,
+                                    new BigDecimal("25.00")));
+
+            when(orderMapper.toResponse(any(Order.class)))
+                    .thenReturn(OrderFixture.anOrderResponse());
+
+            OrderRequest request =
+                    OrderFixture.anOrderRequest(ShippingMethod.EXPRESS);
+            orderService.createOrder(idempotencyKey, request);
+
+            ArgumentCaptor<ShippingQuoteRequest> captor =
+                    ArgumentCaptor.forClass(ShippingQuoteRequest.class);
+
+            verify(shippingClient).calculateQuote(captor.capture());
+
+            assertThat(captor.getValue().shippingMethod())
+                    .isEqualTo(ShippingMethod.EXPRESS);
+        }
+
+        @Test
+        void shouldSendCalculatedWeightToShippingService() {
+
+            doNothing().when(customerClient)
+                    .validateCustomerExists(CUSTOMER_ID);
+
+            configureRepositoryToAssignIds();
+
+            when(productClient.getProduct(PRODUCT_ID))
+                    .thenReturn(
+                            productSnapshot(
+                                    new BigDecimal("100.00"),
+                                    new BigDecimal("2.50")));
+
+            when(shippingClient.calculateQuote(any(ShippingQuoteRequest.class)))
+                    .thenReturn(
+                            ShippingFixture.shippingQuoteResponse(
+                                    ShippingMethod.STANDARD,
+                                    new BigDecimal("25.00")));
+
+            when(orderMapper.toResponse(any(Order.class)))
+                    .thenReturn(OrderFixture.anOrderResponse());
+
+            orderService.createOrder(idempotencyKey, orderRequest(2));
+
+            ArgumentCaptor<ShippingQuoteRequest> captor =
+                    ArgumentCaptor.forClass(ShippingQuoteRequest.class);
+
+            verify(shippingClient).calculateQuote(captor.capture());
+
+            assertThat(captor.getValue().weightKg())
+                    .isEqualByComparingTo("5.00");
+        }
+
+        @Test
+        void shouldNotProcessPaymentWhenShippingQuoteFails() {
+
+            doNothing().when(customerClient)
+                    .validateCustomerExists(CUSTOMER_ID);
+
+            when(productClient.getProduct(PRODUCT_ID))
+                    .thenReturn(productSnapshot());
+
+            RuntimeException exception =
+                    new RuntimeException("Shipping service unavailable");
+
+            when(shippingClient.calculateQuote(any(ShippingQuoteRequest.class)))
+                    .thenThrow(exception);
+
+            assertThatThrownBy(
+                    () -> orderService.createOrder(
+                            idempotencyKey,
+                            orderRequest()))
+                    .isSameAs(exception);
+
+            verify(paymentClient, never())
+                    .processPayment(
+                            any(),
+                            any(),
+                            any(),
+                            any());
+        }
+
+
     }
 
     @Nested
@@ -285,9 +332,9 @@ class OrderServiceTest {
         @Test
         void shouldReturnOrder() {
             // Arrange
-            Order order = OrderFixtures.anOrder();
+            Order order = OrderFixture.anOrder();
 
-            OrderResponse expectedResponse = OrderFixtures.anOrderResponse();
+            OrderResponse expectedResponse = OrderFixture.anOrderResponse();
 
             when(repository.findById(ORDER_ID)).thenReturn(Optional.of(order));
 
@@ -318,13 +365,13 @@ class OrderServiceTest {
         @Test
         void shouldReturnOrdersForAuthenticatedCustomer() {
             // Arrange
-            Order order1 = OrderFixtures.anOrder();
-            Order order2 = OrderFixtures.anOrder();
+            Order order1 = OrderFixture.anOrder();
+            Order order2 = OrderFixture.anOrder();
             order2.setId(UUID.randomUUID());
 
-            OrderResponse response1 = OrderFixtures.anOrderResponse();
+            OrderResponse response1 = OrderFixture.anOrderResponse();
 
-            OrderResponse response2 = OrderFixtures.anOrderResponse();
+            OrderResponse response2 = OrderFixture.anOrderResponse();
 
             when(repository.findByCustomerIdOrderByOrderDateDesc(CUSTOMER_ID))
                     .thenReturn(List.of(order1, order2));
@@ -367,7 +414,7 @@ class OrderServiceTest {
         @Test
         void shouldCancelOrder() {
             // Arrange
-            Order existingOrder = OrderFixtures.anOrder();
+            Order existingOrder = OrderFixture.anOrder();
 
             OrderResponse expectedResponse =
                     OrderResponse.builder()
@@ -440,7 +487,7 @@ class OrderServiceTest {
     }
 
     private Order cancelledOrder() {
-        Order order = OrderFixtures.anOrder();
+        Order order = OrderFixture.anOrder();
         order.setStatus(OrderStatus.CANCELLED);
         return order;
     }
@@ -540,11 +587,15 @@ class OrderServiceTest {
         assertThat(savedOrder.getCustomerId()).isEqualTo(CUSTOMER_ID);
         assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PAID);
         assertThat(savedOrder.getSubtotal()).isEqualByComparingTo(new BigDecimal("89.99"));
-        assertThat(savedOrder.getShipping()).isEqualByComparingTo(new BigDecimal("8.00"));
-        assertThat(savedOrder.getTotal()).isEqualByComparingTo(new BigDecimal("97.99"));
         assertThat(savedOrder.getItems()).hasSize(1);
         assertThat(savedOrder.getId()).isNotNull();
         assertThat(savedOrder.getOrderDate()).isNotNull();
+
+        assertThat(savedOrder.getShipping())
+        .isEqualByComparingTo("15.00");
+
+        assertThat(savedOrder.getTotal())
+        .isEqualByComparingTo("104.99");
     }
 
     private ShippingAddressRequest shippingAddressRequest() {

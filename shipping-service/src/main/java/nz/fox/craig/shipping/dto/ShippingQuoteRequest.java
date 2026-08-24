@@ -3,7 +3,7 @@ package nz.fox.craig.shipping.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import nz.fox.craig.shipping.model.ShippingMethod;
+import nz.fox.craig.api.ShippingMethod;
 
 import java.math.BigDecimal;
 import java.util.UUID;

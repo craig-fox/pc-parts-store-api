@@ -1,18 +1,12 @@
 package nz.fox.craig.order.service;
 
-import static nz.fox.craig.order.shipping.ShippingPolicy.FREE_SHIPPING_THRESHOLD;
-import static nz.fox.craig.order.shipping.ShippingPolicy.HEAVY_SHIPPING;
-import static nz.fox.craig.order.shipping.ShippingPolicy.LIGHT_SHIPPING;
-import static nz.fox.craig.order.shipping.ShippingPolicy.LIGHT_WEIGHT_LIMIT;
-import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_SHIPPING;
-import static nz.fox.craig.order.shipping.ShippingPolicy.STANDARD_WEIGHT_LIMIT;
-
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.stream.Collectors;
 import nz.fox.craig.order.dto.request.ShippingAddressRequest;
+import nz.fox.craig.order.dto.request.ShippingQuoteRequest;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,10 +21,12 @@ import nz.fox.craig.order.client.CustomerClient;
 import nz.fox.craig.order.client.InventoryClient;
 import nz.fox.craig.order.client.PaymentClient;
 import nz.fox.craig.order.client.ProductClient;
+import nz.fox.craig.order.client.ShippingClient;
 import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.response.OrderResponse;
+import nz.fox.craig.order.dto.response.ShippingQuoteResponse;
 import nz.fox.craig.order.exception.IdempotencyKeyReuseException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
@@ -58,6 +54,7 @@ public class OrderService {
     private final ProductClient productClient;
     private final InventoryClient inventoryClient;
     private final PaymentClient paymentClient;
+    private final ShippingClient shippingClient;
     private final OrderMapper orderMapper;
     private final OrderPersistenceService orderPersistenceService;
 
@@ -77,7 +74,6 @@ public class OrderService {
         }
     
         validateCustomer(customerId);
-    
         List<OrderItemRequest> reservedItems = new ArrayList<>();
     
         try {
@@ -86,9 +82,9 @@ public class OrderService {
                 reservedItems.add(item);
             }
         
+            final UUID orderId = UUID.randomUUID();
             final Order order =
-                    assembleOrder(request, customerId, idempotencyKey, requestHash);
-        
+                    assembleOrder(orderId, request, customerId, idempotencyKey, requestHash);
             final Order savedOrder = orderPersistenceService.save(order);
         
             paymentClient.processPayment(
@@ -117,39 +113,51 @@ public class OrderService {
         }
     }
 
-    private Order assembleOrder(OrderRequest request, 
-                                UUID customerId, 
-                                String idempotencyKey, 
-                                String idempotencyHash) {
+    private Order assembleOrder(
+        UUID orderId,
+        OrderRequest request,
+        UUID customerId,
+        String idempotencyKey,
+        String idempotencyHash) {
 
-        final List<OrderItem> items = buildOrderItems(request);
+    final List<OrderItem> items = buildOrderItems(request);
 
-        final BigDecimal subtotal = calculateSubtotal(items);
-        final BigDecimal totalWeight = calculateTotalWeight(items);
-        final BigDecimal shipping = calculateShipping(subtotal, totalWeight);
+    final BigDecimal subtotal = calculateSubtotal(items);
+    final BigDecimal totalWeight = calculateTotalWeight(items);
 
-        final Order order =
-                Order.builder()
-                        .customerId(customerId)
-                        .idempotencyKey(idempotencyKey)
-                        .idempotencyRequestHash(idempotencyHash)
-                        .orderDate(LocalDateTime.now())
-                        .status(OrderStatus.PLACED)
-                        .subtotal(subtotal)
-                        .shipping(shipping)
-                        .total(calculateTotal(subtotal, shipping))
-                        .shippingAddress(
-                                new ShippingAddress(
-                                        request.shippingAddress().addressLine1(),
-                                        request.shippingAddress().city(),
-                                        request.shippingAddress().postcode(),
-                                        request.shippingAddress().country()))
-                        .build();
+    final ShippingQuoteResponse shippingQuote =
+            shippingClient.calculateQuote(
+                    new ShippingQuoteRequest(
+                            orderId,
+                            request.shippingAddress(),
+                            totalWeight,
+                            request.shippingMethod()));
 
-        items.forEach(order::addItem);
+    final BigDecimal shipping = shippingQuote.price();
 
-        return order;
-    }
+    final Order order =
+            Order.builder()
+                    .id(orderId)
+                    .customerId(customerId)
+                    .idempotencyKey(idempotencyKey)
+                    .idempotencyRequestHash(idempotencyHash)
+                    .orderDate(LocalDateTime.now())
+                    .status(OrderStatus.PLACED)
+                    .subtotal(subtotal)
+                    .shipping(shipping)
+                    .total(calculateTotal(subtotal, shipping))
+                    .shippingAddress(
+                            new ShippingAddress(
+                                    request.shippingAddress().addressLine1(),
+                                    request.shippingAddress().city(),
+                                    request.shippingAddress().postcode(),
+                                    request.shippingAddress().country()))
+                    .build();
+
+    items.forEach(order::addItem);
+
+    return order;
+}
 
     private OrderCreationResult handleConcurrentOrder(
         UUID customerId,
@@ -221,22 +229,6 @@ public class OrderService {
         return items.stream().map(OrderItem::getLineTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private BigDecimal calculateShipping(BigDecimal subtotal, BigDecimal totalWeight) {
-
-        if (subtotal.compareTo(FREE_SHIPPING_THRESHOLD) >= 0) {
-            return BigDecimal.ZERO;
-        }
-
-        if (totalWeight.compareTo(LIGHT_WEIGHT_LIMIT) <= 0) {
-            return LIGHT_SHIPPING;
-        }
-
-        if (totalWeight.compareTo(STANDARD_WEIGHT_LIMIT) <= 0) {
-            return STANDARD_SHIPPING;
-        }
-
-        return HEAVY_SHIPPING;
-    }
 
     private BigDecimal calculateTotalWeight(List<OrderItem> items) {
         return items.stream()

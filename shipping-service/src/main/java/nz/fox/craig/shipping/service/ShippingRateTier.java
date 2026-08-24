@@ -1,8 +1,8 @@
 package nz.fox.craig.shipping.service;
 
-import nz.fox.craig.shipping.model.ShippingMethod;
-
 import java.math.BigDecimal;
+
+import nz.fox.craig.api.ShippingMethod;
 
 record ShippingRateTier(
         BigDecimal maximumWeightKg,

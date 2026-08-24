@@ -13,6 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.UUID;
+
+import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.request.ShippingAddressRequest;
@@ -23,7 +25,7 @@ import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderExceptionHandler;
 import nz.fox.craig.order.exception.OrderNotFoundException;
 import nz.fox.craig.order.exception.ProductNotFoundException;
-import nz.fox.craig.order.fixture.OrderFixtures;
+import nz.fox.craig.order.fixture.OrderFixture;
 import nz.fox.craig.order.service.OrderCreationResult;
 import nz.fox.craig.order.service.OrderService;
 import nz.fox.craig.security.JwtAuthenticationFilter;
@@ -61,8 +63,8 @@ class OrderControllerTest {
     class CreateOrder {
         @Test
         void returnsCreatedOrder() throws Exception {
-                OrderRequest request = OrderFixtures.anOrderRequest();
-                OrderResponse response = OrderFixtures.anOrderResponse();
+                OrderRequest request = OrderFixture.anOrderRequest();
+                OrderResponse response = OrderFixture.anOrderResponse();
             
                 when(orderService.createOrder(anyString(), any(OrderRequest.class))).thenReturn(new OrderCreationResult(response, true));
             
@@ -80,7 +82,7 @@ class OrderControllerTest {
 
         @Test
         void emptyOrderItemsReturnsBadRequest() throws Exception {
-            OrderRequest request = OrderFixtures.anOrderRequest(List.of());
+            OrderRequest request = OrderFixture.anOrderRequest(ShippingMethod.STANDARD, List.of());
 
             mockMvc.perform(
                             post("/api/orders")
@@ -94,7 +96,7 @@ class OrderControllerTest {
         @Test
         void customerNotFoundReturns404() throws Exception {
             var missingCustomerID = UUID.randomUUID();
-            OrderRequest request =  OrderFixtures.anOrderRequest();
+            OrderRequest request =  OrderFixture.anOrderRequest();
 
             when(orderService.createOrder(anyString(), any(OrderRequest.class)))
                     .thenThrow(new CustomerNotFoundException(missingCustomerID));
@@ -112,7 +114,7 @@ class OrderControllerTest {
 
         @Test
         void insufficientStockReturns409() throws Exception {
-            OrderRequest request =  OrderFixtures.anOrderRequest();
+            OrderRequest request =  OrderFixture.anOrderRequest();
 
             when(orderService.createOrder(anyString(), any(OrderRequest.class)))
                     .thenThrow(new InsufficientStockException(PRODUCT_ID));
@@ -132,7 +134,7 @@ class OrderControllerTest {
 
         @Test
         void productNotFoundReturns404() throws Exception {
-            OrderRequest request =  OrderFixtures.anOrderRequest();
+            OrderRequest request =  OrderFixture.anOrderRequest();
 
             when(orderService.createOrder(anyString(), any(OrderRequest.class)))
                     .thenThrow(new ProductNotFoundException(PRODUCT_ID));
@@ -152,7 +154,7 @@ class OrderControllerTest {
         void nullProductIdReturnsBadRequest() throws Exception {
             OrderItemRequest item = OrderItemRequest.builder().productId(null).quantity(1).build();
 
-            OrderRequest request =  OrderFixtures.anOrderRequest(List.of(item));
+            OrderRequest request =  OrderFixture.anOrderRequest(ShippingMethod.STANDARD, List.of(item));
 
             mockMvc.perform(
                             post("/api/orders")
@@ -170,7 +172,7 @@ class OrderControllerTest {
             OrderItemRequest item =
                     OrderItemRequest.builder().productId(PRODUCT_ID).quantity(null).build();
 
-            OrderRequest request =  OrderFixtures.anOrderRequest(List.of(item));
+            OrderRequest request =  OrderFixture.anOrderRequest(ShippingMethod.STANDARD, List.of(item));
 
             mockMvc.perform(
                             post("/api/orders")
@@ -188,7 +190,7 @@ class OrderControllerTest {
             OrderItemRequest item =
                     OrderItemRequest.builder().productId(PRODUCT_ID).quantity(0).build();
 
-            OrderRequest request = OrderFixtures.anOrderRequest(List.of(item));
+            OrderRequest request = OrderFixture.anOrderRequest(ShippingMethod.STANDARD, List.of(item));
 
             mockMvc.perform(
                             post("/api/orders")
@@ -216,8 +218,9 @@ class OrderControllerTest {
 
             OrderRequest request =
                     OrderRequest.builder()
-                            .items(OrderFixtures.orderItems())
+                            .items(OrderFixture.orderItems())
                             .shippingAddress(shippingAddress)
+                            .shippingMethod(ShippingMethod.STANDARD)
                             .build();
 
             mockMvc.perform(
@@ -233,13 +236,46 @@ class OrderControllerTest {
             verifyNoInteractions(orderService);
         }
 
+        @Test
+        void missingShippingMethodReturnsBadRequest() throws Exception {
+
+        OrderRequest request =
+                OrderRequest.builder()
+                        .items(OrderFixture.orderItems())
+                        .shippingAddress(
+                                ShippingAddressRequest.builder()
+                                        .addressLine1("123 Main Street")
+                                        .city("Auckland")
+                                        .postcode("1010")
+                                        .country("NZ")
+                                        .build())
+                        .shippingMethod(null)
+                        .build();
+
+        mockMvc.perform(
+                        post("/api/orders")
+                                .header(
+                                        "Idempotency-Key",
+                                        UUID.randomUUID().toString())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        jsonPath("$.message")
+                                .value(
+                                        "shippingMethod: Must choose a shipping method"));
+
+        verifyNoInteractions(orderService);
+        }
+
     }
 
     @Nested
     class GetOrder {
         @Test
         void returnsOrder() throws Exception {
-            when(orderService.getOrder(ORDER_ID)).thenReturn(OrderFixtures.anOrderResponse(ORDER_ID));
+            when(orderService.getOrder(ORDER_ID)).thenReturn(OrderFixture.anOrderResponse(ORDER_ID));
 
             mockMvc.perform(get("/api/orders/{id}", ORDER_ID))
                     .andExpect(status().isOk())
@@ -264,8 +300,8 @@ class OrderControllerTest {
 
         @Test
         void returnsOrders() throws Exception {
-            OrderResponse first =  OrderFixtures.anOrderResponse();
-            OrderResponse second = OrderFixtures.anOrderResponse("CANCELLED");
+            OrderResponse first =  OrderFixture.anOrderResponse();
+            OrderResponse second = OrderFixture.anOrderResponse("CANCELLED");
 
             when(orderService.getOrdersForAuthenticatedCustomer())
                     .thenReturn(List.of(first, second));
@@ -297,7 +333,7 @@ class OrderControllerTest {
     class CancelOrder {
         @Test
         void returnsCancelledOrder() throws Exception {
-            OrderResponse cancelled = OrderFixtures.anOrderResponse("CANCELLED");
+            OrderResponse cancelled = OrderFixture.anOrderResponse("CANCELLED");
 
             when(orderService.cancelOrder(ORDER_ID)).thenReturn(cancelled);
 

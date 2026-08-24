@@ -1,10 +1,11 @@
 package nz.fox.craig.shipping.service;
 
-import nz.fox.craig.shipping.model.ShippingMethod;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import nz.fox.craig.api.ShippingMethod;
 
 import java.math.BigDecimal;
 import java.util.stream.Stream;

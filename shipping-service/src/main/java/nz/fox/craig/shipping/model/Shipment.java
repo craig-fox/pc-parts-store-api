@@ -16,6 +16,7 @@ import jakarta.persistence.EnumType;
 import lombok.Getter;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
+import nz.fox.craig.api.ShippingMethod;
 import lombok.AllArgsConstructor;
 import lombok.AccessLevel;
 
