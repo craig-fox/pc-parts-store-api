@@ -15,6 +15,7 @@
 
     <modules>
         <module>api-common</module>
+        <module>api-gateway</module>
         <module>customer-service</module>
         <module>order-service</module>
         <module>product-service</module>
@@ -45,6 +46,7 @@
         <sonar.projectKey>pc-parts-store-api</sonar.projectKey>
         <sonar.projectName>pc-parts-store-api</sonar.projectName>
         <resilience4j.version>2.3.0</resilience4j.version>
+        <spring-cloud.version>2025.0.3</spring-cloud.version>
     </properties>
 
     <dependencyManagement>
@@ -69,6 +71,13 @@
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-bom</artifactId>
                 <version>${resilience4j.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -113,7 +122,11 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-            
+                <configuration>
+                    <excludes>
+                        <exclude>**/ApiGatewayApplication.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
             
                     <execution>
