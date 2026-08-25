@@ -119,4 +119,6 @@ class HttpCustomerClientTest {
                 .isInstanceOf(DownstreamServiceUnavailableException.class)
                 .hasMessage("Customer service is unavailable");
     }
+
+    
 }

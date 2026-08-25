@@ -134,33 +134,33 @@ class HttpInventoryClientTest {
 
     @Test
     void shouldThrowDownstreamServiceUnavailableWhenReleaseReturnsServerError() {
-
+    
         when(restClient.post()).thenReturn(requestBodyUriSpec);
-
-        when(requestBodyUriSpec.uri(
-                eq("/api/inventory/{productId}/release"),
-                eq(PRODUCT_ID)))
+    
+        when(requestBodyUriSpec
+                .uri(eq("/api/inventory/{productId}/release"), eq(PRODUCT_ID)))
                 .thenReturn(requestBodySpec);
-
+    
         when(requestBodySpec.contentType(MediaType.APPLICATION_JSON))
                 .thenReturn(requestBodySpec);
-
+    
         when(requestBodySpec.body(any(InventoryReservationRequest.class)))
                 .thenReturn(requestBodySpec);
-
+    
         when(requestBodySpec.retrieve())
                 .thenReturn(responseSpec);
-
-        HttpServerErrorException serverError =
-                mock(HttpServerErrorException.class);
-
+    
+        HttpServerErrorException.InternalServerError serverError =
+                mock(HttpServerErrorException.InternalServerError.class);
+    
         when(responseSpec.toBodilessEntity())
                 .thenThrow(serverError);
-
-        assertThatThrownBy(() ->
-                client.releaseStock(PRODUCT_ID, QUANTITY))
+    
+        assertThatThrownBy(
+                () -> client.releaseStock(PRODUCT_ID, QUANTITY))
                 .isInstanceOf(DownstreamServiceUnavailableException.class)
-                .hasMessage("Inventory service is unavailable");
+                .hasMessage("Inventory service is unavailable")
+                .hasCause(serverError);
     }
 
     @Test

@@ -27,7 +27,6 @@ public class HttpInventoryClient implements InventoryClient {
 
     @Override
     public void reserveStock(UUID productId, int quantity) {
-
         try {
             restClient
                     .post()
@@ -35,10 +34,10 @@ public class HttpInventoryClient implements InventoryClient {
                     .body(new InventoryReservationRequest(quantity))
                     .retrieve()
                     .toBodilessEntity();
-
+    
         } catch (HttpClientErrorException.Conflict ex) {
             throw new InsufficientStockException(productId);
-
+    
         } catch (HttpServerErrorException | ResourceAccessException ex) {
             throw new DownstreamServiceUnavailableException(
                     "Inventory",
@@ -48,7 +47,6 @@ public class HttpInventoryClient implements InventoryClient {
 
     @Override
     public void releaseStock(UUID productId, int quantity) {
-
         try {
             restClient
                     .post()
@@ -57,7 +55,7 @@ public class HttpInventoryClient implements InventoryClient {
                     .body(new InventoryReservationRequest(quantity))
                     .retrieve()
                     .toBodilessEntity();
-
+    
         } catch (HttpServerErrorException | ResourceAccessException ex) {
             throw new DownstreamServiceUnavailableException(
                     "Inventory",

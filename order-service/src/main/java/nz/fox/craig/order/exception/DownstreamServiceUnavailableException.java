@@ -1,6 +1,7 @@
 package nz.fox.craig.order.exception;
 
-public class DownstreamServiceUnavailableException extends RuntimeException {
+public class DownstreamServiceUnavailableException
+        extends RuntimeException {
 
     public DownstreamServiceUnavailableException(
             String service,

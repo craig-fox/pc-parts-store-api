@@ -3,6 +3,7 @@ package nz.fox.craig.order.client;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -96,4 +97,13 @@ class HttpPaymentClientTest {
                 .isInstanceOf(HttpClientErrorException.BadRequest.class)
                 .isNotInstanceOf(DownstreamServiceUnavailableException.class);
     }
+
+    @Test
+    void shouldThrowDownstreamServiceIsUnavailableAfterResourceAccessException() throws IOException {
+        mockWebServer.shutdown();
+        assertThatThrownBy(() -> paymentClient.processPayment(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.valueOf(100.00), "NZD"))
+                .isInstanceOf(DownstreamServiceUnavailableException.class);
+    }
+
+   
 }

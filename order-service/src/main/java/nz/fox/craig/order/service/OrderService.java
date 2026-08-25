@@ -27,6 +27,7 @@ import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.dto.response.ShippingQuoteResponse;
+import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.exception.IdempotencyKeyReuseException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
@@ -42,7 +43,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClientException;
 
 @Service
 @Slf4j
@@ -178,11 +178,18 @@ public class OrderService {
                 false);
     }
 
-    private void releaseReservedStock(List<OrderItemRequest> reservedItems) {
+    private void releaseReservedStock(
+        List<OrderItemRequest> reservedItems) {
+
         for (OrderItemRequest item : reservedItems) {
+
             try {
-                inventoryClient.releaseStock(item.productId(), item.quantity());
-            } catch (RestClientException ex) {
+                inventoryClient.releaseStock(
+                        item.productId(),
+                        item.quantity());
+
+            } catch (DownstreamServiceUnavailableException ex) {
+
                 log.warn(
                         "Failed to release item {}. {}",
                         item.productId(),

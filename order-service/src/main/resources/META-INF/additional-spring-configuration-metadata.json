@@ -48,5 +48,15 @@
     "name": "service-client.read-timeout",
     "type": "java.lang.String",
     "description": "A description for 'service-client.read-timeout'"
+  },
+  {
+    "name": "services.http-client.connect-timeout",
+    "type": "java.lang.String",
+    "description": "A description for 'services.http-client.connect-timeout'"
+  },
+  {
+    "name": "services.http-client.read-timeout",
+    "type": "java.lang.String",
+    "description": "A description for 'services.http-client.read-timeout'"
   }
 ]}

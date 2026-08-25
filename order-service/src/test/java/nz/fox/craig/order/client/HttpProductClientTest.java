@@ -9,8 +9,7 @@ import java.util.UUID;
 import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.exception.ProductNotFoundException;
-import nz.fox.craig.order.utils.ProductResponses;
-
+import nz.fox.craig.order.utils.SampleResponses;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -55,7 +54,7 @@ class HttpProductClientTest {
                 new MockResponse()
                         .setHeader("Content-Type", "application/json")
                         .setBody(
-                                ProductResponses
+                                SampleResponses
                                         .gamingMouse(productId)
                                         .formatted(productId)));
 
@@ -131,4 +130,5 @@ class HttpProductClientTest {
                 .isInstanceOf(DownstreamServiceUnavailableException.class)
                 .hasMessage("Product service is unavailable");
     }
+
 }
