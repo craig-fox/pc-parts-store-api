@@ -44,6 +44,7 @@
         <sonar.host.url>http://localhost:9000</sonar.host.url>
         <sonar.projectKey>pc-parts-store-api</sonar.projectKey>
         <sonar.projectName>pc-parts-store-api</sonar.projectName>
+        <resilience4j.version>2.3.0</resilience4j.version>
     </properties>
 
     <dependencyManagement>
@@ -63,6 +64,13 @@
                 <groupId>net.sourceforge.plantuml</groupId>
                 <artifactId>plantuml</artifactId>
                 <version>${plantuml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-bom</artifactId>
+                <version>${resilience4j.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
 

@@ -18,19 +18,8 @@ public class JwtPropagationInterceptor implements ClientHttpRequestInterceptor {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        System.out.println(
-            "JWT propagation authentication: "
-                    + (authentication == null
-                            ? "null"
-                            : authentication.getClass().getSimpleName()));
-
         if (authentication instanceof UsernamePasswordAuthenticationToken) {
             Object credentials = authentication.getCredentials();
-            System.out.println(
-                "JWT propagation credentials are String: "
-                        + (credentials instanceof String));
-    
-
             if (credentials instanceof String jwt) {
                 request.getHeaders().setBearerAuth(jwt);
             }

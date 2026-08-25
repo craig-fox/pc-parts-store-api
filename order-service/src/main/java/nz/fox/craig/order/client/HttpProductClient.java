@@ -11,6 +11,8 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
+import io.github.resilience4j.retry.annotation.Retry;
+
 @Component
 public class HttpProductClient implements ProductClient {
 
@@ -22,6 +24,7 @@ public class HttpProductClient implements ProductClient {
         this.restClient = restClient;
     }
 
+    @Retry(name = "downstreamRead")
     @Override
     public ProductSnapshot getProduct(UUID productId) {
 

@@ -11,6 +11,8 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
+import io.github.resilience4j.retry.annotation.Retry;
+
 @Component
 public class HttpCustomerClient implements CustomerClient {
 
@@ -22,6 +24,7 @@ public class HttpCustomerClient implements CustomerClient {
         this.restClient = restClient;
     }
 
+    @Retry(name = "downstreamRead")
     @Override
     public void validateCustomerExists(UUID customerId) {
 

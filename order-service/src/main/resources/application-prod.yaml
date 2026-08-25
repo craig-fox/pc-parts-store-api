@@ -13,3 +13,22 @@ services:
 
   inventory:
     base-url: ${INVENTORY_SERVICE_URL}
+
+resilience4j:
+  retry:
+    instances:
+      downstreamRead:
+        max-attempts: 3
+        wait-duration: 200ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - nz.fox.craig.order.exception.DownstreamServiceUnavailableException
+
+      payment:
+        max-attempts: 3
+        wait-duration: 200ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - nz.fox.craig.order.exception.DownstreamServiceUnavailableException
