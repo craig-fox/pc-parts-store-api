@@ -14,3 +14,18 @@ jwt:
   expiration: ${JWT_EXPIRATION:3600000}
 
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+
