@@ -18,6 +18,12 @@ server:
   port: ${SERVER_PORT:8080}
 
 
+logging:
+  structured:
+    format:
+      console: ecs
+
+
 management:
   endpoints:
     web:

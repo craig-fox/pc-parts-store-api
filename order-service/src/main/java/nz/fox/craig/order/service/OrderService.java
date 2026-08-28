@@ -60,17 +60,19 @@ public class OrderService {
 
     @Transactional
     public OrderCreationResult createOrder(String idempotencyKey, OrderRequest request) {
+       
         UUID customerId = getAuthenticatedCustomerId();
         String requestHash = hashOrderRequest(request);
-    
-        Optional<Order> existingOrder =
-                orderRepository.findByCustomerIdAndIdempotencyKey(
-                        customerId, idempotencyKey);
+        log.info("Creating order for customer {}", customerId);
+        Optional<Order> existingOrder = orderRepository.findByCustomerIdAndIdempotencyKey(
+                                                        customerId, idempotencyKey);
     
         if (existingOrder.isPresent()) {
+            log.info(
+                "Returning existing order {} for duplicate request",
+                existingOrder.get().getId());
             return new OrderCreationResult(
-                    handleExistingOrder(existingOrder.get(), requestHash),
-                    false);
+                    handleExistingOrder(existingOrder.get(), requestHash),false);
         }
     
         validateCustomer(customerId);
@@ -83,8 +85,7 @@ public class OrderService {
             }
         
             final UUID orderId = UUID.randomUUID();
-            final Order order =
-                    assembleOrder(orderId, request, customerId, idempotencyKey, requestHash);
+            final Order order = assembleOrder(orderId, request, customerId, idempotencyKey, requestHash);
             final Order savedOrder = orderPersistenceService.save(order);
         
             paymentClient.processPayment(
@@ -95,6 +96,11 @@ public class OrderService {
         
             savedOrder.setStatus(OrderStatus.PAID);
             final Order paidOrder = orderPersistenceService.save(savedOrder);
+            log.info(
+                "Order {} created successfully with total {} {}",
+                paidOrder.getId(),
+                paidOrder.getTotal(),
+                "NZD");
         
             return new OrderCreationResult(
                     orderMapper.toResponse(paidOrder),
@@ -191,10 +197,9 @@ public class OrderService {
             } catch (DownstreamServiceUnavailableException ex) {
 
                 log.warn(
-                        "Failed to release item {}. {}",
-                        item.productId(),
-                        ex.getMessage(),
-                        ex);
+                    "Failed to release reserved inventory for product {}",
+                    item.productId(),
+                    ex);
             }
         }
     }
@@ -312,6 +317,7 @@ public class OrderService {
         validateOrderCanBeCancelled(order);
         order.setStatus(OrderStatus.CANCELLED);
         final Order savedOrder = orderRepository.save(order);
+        log.info("Order {} cancelled", savedOrder.getId());
         return orderMapper.toResponse(savedOrder);
     }
 
