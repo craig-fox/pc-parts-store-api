@@ -25,6 +25,7 @@
         <module>payment-service</module>
         <module>shipping-service</module>
         <module>test-support</module>
+        <module>observability-common</module>
     </modules>
 
     <properties>

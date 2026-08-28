@@ -1,5 +1,7 @@
 package nz.fox.craig.order.config;
 
+import nz.fox.craig.observability.CorrelationIdInterceptor;
+import nz.fox.craig.observability.RestClientLoggingInterceptor;
 import nz.fox.craig.security.JwtPropagationInterceptor;
 
 import java.net.http.HttpClient;
@@ -43,12 +45,16 @@ public class RestClientConfig {
             RestClient.Builder builder,
             CustomerServiceProperties properties,
             JwtPropagationInterceptor interceptor,
+            CorrelationIdInterceptor correlationIdInterceptor,
+            RestClientLoggingInterceptor loggingInterceptor,
             ClientHttpRequestFactory requestFactory) {
 
     return createRestClient(
             builder,
             properties.baseUrl(),
             interceptor,
+            correlationIdInterceptor,
+            loggingInterceptor,
             requestFactory);
 }
 
@@ -57,12 +63,16 @@ public class RestClientConfig {
             RestClient.Builder builder,
             ProductServiceProperties properties,
             JwtPropagationInterceptor interceptor,
+            CorrelationIdInterceptor correlationIdInterceptor,
+            RestClientLoggingInterceptor loggingInterceptor,
             ClientHttpRequestFactory requestFactory) {
 
         return createRestClient(
                 builder,
                 properties.baseUrl(),
                 interceptor,
+                correlationIdInterceptor,
+                loggingInterceptor,
                 requestFactory);
     }
 
@@ -71,26 +81,34 @@ public class RestClientConfig {
             RestClient.Builder builder,
             InventoryServiceProperties properties,
             JwtPropagationInterceptor interceptor,
+            CorrelationIdInterceptor correlationIdInterceptor,
+            RestClientLoggingInterceptor loggingInterceptor,
             ClientHttpRequestFactory requestFactory) {
 
         return createRestClient(
                 builder,
                 properties.baseUrl(),
                 interceptor,
+                correlationIdInterceptor,
+                loggingInterceptor,
                 requestFactory);
     }
 
     @Bean(name = "paymentRestClient")
-        RestClient paymentRestClient(
-                RestClient.Builder builder,
-                PaymentServiceProperties properties,
-                JwtPropagationInterceptor interceptor,
-                ClientHttpRequestFactory requestFactory) {
-
+    RestClient paymentRestClient(
+            RestClient.Builder builder,
+            PaymentServiceProperties properties,
+            JwtPropagationInterceptor jwtInterceptor,
+            CorrelationIdInterceptor correlationIdInterceptor,
+            RestClientLoggingInterceptor loggingInterceptor,
+            ClientHttpRequestFactory requestFactory) {
+    
         return createRestClient(
                 builder,
                 properties.baseUrl(),
-                interceptor,
+                jwtInterceptor,
+                correlationIdInterceptor,
+                loggingInterceptor,
                 requestFactory);
     }
 
@@ -99,26 +117,34 @@ public class RestClientConfig {
             RestClient.Builder builder,
             ShippingServiceProperties properties,
             JwtPropagationInterceptor interceptor,
+            CorrelationIdInterceptor correlationIdInterceptor,
+            RestClientLoggingInterceptor loggingInterceptor,
             ClientHttpRequestFactory requestFactory) {
 
         return createRestClient(
                 builder,
                 properties.baseUrl(),
                 interceptor,
+                correlationIdInterceptor,
+                loggingInterceptor,
                 requestFactory);
     }
 
     private RestClient createRestClient(
         RestClient.Builder builder,
         String baseUrl,
-        JwtPropagationInterceptor interceptor,
+        JwtPropagationInterceptor jwtInterceptor,
+        CorrelationIdInterceptor correlationIdInterceptor,
+        RestClientLoggingInterceptor loggingInterceptor,
         ClientHttpRequestFactory requestFactory) {
 
-        return builder
-                .baseUrl(baseUrl)
-                .requestInterceptor(interceptor)
-                .requestFactory(requestFactory)
-                .build();
-        }
+    return builder
+            .baseUrl(baseUrl)
+            .requestInterceptor(jwtInterceptor)
+            .requestInterceptor(correlationIdInterceptor)
+            .requestInterceptor(loggingInterceptor)
+            .requestFactory(requestFactory)
+            .build();
+}
 
 }
