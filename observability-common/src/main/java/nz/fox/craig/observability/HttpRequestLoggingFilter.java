@@ -1,20 +1,21 @@
 package nz.fox.craig.observability;
 
 import java.io.IOException;
-import java.util.UUID;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.slf4j.MDC;
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.core.Ordered;
 
+@Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE)
-public class CorrelationIdFilter extends OncePerRequestFilter {
+public class HttpRequestLoggingFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
@@ -23,19 +24,20 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        String correlationId = request.getHeader(CorrelationId.HEADER);
-
-        if (correlationId == null || correlationId.isBlank()) {
-            correlationId = UUID.randomUUID().toString();
-        }
-
-        MDC.put(CorrelationId.MDC_KEY, correlationId);
-        response.setHeader(CorrelationId.HEADER, correlationId);
+        long start = System.nanoTime();
 
         try {
             filterChain.doFilter(request, response);
         } finally {
-            MDC.remove(CorrelationId.MDC_KEY);
+            long durationMs =
+                    (System.nanoTime() - start) / 1_000_000;
+
+            log.info(
+                    "HTTP request completed: {} {} -> {} in {} ms",
+                    request.getMethod(),
+                    request.getRequestURI(),
+                    response.getStatus(),
+                    durationMs);
         }
     }
 }

@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 
 import nz.fox.craig.observability.CorrelationIdFilter;
 import nz.fox.craig.observability.CorrelationIdInterceptor;
+import nz.fox.craig.observability.HttpRequestLoggingFilter;
 import nz.fox.craig.observability.RestClientLoggingInterceptor;
 
 @Configuration
@@ -23,5 +24,10 @@ public class ObservabilityConfig {
     @Bean
     RestClientLoggingInterceptor restClientLoggingInterceptor() {
         return new RestClientLoggingInterceptor();
+    }
+
+    @Bean
+    HttpRequestLoggingFilter httpRequestLoggingFilter() {
+        return new HttpRequestLoggingFilter();
     }
 }

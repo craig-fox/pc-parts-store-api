@@ -42,6 +42,7 @@ import nz.fox.craig.order.exception.ProductNotFoundException;
 import nz.fox.craig.order.fixture.OrderFixture;
 import nz.fox.craig.order.fixture.ShippingFixture;
 import nz.fox.craig.order.mapper.OrderMapper;
+import nz.fox.craig.order.metrics.OrderMetrics;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
@@ -94,6 +95,9 @@ class OrderServiceTest {
 
     @Mock
     private OrderPersistenceService orderPersistenceService;
+
+    @Mock
+    private OrderMetrics orderMetrics;
 
     @InjectMocks 
     private OrderService orderService;
@@ -150,6 +154,7 @@ class OrderServiceTest {
                 eq("NZD"));
 
             verify(shippingClient).calculateQuote(any(ShippingQuoteRequest.class));
+            verify(orderMetrics).orderCreated();
         }
 
         @Test
@@ -452,6 +457,7 @@ class OrderServiceTest {
             verify(orderMapper).toResponse(existingOrder);
 
             verifyNoMoreInteractions(repository, orderMapper);
+            verify(orderMetrics).orderCreated();
         }
 
         @Test
