@@ -32,6 +32,7 @@ import nz.fox.craig.order.exception.IdempotencyKeyReuseException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
 import nz.fox.craig.order.mapper.OrderMapper;
+import nz.fox.craig.order.metrics.OrderMetrics;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
@@ -57,6 +58,7 @@ public class OrderService {
     private final ShippingClient shippingClient;
     private final OrderMapper orderMapper;
     private final OrderPersistenceService orderPersistenceService;
+    private final OrderMetrics orderMetrics;
 
     @Transactional
     public OrderCreationResult createOrder(String idempotencyKey, OrderRequest request) {
@@ -84,9 +86,9 @@ public class OrderService {
                 reservedItems.add(item);
             }
         
-            final UUID orderId = UUID.randomUUID();
-            final Order order = assembleOrder(orderId, request, customerId, idempotencyKey, requestHash);
-            final Order savedOrder = orderPersistenceService.save(order);
+            UUID orderId = UUID.randomUUID();
+            Order order = assembleOrder(orderId, request, customerId, idempotencyKey, requestHash);
+            Order savedOrder = orderPersistenceService.save(order);
         
             paymentClient.processPayment(
                     savedOrder.getId(),
@@ -95,13 +97,13 @@ public class OrderService {
                     "NZD");
         
             savedOrder.setStatus(OrderStatus.PAID);
-            final Order paidOrder = orderPersistenceService.save(savedOrder);
+            Order paidOrder = orderPersistenceService.save(savedOrder);
             log.info(
                 "Order {} created successfully with total {} {}",
                 paidOrder.getId(),
                 paidOrder.getTotal(),
                 "NZD");
-        
+            orderMetrics.orderCreated();
             return new OrderCreationResult(
                     orderMapper.toResponse(paidOrder),
                     true);
@@ -126,12 +128,12 @@ public class OrderService {
         String idempotencyKey,
         String idempotencyHash) {
 
-    final List<OrderItem> items = buildOrderItems(request);
+    List<OrderItem> items = buildOrderItems(request);
 
-    final BigDecimal subtotal = calculateSubtotal(items);
-    final BigDecimal totalWeight = calculateTotalWeight(items);
+    BigDecimal subtotal = calculateSubtotal(items);
+    BigDecimal totalWeight = calculateTotalWeight(items);
 
-    final ShippingQuoteResponse shippingQuote =
+    ShippingQuoteResponse shippingQuote =
             shippingClient.calculateQuote(
                     new ShippingQuoteRequest(
                             orderId,
@@ -139,26 +141,26 @@ public class OrderService {
                             totalWeight,
                             request.shippingMethod()));
 
-    final BigDecimal shipping = shippingQuote.price();
+    BigDecimal shipping = shippingQuote.price();
 
-    final Order order =
-            Order.builder()
-                    .id(orderId)
-                    .customerId(customerId)
-                    .idempotencyKey(idempotencyKey)
-                    .idempotencyRequestHash(idempotencyHash)
-                    .orderDate(LocalDateTime.now())
-                    .status(OrderStatus.PLACED)
-                    .subtotal(subtotal)
-                    .shipping(shipping)
-                    .total(calculateTotal(subtotal, shipping))
-                    .shippingAddress(
-                            new ShippingAddress(
-                                    request.shippingAddress().addressLine1(),
-                                    request.shippingAddress().city(),
-                                    request.shippingAddress().postcode(),
-                                    request.shippingAddress().country()))
-                    .build();
+    Order order =
+        Order.builder()
+                .id(orderId)
+                .customerId(customerId)
+                .idempotencyKey(idempotencyKey)
+                .idempotencyRequestHash(idempotencyHash)
+                .orderDate(LocalDateTime.now())
+                .status(OrderStatus.PLACED)
+                .subtotal(subtotal)
+                .shipping(shipping)
+                .total(calculateTotal(subtotal, shipping))
+                .shippingAddress(
+                        new ShippingAddress(
+                                request.shippingAddress().addressLine1(),
+                                request.shippingAddress().city(),
+                                request.shippingAddress().postcode(),
+                                request.shippingAddress().country()))
+                .build();
 
     items.forEach(order::addItem);
 
@@ -302,8 +304,7 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderResponse getOrder(UUID id) {
-
-        final Order order = findOrderById(id);
+        Order order = findOrderById(id);
         return orderMapper.toResponse(order);
     }
 
@@ -313,11 +314,12 @@ public class OrderService {
 
     @Transactional
     public OrderResponse cancelOrder(UUID id) {
-        final Order order = findOrderById(id);
+        Order order = findOrderById(id);
         validateOrderCanBeCancelled(order);
         order.setStatus(OrderStatus.CANCELLED);
-        final Order savedOrder = orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
         log.info("Order {} cancelled", savedOrder.getId());
+        orderMetrics.orderCreated();
         return orderMapper.toResponse(savedOrder);
     }
 
