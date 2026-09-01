@@ -16,6 +16,7 @@ import nz.fox.craig.customer.dto.CustomerResponse;
 import nz.fox.craig.customer.exception.CustomerAlreadyExistsException;
 import nz.fox.craig.customer.exception.CustomerNotFoundException;
 import nz.fox.craig.customer.fixture.CustomerFixtures;
+import nz.fox.craig.customer.metrics.CustomerMetrics;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
 import nz.fox.craig.customer.repository.CustomerRepository;
@@ -39,6 +40,8 @@ class CustomerServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
 
     @Mock private SecurityService securityService;
+
+    @Mock private CustomerMetrics customerMetrics;
 
     @InjectMocks private CustomerService customerService;
 
@@ -81,6 +84,7 @@ class CustomerServiceTest {
             assertThat(response.email()).isEqualTo("jane@example.com");
             assertThat(response.address()).isEqualTo("123 Main St");
             verify(customerRepository).save(any(Customer.class));
+            verify(customerMetrics).customerRegistered();
         }
 
         @Test
@@ -104,6 +108,7 @@ class CustomerServiceTest {
             CustomerResponse response = customerService.registerCustomer(request);
 
             assertThat(response.displayName()).isEqualTo("Jane");
+            verify(customerMetrics).customerRegistered();
         }
 
         @Test
@@ -310,6 +315,7 @@ class CustomerServiceTest {
 
             assertThat(customer.getStatus()).isEqualTo(CustomerStatus.ACTIVE);
             verify(customerRepository).save(customer);
+            verify(customerMetrics).customerActivated();
         }
 
         @Test
@@ -325,6 +331,7 @@ class CustomerServiceTest {
                     .hasMessage("Customer already exists with email: jane@example.com");
 
             verify(customerRepository, never()).save(any(Customer.class));
+     
         }
     }
 
@@ -343,6 +350,7 @@ class CustomerServiceTest {
             assertThat(customer.getStatus()).isEqualTo(CustomerStatus.INACTIVE);
             verify(customerRepository).save(customer);
             verify(securityService).verifyCurrentUser(CUSTOMER_ID);
+            verify(customerMetrics).customerDeactivated();
         }
 
         @Test

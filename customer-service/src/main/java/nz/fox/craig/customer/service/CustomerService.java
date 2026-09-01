@@ -8,6 +8,7 @@ import nz.fox.craig.customer.dto.CustomerRequest;
 import nz.fox.craig.customer.dto.CustomerResponse;
 import nz.fox.craig.customer.exception.CustomerAlreadyExistsException;
 import nz.fox.craig.customer.exception.CustomerNotFoundException;
+import nz.fox.craig.customer.metrics.CustomerMetrics;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
 import nz.fox.craig.customer.repository.CustomerRepository;
@@ -23,6 +24,7 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final PasswordEncoder passwordEncoder;
     private final SecurityService securityService;
+    private final CustomerMetrics customerMetrics;
 
     @Transactional
     public CustomerResponse registerCustomer(CustomerRequest request) {
@@ -40,6 +42,7 @@ public class CustomerService {
                         .password(passwordEncoder.encode(request.password()))
                         .status(CustomerStatus.ACTIVE)
                         .build();
+        customerMetrics.customerRegistered();
         return CustomerResponse.from(customerRepository.save(customer));
     }
 
@@ -104,7 +107,9 @@ public class CustomerService {
                         .orElseThrow(() -> new CustomerNotFoundException(customerId));
 
         customer.setStatus(CustomerStatus.INACTIVE);
+
         customerRepository.save(customer);
+        customerMetrics.customerDeactivated();
     }
 
     @Transactional
@@ -120,5 +125,6 @@ public class CustomerService {
         }
         customer.setStatus(CustomerStatus.ACTIVE);
         customerRepository.save(customer);
+        customerMetrics.customerActivated();
     }
 }

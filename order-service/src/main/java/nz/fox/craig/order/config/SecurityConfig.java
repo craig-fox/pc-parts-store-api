@@ -42,7 +42,6 @@ public class SecurityConfig {
                                                 "/actuator/metrics",
                                                 "/actuator/metrics/**")
                                         .permitAll()
-                                        .requestMatchers("/actuator/health").permitAll()
                                         .anyRequest()
                                         .authenticated())
                 .addFilterBefore(

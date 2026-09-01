@@ -51,12 +51,12 @@ public class SecurityConfig {
                                         .requestMatchers(HttpMethod.POST, "/api/customers").permitAll()
                                         .requestMatchers(HttpMethod.GET, "/api/customers/email/**").permitAll()
                                         .requestMatchers(
-                                                "/v3/api-docs/**",
-                                                "/swagger-ui/**",
-                                                "/swagger-ui.html")
+                                                "/actuator/health",
+                                                "/actuator/health/**",
+                                                "/actuator/info",
+                                                "/actuator/metrics",
+                                                "/actuator/metrics/**")
                                         .permitAll()
-                                        .requestMatchers("/actuator/health",
-                                                                      "/actuator/health/**").permitAll()
                                         .anyRequest()
                                         .authenticated())
                 .addFilterBefore(
