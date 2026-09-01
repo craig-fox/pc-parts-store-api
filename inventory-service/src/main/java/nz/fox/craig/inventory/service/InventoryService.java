@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import nz.fox.craig.inventory.dto.InventoryResponse;
 import nz.fox.craig.inventory.exception.InventoryNotFoundException;
 import nz.fox.craig.inventory.mapper.InventoryMapper;
+import nz.fox.craig.inventory.metrics.InventoryMetrics;
 import nz.fox.craig.inventory.model.Inventory;
 import nz.fox.craig.inventory.repository.InventoryRepository;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
     private final InventoryMapper inventoryMapper;
+    private final InventoryMetrics inventoryMetrics;
 
     public InventoryResponse getInventory(UUID productId) {
         Inventory inventory = findInventory(productId);
@@ -27,6 +29,7 @@ public class InventoryService {
 
         inventory.reserve(quantity);
         inventoryRepository.save(inventory);
+        inventoryMetrics.reservationMade();
         return inventoryMapper.toResponse(inventory);
     }
 
@@ -34,9 +37,8 @@ public class InventoryService {
         Inventory inventory = findInventory(productId);
 
         inventory.release(quantity);
-
         inventoryRepository.save(inventory);
-
+        inventoryMetrics.releaseMade();
         return inventoryMapper.toResponse(inventory);
     }
 

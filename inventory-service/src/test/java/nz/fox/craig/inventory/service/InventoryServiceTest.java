@@ -14,6 +14,7 @@ import nz.fox.craig.inventory.dto.InventoryResponse;
 import nz.fox.craig.inventory.exception.InsufficientInventoryException;
 import nz.fox.craig.inventory.exception.InventoryNotFoundException;
 import nz.fox.craig.inventory.mapper.InventoryMapper;
+import nz.fox.craig.inventory.metrics.InventoryMetrics;
 import nz.fox.craig.inventory.model.Inventory;
 import nz.fox.craig.inventory.model.InventoryStatus;
 import nz.fox.craig.inventory.repository.InventoryRepository;
@@ -36,6 +37,8 @@ class InventoryServiceTest {
     @Mock private InventoryRepository inventoryRepository;
 
     @Mock private InventoryMapper inventoryMapper;
+
+    @Mock private InventoryMetrics inventoryMetrics;
 
     @InjectMocks private InventoryService inventoryService;
 
@@ -97,6 +100,7 @@ class InventoryServiceTest {
 
             verify(inventoryRepository).save(inventory);
             verify(inventoryMapper).toResponse(inventory);
+            verify(inventoryMetrics).reservationMade();
         }
 
         @Test
@@ -137,6 +141,7 @@ class InventoryServiceTest {
             assertThat(result).isEqualTo(response);
 
             verify(inventoryRepository).save(inventory);
+            verify(inventoryMetrics).releaseMade();
         }
 
         @Test
