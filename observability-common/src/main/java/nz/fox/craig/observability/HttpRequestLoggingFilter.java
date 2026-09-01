@@ -14,7 +14,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Slf4j
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(Ordered.HIGHEST_PRECEDENCE + 1)
 public class HttpRequestLoggingFilter extends OncePerRequestFilter {
 
     @Override
