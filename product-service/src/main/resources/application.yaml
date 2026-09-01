@@ -17,6 +17,11 @@ jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:3600000}
 
+logging:
+  structured:
+    format:
+      console: ecs
+
 management:
   endpoints:
     web:
