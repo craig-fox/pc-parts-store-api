@@ -12,6 +12,7 @@ spring:
               '[/**]':
                 allowedOrigins:
                   - http://localhost:5173
+                  - https://pcparts.craigfox.dev
                 allowedMethods:
                   - GET
                   - POST
