@@ -3,8 +3,7 @@ spring:
     name: authentication-service
 
 customer-service:
-  base-url: http://customer-service:8080
-
+  base-url: ${CUSTOMER_SERVICE_URL:http://localhost:8081}
 
 server:
   port: ${SERVER_PORT:8085}
