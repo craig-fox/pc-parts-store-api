@@ -1,2 +1,2 @@
 customer-service:
-  base-url: ${CUSTOMER_SERVICE_URL}
+  base-url: ${CUSTOMER_SERVICE_URL:http://localhost:8081}
