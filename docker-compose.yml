@@ -203,10 +203,14 @@ services:
     build:
       context: ./authentication-service
     container_name: authentication-service
+    depends_on:
+      customer-service:
+        condition: service_started
     environment:
       SERVER_PORT: 8080
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
+      CUSTOMER_SERVICE_URL: http://customer-service:8080
       SPRING_PROFILES_ACTIVE: dev
     ports:
       - "8085:8080"
