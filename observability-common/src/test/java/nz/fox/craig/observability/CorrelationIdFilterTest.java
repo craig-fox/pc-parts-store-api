@@ -15,6 +15,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 class CorrelationIdFilterTest {
 
     private final CorrelationIdFilter filter = new CorrelationIdFilter();
+    private static final String CORRELATION_ID = "17eec180-d060-4cf6-977e-5006a8c24a90";
 
     @AfterEach
     void clearMdc() {
@@ -23,10 +24,9 @@ class CorrelationIdFilterTest {
 
     @Test
     void preservesExistingCorrelationId() throws Exception {
-        String correlationId = "test-correlation-123";
 
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader(CorrelationId.HEADER, correlationId);
+        request.addHeader(CorrelationId.HEADER, CORRELATION_ID);
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain filterChain = mock(FilterChain.class);
@@ -34,7 +34,7 @@ class CorrelationIdFilterTest {
         filter.doFilter(request, response, filterChain);
 
         assertThat(response.getHeader(CorrelationId.HEADER))
-                .isEqualTo(correlationId);
+                .isEqualTo(CORRELATION_ID);
 
         verify(filterChain).doFilter(request, response);
     }
@@ -61,10 +61,9 @@ class CorrelationIdFilterTest {
 
     @Test
     void removesCorrelationIdFromMdcAfterRequest() throws Exception {
-        String correlationId = "test-correlation-123";
 
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader(CorrelationId.HEADER, correlationId);
+        request.addHeader(CorrelationId.HEADER, CORRELATION_ID);
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain filterChain = mock(FilterChain.class);
@@ -77,16 +76,14 @@ class CorrelationIdFilterTest {
 
     @Test
     void makesCorrelationIdAvailableInMdcDuringRequest() throws Exception {
-        String correlationId = "test-correlation-123";
-
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader(CorrelationId.HEADER, correlationId);
+        request.addHeader(CorrelationId.HEADER, CORRELATION_ID);
 
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         FilterChain filterChain = (req, res) ->
                 assertThat(MDC.get(CorrelationId.MDC_KEY))
-                        .isEqualTo(correlationId);
+                        .isEqualTo(CORRELATION_ID);
 
         filter.doFilter(request, response, filterChain);
     }

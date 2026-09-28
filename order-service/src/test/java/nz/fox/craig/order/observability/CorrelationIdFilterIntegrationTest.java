@@ -33,6 +33,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class CorrelationIdFilterIntegrationTest {
 
+    private static final String CORRELATION_ID = "24bb9e32-ca44-4905-830d-bab2fc96f353";
+
     @Autowired
     private MockMvc mockMvc;
     
@@ -47,16 +49,15 @@ class CorrelationIdFilterIntegrationTest {
 
     @Test
     void preservesCorrelationIdFromIncomingRequest() throws Exception {
-        String correlationId = "test-correlation-123";
 
         mockMvc.perform(
                 get("/test")
-                        .header(CorrelationId.HEADER, correlationId))
+                        .header(CorrelationId.HEADER, CORRELATION_ID))
                 .andExpect(status().isOk())
                 .andExpect(
                         header().string(
                                 CorrelationId.HEADER,
-                                correlationId));
+                                CORRELATION_ID));
     }
 
     @Test
