@@ -16,6 +16,20 @@ import org.springframework.core.Ordered;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CorrelationIdFilter extends OncePerRequestFilter {
 
+    private String resolveCorrelationId(HttpServletRequest request) {
+        String incoming = request.getHeader(CorrelationId.HEADER);
+    
+        if (incoming != null && incoming.length() <= 36) {
+            try {
+                return UUID.fromString(incoming).toString();
+            } catch (IllegalArgumentException ignored) {
+                // Invalid ID; generate a new one.
+            }
+        }
+    
+        return UUID.randomUUID().toString();
+    }
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
@@ -23,16 +37,11 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        String correlationId = request.getHeader(CorrelationId.HEADER);
-
-        if (correlationId == null || correlationId.isBlank()) {
-            correlationId = UUID.randomUUID().toString();
-        }
-
-        MDC.put(CorrelationId.MDC_KEY, correlationId);
-        response.setHeader(CorrelationId.HEADER, correlationId);
+        String correlationId = resolveCorrelationId(request);
 
         try {
+            MDC.put(CorrelationId.MDC_KEY, correlationId);
+            response.setHeader(CorrelationId.HEADER, correlationId);
             filterChain.doFilter(request, response);
         } finally {
             MDC.remove(CorrelationId.MDC_KEY);
