@@ -1,7 +1,5 @@
 package nz.fox.craig.shipping.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.shipping.dto.CreateShipmentRequest;
 import nz.fox.craig.shipping.dto.ShippingAddressRequest;
@@ -12,10 +10,12 @@ import nz.fox.craig.shipping.model.ShippingQuote;
 import nz.fox.craig.shipping.model.Shipment;
 import nz.fox.craig.shipping.model.ShipmentStatus;
 import nz.fox.craig.shipping.service.ShippingService;
+import tools.jackson.databind.json.JsonMapper;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -45,7 +45,7 @@ class ShippingControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private JsonMapper objectMapper;
 
     @MockitoBean
     private ShippingService shippingService;

@@ -10,7 +10,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,11 +29,13 @@ import nz.fox.craig.order.service.OrderCreationResult;
 import nz.fox.craig.order.service.OrderService;
 import nz.fox.craig.security.JwtAuthenticationFilter;
 import nz.fox.craig.security.TokenService;
+import tools.jackson.databind.json.JsonMapper;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -48,7 +49,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class OrderControllerTest {
     @Autowired private MockMvc mockMvc;
 
-    @Autowired private ObjectMapper objectMapper;
+    @Autowired private JsonMapper objectMapper;
 
     @MockitoBean private OrderService orderService;
 

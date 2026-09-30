@@ -11,6 +11,8 @@ spring:
     enabled: true
 
 logging:
+  level:
+    org.flywaydb: DEBUG
   structured:
     format:
       console: ecs

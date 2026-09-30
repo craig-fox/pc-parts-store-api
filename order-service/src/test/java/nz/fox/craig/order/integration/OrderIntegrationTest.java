@@ -6,7 +6,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -36,6 +35,8 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.QueueDispatcher;
 import okhttp3.mockwebserver.RecordedRequest;
+import tools.jackson.databind.json.JsonMapper;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,8 +44,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -63,7 +64,7 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
     @Autowired private MockMvc mockMvc;
 
-    @Autowired private ObjectMapper objectMapper;
+    @Autowired private JsonMapper objectMapper;
 
     @Autowired private OrderRepository orderRepository;
 
@@ -910,14 +911,10 @@ class OrderIntegrationTest extends AbstractPostgresTest {
     }
 
     private MockResponse productResponse() {
-        try {
-            return new MockResponse()
+        return new MockResponse()
                     .setResponseCode(200)
                     .setBody(objectMapper.writeValueAsString(productSnapshot()))
                     .addHeader("Content-Type", "application/json");
-        } catch (JsonProcessingException ex) {
-            throw new AssertionError(ex);
-        }
     }
 
     private List<Integer> executeConcurrentOrderRequests(

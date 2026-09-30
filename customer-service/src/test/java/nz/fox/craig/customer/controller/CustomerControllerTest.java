@@ -13,7 +13,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.UUID;
 import nz.fox.craig.customer.dto.CustomerAuthenticationResponse;
@@ -25,11 +24,13 @@ import nz.fox.craig.customer.exception.CustomerNotFoundException;
 import nz.fox.craig.customer.model.CustomerStatus;
 import nz.fox.craig.customer.service.CustomerService;
 import nz.fox.craig.security.JwtAuthenticationFilter;
+import tools.jackson.databind.json.JsonMapper;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -42,7 +43,8 @@ class CustomerControllerTest {
 
     @Autowired private MockMvc mockMvc;
 
-    @Autowired private ObjectMapper objectMapper;
+    @Autowired
+    private JsonMapper jsonMapper;
 
     @MockitoBean private CustomerService customerService;
 
@@ -67,7 +69,7 @@ class CustomerControllerTest {
             mockMvc.perform(
                             post("/api/customers")
                                     .contentType(MediaType.APPLICATION_JSON)
-                                    .content(objectMapper.writeValueAsString(request)))
+                                    .content(jsonMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.id").value(CUSTOMER_ID.toString()))
                     .andExpect(jsonPath("$.firstName").value("Jane"))
@@ -86,7 +88,7 @@ class CustomerControllerTest {
             mockMvc.perform(
                             post("/api/customers")
                                     .contentType(MediaType.APPLICATION_JSON)
-                                    .content(objectMapper.writeValueAsString(request)))
+                                    .content(jsonMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value("Validation failed"))
                     .andExpect(
@@ -250,7 +252,7 @@ class CustomerControllerTest {
             mockMvc.perform(
                             put("/api/customers/" + CUSTOMER_ID)
                                     .contentType(MediaType.APPLICATION_JSON)
-                                    .content(objectMapper.writeValueAsString(request)))
+                                    .content(jsonMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.firstName").value("Jane"))
                     .andExpect(jsonPath("$.lastName").value("Smith"))
@@ -275,7 +277,7 @@ class CustomerControllerTest {
             mockMvc.perform(
                             put("/api/customers/" + UNKNOWN_CUSTOMER)
                                     .contentType(MediaType.APPLICATION_JSON)
-                                    .content(objectMapper.writeValueAsString(request)))
+                                    .content(jsonMapper.writeValueAsString(request)))
                     .andExpect(status().isNotFound())
                     .andExpect(
                             jsonPath("$.message")
@@ -334,7 +336,7 @@ class CustomerControllerTest {
             mockMvc.perform(
                             post("/api/customers")
                                     .contentType(MediaType.APPLICATION_JSON)
-                                    .content(objectMapper.writeValueAsString(request)))
+                                    .content(jsonMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict())
                     .andExpect(
                             jsonPath("$.message")
