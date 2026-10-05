@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import nz.fox.craig.customer.dto.CustomerAuthenticationResponse;
 import nz.fox.craig.customer.dto.CustomerRequest;
 import nz.fox.craig.customer.dto.CustomerResponse;
+import nz.fox.craig.customer.exception.CustomerAlreadyActiveException;
 import nz.fox.craig.customer.exception.CustomerAlreadyExistsException;
 import nz.fox.craig.customer.exception.CustomerNotFoundException;
 import nz.fox.craig.customer.metrics.CustomerMetrics;
@@ -46,17 +47,19 @@ public class CustomerService {
         return CustomerResponse.from(customerRepository.save(customer));
     }
 
+    @Transactional(readOnly = true)
     public List<CustomerResponse> getCustomers(CustomerStatus status) {
-
         List<Customer> customers;
-
+    
         if (status == null) {
             customers = customerRepository.findAll();
         } else {
             customers = customerRepository.findByStatus(status);
         }
-
-        return customers.stream().map(CustomerResponse::from).toList();
+    
+        return customers.stream()
+                .map(CustomerResponse::from)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -83,18 +86,25 @@ public class CustomerService {
 
     @Transactional
     public CustomerResponse updateCustomer(UUID customerId, CustomerRequest request) {
-
+    
         securityService.verifyCurrentUser(customerId);
-
+    
+        if (customerRepository.existsByEmailAndIdNot(request.email(), customerId)) {
+            throw new CustomerAlreadyExistsException(request.email());
+        }
+    
         Customer customer =
                 customerRepository
                         .findById(customerId)
                         .orElseThrow(() -> new CustomerNotFoundException(customerId));
+    
         customer.setFirstName(request.firstName());
         customer.setLastName(request.lastName());
+        customer.setPreferredName(request.preferredName());
         customer.setEmail(request.email());
         customer.setAddress(request.address());
-        return CustomerResponse.from(customerRepository.save(customer));
+    
+        return CustomerResponse.from(customer);
     }
 
     @Transactional
@@ -107,8 +117,6 @@ public class CustomerService {
                         .orElseThrow(() -> new CustomerNotFoundException(customerId));
 
         customer.setStatus(CustomerStatus.INACTIVE);
-
-        customerRepository.save(customer);
         customerMetrics.customerDeactivated();
     }
 
@@ -121,10 +129,9 @@ public class CustomerService {
                         .findById(customerId)
                         .orElseThrow(() -> new CustomerNotFoundException(customerId));
         if (customer.getStatus() == CustomerStatus.ACTIVE) {
-            throw new CustomerAlreadyExistsException(customer.getEmail());
+            throw new CustomerAlreadyActiveException(customer.getEmail());
         }
         customer.setStatus(CustomerStatus.ACTIVE);
-        customerRepository.save(customer);
         customerMetrics.customerActivated();
     }
 }

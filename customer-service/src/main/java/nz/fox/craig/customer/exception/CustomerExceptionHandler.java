@@ -82,4 +82,19 @@ public class CustomerExceptionHandler {
                                 Map.of(),
                                 request.getRequestURI()));
     }
+
+    @ExceptionHandler(CustomerAlreadyActiveException.class)
+    public ResponseEntity<ApiError> handleCustomerAlreadyActive(
+            CustomerAlreadyActiveException ex, HttpServletRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(
+                        new ApiError(
+                                Instant.now(),
+                                HttpStatus.CONFLICT.value(),
+                                HttpStatus.CONFLICT.getReasonPhrase(),
+                                ex.getMessage(),
+                                Map.of(),
+                                request.getRequestURI()));
+    }
 }
