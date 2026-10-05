@@ -13,7 +13,7 @@ import nz.fox.craig.order.config.HttpClientProperties;
 import nz.fox.craig.order.config.ProductServiceProperties;
 import nz.fox.craig.order.config.RestClientConfig;
 import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
-import nz.fox.craig.security.JwtPropagationInterceptor;
+import nz.fox.craig.security.service.JwtPropagationInterceptor;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

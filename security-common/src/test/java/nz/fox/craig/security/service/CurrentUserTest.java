@@ -1,4 +1,4 @@
-package nz.fox.craig.security;
+package nz.fox.craig.security.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -6,8 +6,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.UUID;
-import nz.fox.craig.dto.AuthenticatedUser;
-import nz.fox.craig.exception.UnauthenticatedException;
+
+import nz.fox.craig.security.dto.AuthenticatedUser;
+import nz.fox.craig.security.exception.UnauthenticatedException;
+import nz.fox.craig.security.service.CurrentUser;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.Authentication;

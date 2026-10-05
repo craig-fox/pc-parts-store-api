@@ -20,8 +20,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import nz.fox.craig.api.ShippingMethod;
-import nz.fox.craig.dto.AuthenticatedUser;
-import nz.fox.craig.dto.Role;
 import nz.fox.craig.order.client.CustomerClient;
 import nz.fox.craig.order.client.InventoryClient;
 import nz.fox.craig.order.client.PaymentClient;
@@ -47,6 +45,9 @@ import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.repository.OrderRepository;
+import nz.fox.craig.security.dto.AuthenticatedUser;
+import nz.fox.craig.security.dto.Role;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;

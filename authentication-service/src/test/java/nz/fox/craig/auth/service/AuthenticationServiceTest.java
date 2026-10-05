@@ -14,8 +14,9 @@ import nz.fox.craig.auth.dto.LoginRequest;
 import nz.fox.craig.auth.dto.LoginResponse;
 import nz.fox.craig.auth.exception.CustomerInactiveException;
 import nz.fox.craig.auth.exception.InvalidCredentialsException;
-import nz.fox.craig.dto.AuthenticatedUser;
-import nz.fox.craig.security.TokenService;
+import nz.fox.craig.security.dto.AuthenticatedUser;
+import nz.fox.craig.security.service.TokenService;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

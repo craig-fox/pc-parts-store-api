@@ -17,7 +17,7 @@ import nz.fox.craig.inventory.exception.InventoryExceptionHandler;
 import nz.fox.craig.inventory.exception.InventoryNotFoundException;
 import nz.fox.craig.inventory.model.InventoryStatus;
 import nz.fox.craig.inventory.service.InventoryService;
-import nz.fox.craig.security.TokenService;
+import nz.fox.craig.security.service.TokenService;
 import tools.jackson.databind.json.JsonMapper;
 
 import org.junit.jupiter.api.BeforeEach;

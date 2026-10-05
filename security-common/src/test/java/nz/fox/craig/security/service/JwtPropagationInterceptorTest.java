@@ -1,4 +1,4 @@
-package nz.fox.craig.security;
+package nz.fox.craig.security.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -14,6 +14,8 @@ import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import nz.fox.craig.security.service.JwtPropagationInterceptor;
 
 class JwtPropagationInterceptorTest {
 

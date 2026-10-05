@@ -1,4 +1,4 @@
-package nz.fox.craig.dto;
+package nz.fox.craig.security.dto;
 
 import java.util.Set;
 import java.util.UUID;

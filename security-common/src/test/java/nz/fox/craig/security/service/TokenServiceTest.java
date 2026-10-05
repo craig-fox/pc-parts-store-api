@@ -1,35 +1,34 @@
-package nz.fox.craig.security;
+package nz.fox.craig.security.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Duration;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
+
+import nz.fox.craig.security.config.JwtProperties;
 
 class TokenServiceTest {
 
     private static final String SECRET = "VGhpc0lzQVN1ZmZpY2llbnRMb25nU2VjcmV0S2V5Rm9ySldU";
 
-    private static final long EXPIRATION = 3600000L;
+    private static final Duration EXPIRATION = Duration.ofHours(1);
 
     private TokenService tokenService;
 
+    private final JwtProperties jwtProperties = new JwtProperties(SECRET, EXPIRATION);
+
     @BeforeEach
     void setUp() {
-        tokenService = new TokenService();
-
-        ReflectionTestUtils.setField(tokenService, "secret", SECRET);
-        ReflectionTestUtils.setField(tokenService, "jwtExpiration", EXPIRATION);
+        tokenService = new TokenService(jwtProperties);
     }
 
     @Test
     void shouldGenerateValidToken() {
         String token =
                 tokenService.generateToken(SampleAuthenticatedUsers.authenticatedCustomerUser());
-        ;
-
         assertThat(token).isNotBlank();
         assertThat(tokenService.isTokenValid(token)).isTrue();
     }
@@ -63,8 +62,7 @@ class TokenServiceTest {
         String token =
                 tokenService.generateToken(SampleAuthenticatedUsers.authenticatedCustomerUser());
 
-        ReflectionTestUtils.setField(
-                tokenService, "secret", "QW5vdGhlclZlcnlMb25nU2VjcmV0S2V5Rm9ySldU");
+        tokenService = new TokenService(new JwtProperties("QW5vdGhlclZlcnlMb25nU2VjcmV0S2V5Rm9ySldU", EXPIRATION));
 
         assertThat(tokenService.isTokenValid(token)).isFalse();
     }
