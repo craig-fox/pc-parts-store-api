@@ -1,7 +1,6 @@
 package nz.fox.craig.security.service;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -42,41 +41,35 @@ public class TokenService {
                 .compact();
     }
 
-    public Set<Role> extractRoles(String token) {
-        List<String> roles = extractClaims(token).get("roles", List.class);
+    public AuthenticatedUser parseUser(String token) {
+        Claims claims = parseAndValidate(token);
     
-        return roles.stream()
+        UUID customerId = UUID.fromString(claims.getSubject());
+        String email = claims.get("email", String.class);
+    
+        List<String> roleNames = claims.get("roles", List.class);
+    
+        Set<Role> roles = roleNames.stream()
                 .map(Role::valueOf)
                 .collect(Collectors.toUnmodifiableSet());
+    
+        return new AuthenticatedUser(customerId, email, roles);
     }
+
+ 
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.secret());
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public boolean isTokenValid(String token) {
-        try {
-            extractClaims(token);
-            return true;
-        } catch (JwtException | IllegalArgumentException ex) {
-            return false;
-        }
-    }
 
-    public UUID extractCustomerId(String token) {
-        return UUID.fromString(extractClaims(token).getSubject());
-    }
-
-    public String extractEmail(String token) {
-        return extractClaims(token).get("email", String.class);
-    }
-
-    private Claims extractClaims(String token) {
+    public Claims parseAndValidate(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
     }
+
 }
