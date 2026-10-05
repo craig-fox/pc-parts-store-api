@@ -7,9 +7,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import nz.fox.craig.dto.AuthenticatedUser;
-import nz.fox.craig.dto.Role;
-import nz.fox.craig.exception.UnauthenticatedException;
+
+import nz.fox.craig.security.dto.AuthenticatedUser;
+import nz.fox.craig.security.dto.Role;
+import nz.fox.craig.security.exception.UnauthenticatedException;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;

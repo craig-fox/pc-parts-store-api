@@ -8,8 +8,8 @@ import java.util.UUID;
 import nz.fox.craig.order.client.HttpProductClient;
 import nz.fox.craig.order.client.ProductClient;
 import nz.fox.craig.order.config.ProductServiceProperties;
-import nz.fox.craig.security.JwtPropagationInterceptor;
 import nz.fox.craig.order.utils.SampleResponses;
+import nz.fox.craig.security.service.JwtPropagationInterceptor;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 

@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.Duration;
 import java.util.UUID;
 import nz.fox.craig.product.utility.ProductIds;
-import nz.fox.craig.security.TokenService;
+import nz.fox.craig.security.service.TokenService;
 import nz.fox.craig.test.AbstractPostgresTest;
 import nz.fox.craig.test.JwtTestFactory;
 import org.junit.jupiter.api.Test;

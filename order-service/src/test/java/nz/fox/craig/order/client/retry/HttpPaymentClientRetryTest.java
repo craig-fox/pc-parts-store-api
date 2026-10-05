@@ -31,7 +31,7 @@ import nz.fox.craig.order.client.HttpPaymentClient;
 import nz.fox.craig.order.client.PaymentClient;
 import nz.fox.craig.order.config.PaymentServiceProperties;
 import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
-import nz.fox.craig.security.JwtPropagationInterceptor;
+import nz.fox.craig.security.service.JwtPropagationInterceptor;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 

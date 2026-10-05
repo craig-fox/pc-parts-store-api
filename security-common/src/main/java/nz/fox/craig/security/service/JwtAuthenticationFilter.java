@@ -1,4 +1,4 @@
-package nz.fox.craig.security;
+package nz.fox.craig.security.service;
 
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -10,8 +10,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import nz.fox.craig.dto.AuthenticatedUser;
-import nz.fox.craig.dto.Role;
+import nz.fox.craig.security.dto.AuthenticatedUser;
+import nz.fox.craig.security.dto.Role;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -42,17 +43,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 UUID customerId = tokenService.extractCustomerId(jwt);
 
+                Set<Role> roles = Set.of(Role.ROLE_CUSTOMER);
+
                 AuthenticatedUser principal =
                         new AuthenticatedUser(
                                 customerId,
                                 tokenService.extractEmail(jwt),
-                                Set.of(Role.ROLE_CUSTOMER));
-
+                                roles);
+                
+                List<SimpleGrantedAuthority> authorities =
+                        roles.stream()
+                                .map(role -> new SimpleGrantedAuthority(role.name()))
+                                .toList();
+                
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 principal,
                                 jwt,
-                                List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+                                authorities);
 
                 authentication.setDetails(
                         new WebAuthenticationDetailsSource().buildDetails(request));

@@ -27,8 +27,8 @@ import nz.fox.craig.order.exception.ProductNotFoundException;
 import nz.fox.craig.order.fixture.OrderFixture;
 import nz.fox.craig.order.service.OrderCreationResult;
 import nz.fox.craig.order.service.OrderService;
-import nz.fox.craig.security.JwtAuthenticationFilter;
-import nz.fox.craig.security.TokenService;
+import nz.fox.craig.security.service.JwtAuthenticationFilter;
+import nz.fox.craig.security.service.TokenService;
 import tools.jackson.databind.json.JsonMapper;
 
 import org.junit.jupiter.api.Nested;

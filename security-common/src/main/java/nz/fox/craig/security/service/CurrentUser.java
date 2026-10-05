@@ -1,8 +1,10 @@
-package nz.fox.craig.security;
+package nz.fox.craig.security.service;
 
 import java.util.UUID;
-import nz.fox.craig.dto.AuthenticatedUser;
-import nz.fox.craig.exception.UnauthenticatedException;
+
+import nz.fox.craig.security.dto.AuthenticatedUser;
+import nz.fox.craig.security.exception.UnauthenticatedException;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;

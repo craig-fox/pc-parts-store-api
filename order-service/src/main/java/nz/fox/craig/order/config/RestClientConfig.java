@@ -2,7 +2,7 @@ package nz.fox.craig.order.config;
 
 import nz.fox.craig.observability.CorrelationIdInterceptor;
 import nz.fox.craig.observability.RestClientLoggingInterceptor;
-import nz.fox.craig.security.JwtPropagationInterceptor;
+import nz.fox.craig.security.service.JwtPropagationInterceptor;
 
 import java.net.http.HttpClient;
 

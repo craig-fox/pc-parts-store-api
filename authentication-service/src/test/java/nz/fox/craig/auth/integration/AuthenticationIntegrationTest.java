@@ -16,9 +16,9 @@ import nz.fox.craig.auth.client.CustomerClient;
 import nz.fox.craig.auth.dto.AuthenticatedCustomer;
 import nz.fox.craig.auth.dto.LoginRequest;
 import nz.fox.craig.auth.exception.InvalidCredentialsException;
-import nz.fox.craig.dto.AuthenticatedUser;
-import nz.fox.craig.dto.Role;
-import nz.fox.craig.security.TokenService;
+import nz.fox.craig.security.dto.AuthenticatedUser;
+import nz.fox.craig.security.dto.Role;
+import nz.fox.craig.security.service.TokenService;
 import tools.jackson.databind.json.JsonMapper;
 
 import org.junit.jupiter.api.Nested;

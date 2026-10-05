@@ -1,4 +1,4 @@
-package nz.fox.craig.security;
+package nz.fox.craig.security.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -10,11 +10,15 @@ import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import nz.fox.craig.security.dto.AuthenticatedUser;
+import nz.fox.craig.security.dto.Role;
+import nz.fox.craig.security.service.JwtAuthenticationFilter;
+import nz.fox.craig.security.service.TokenService;
+
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import nz.fox.craig.dto.AuthenticatedUser;
-import nz.fox.craig.dto.Role;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

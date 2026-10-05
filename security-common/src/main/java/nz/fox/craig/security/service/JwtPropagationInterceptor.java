@@ -1,4 +1,4 @@
-package nz.fox.craig.security;
+package nz.fox.craig.security.service;
 
 import java.io.IOException;
 import org.springframework.http.HttpRequest;

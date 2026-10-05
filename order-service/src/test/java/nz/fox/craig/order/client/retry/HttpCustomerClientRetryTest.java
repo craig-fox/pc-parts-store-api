@@ -28,7 +28,7 @@ import nz.fox.craig.order.client.HttpCustomerClient;
 import nz.fox.craig.order.config.CustomerServiceProperties;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
 import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
-import nz.fox.craig.security.JwtPropagationInterceptor;
+import nz.fox.craig.security.service.JwtPropagationInterceptor;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 
