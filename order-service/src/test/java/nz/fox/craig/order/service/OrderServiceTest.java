@@ -2,7 +2,6 @@ package nz.fox.craig.order.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -16,7 +15,6 @@ import static org.mockito.Mockito.times;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import nz.fox.craig.api.ShippingMethod;
@@ -45,10 +43,8 @@ import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.repository.OrderRepository;
-import nz.fox.craig.security.dto.AuthenticatedUser;
-import nz.fox.craig.security.dto.Role;
+import nz.fox.craig.security.service.CurrentUser;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -57,10 +53,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-
 
 
 @ExtendWith(MockitoExtension.class)
@@ -72,7 +64,8 @@ class OrderServiceTest {
     private static final UUID ORDER_ID = UUID.randomUUID();
     private static final UUID PRODUCT_ID = UUID.randomUUID();
     private static final int DEFAULT_ORDER_QUANTITY = 1;
-    private static final String idempotencyKey = UUID.randomUUID().toString();
+    private static final String IDEMPOTENCY_KEY = UUID.randomUUID().toString();
+    
 
     @Mock 
     private OrderRepository repository;
@@ -100,17 +93,15 @@ class OrderServiceTest {
     @Mock
     private OrderMetrics orderMetrics;
 
+    @Mock
+    private CurrentUser currentUser;
+
     @InjectMocks 
     private OrderService orderService;
 
     @BeforeEach
-    void setUpSecurityContext() {
-        authenticateCustomer();
-    }
-
-    @AfterEach
-    void clearSecurityContext() {
-        SecurityContextHolder.clearContext();
+    void setUp() {
+        when(currentUser.customerId()).thenReturn(CUSTOMER_ID);
     }
 
     @Nested
@@ -131,7 +122,7 @@ class OrderServiceTest {
 
             // Act
             OrderCreationResult result =
-                    orderService.createOrder(idempotencyKey, orderRequest());
+                    orderService.createOrder(IDEMPOTENCY_KEY, orderRequest());
 
             OrderResponse response = result.order();
 
@@ -164,13 +155,11 @@ class OrderServiceTest {
                     .when(inventoryClient)
                     .reserveStock(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
 
-            assertThatThrownBy(() -> orderService.createOrder(idempotencyKey, orderRequest()))
+            assertThatThrownBy(() -> orderService.createOrder(IDEMPOTENCY_KEY, orderRequest()))
                     .isInstanceOf(InsufficientStockException.class);
 
-            verify(repository, never()).save(any());
             verify(inventoryClient).reserveStock(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
-
-            verify(repository, never()).save(any());
+            verify(orderPersistenceService, never()).save(any());
             verify(productClient, never()).getProduct(any());
         }
 
@@ -181,7 +170,8 @@ class OrderServiceTest {
                     .when(customerClient)
                     .validateCustomerExists(CUSTOMER_ID);
 
-            assertThrows(CustomerNotFoundException.class, () -> orderService.createOrder(idempotencyKey, request));
+            assertThatThrownBy(() -> orderService.createOrder(IDEMPOTENCY_KEY, request))
+                    .isInstanceOf(CustomerNotFoundException.class);
 
             verify(repository, never()).save(any());
         }
@@ -192,7 +182,7 @@ class OrderServiceTest {
                     .thenThrow(new ProductNotFoundException(PRODUCT_ID));
             doNothing().when(customerClient).validateCustomerExists(CUSTOMER_ID);
 
-            assertThatThrownBy(() -> orderService.createOrder(idempotencyKey, orderRequest()))
+            assertThatThrownBy(() -> orderService.createOrder(IDEMPOTENCY_KEY, orderRequest()))
                     .isInstanceOf(ProductNotFoundException.class);
 
             verify(repository, never()).save(any());
@@ -224,7 +214,7 @@ class OrderServiceTest {
             when(orderMapper.toResponse(orderCaptor.capture()))
                     .thenReturn(OrderFixture.anOrderResponse());
 
-            orderService.createOrder(idempotencyKey, orderRequest());
+            orderService.createOrder(IDEMPOTENCY_KEY, orderRequest());
 
             Order order = orderCaptor.getValue();
 
@@ -238,9 +228,7 @@ class OrderServiceTest {
 
             doNothing().when(customerClient)
                     .validateCustomerExists(CUSTOMER_ID);
-
-            when(orderPersistenceService.save(any(Order.class)))
-                    .thenAnswer(invocation -> invocation.getArgument(0));
+            configureRepositoryToAssignIds();
 
             when(productClient.getProduct(OrderFixture.FIXTURE_PRODUCT_ID))
                     .thenReturn(productSnapshot());
@@ -256,7 +244,7 @@ class OrderServiceTest {
 
             OrderRequest request =
                     OrderFixture.anOrderRequest(ShippingMethod.EXPRESS);
-            orderService.createOrder(idempotencyKey, request);
+            orderService.createOrder(IDEMPOTENCY_KEY, request);
 
             ArgumentCaptor<ShippingQuoteRequest> captor =
                     ArgumentCaptor.forClass(ShippingQuoteRequest.class);
@@ -290,7 +278,7 @@ class OrderServiceTest {
             when(orderMapper.toResponse(any(Order.class)))
                     .thenReturn(OrderFixture.anOrderResponse());
 
-            orderService.createOrder(idempotencyKey, orderRequest(2));
+            orderService.createOrder(IDEMPOTENCY_KEY, orderRequest(2));
 
             ArgumentCaptor<ShippingQuoteRequest> captor =
                     ArgumentCaptor.forClass(ShippingQuoteRequest.class);
@@ -318,7 +306,7 @@ class OrderServiceTest {
 
             assertThatThrownBy(
                     () -> orderService.createOrder(
-                            idempotencyKey,
+                            IDEMPOTENCY_KEY,
                             orderRequest()))
                     .isSameAs(exception);
 
@@ -339,10 +327,10 @@ class OrderServiceTest {
         void shouldReturnOrder() {
             // Arrange
             Order order = OrderFixture.anOrder();
-
             OrderResponse expectedResponse = OrderFixture.anOrderResponse();
 
-            when(repository.findById(ORDER_ID)).thenReturn(Optional.of(order));
+            when(repository.findByIdAndCustomerId(ORDER_ID, CUSTOMER_ID))
+                .thenReturn(Optional.of(order));
 
             when(orderMapper.toResponse(order)).thenReturn(expectedResponse);
 
@@ -352,16 +340,15 @@ class OrderServiceTest {
             // Assert
             assertThat(response).isSameAs(expectedResponse);
 
-            verify(repository).findById(ORDER_ID);
+            verify(repository).findByIdAndCustomerId(ORDER_ID, CUSTOMER_ID);
             verify(orderMapper).toResponse(order);
             verifyNoMoreInteractions(repository, orderMapper);
         }
 
         @Test
         void shouldThrowWhenOrderNotFound() {
-            when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
-
-            assertThrows(OrderNotFoundException.class, () -> orderService.getOrder(ORDER_ID));
+            when(repository.findByIdAndCustomerId(ORDER_ID, CUSTOMER_ID)).thenReturn(Optional.empty());
+            assertThatThrownBy(() -> orderService.getOrder(ORDER_ID)).isInstanceOf(OrderNotFoundException.class);
         }
     }
 
@@ -401,17 +388,10 @@ class OrderServiceTest {
 
         @Test
         void shouldReturnEmptyListWhenAuthenticatedCustomerHasNoOrders() {
-            UUID customerId = UUID.randomUUID();
-
-            mockAuthenticatedCustomer(customerId);
-
-            when(repository.findByCustomerIdOrderByOrderDateDesc(customerId)).thenReturn(List.of());
-
+            when(repository.findByCustomerIdOrderByOrderDateDesc(CUSTOMER_ID)).thenReturn(List.of());
             List<OrderResponse> responses = orderService.getOrdersForAuthenticatedCustomer();
-
             assertThat(responses).isEmpty();
-
-            verify(repository).findByCustomerIdOrderByOrderDateDesc(customerId);
+            verify(repository).findByCustomerIdOrderByOrderDateDesc(CUSTOMER_ID);
         }
     }
 
@@ -441,8 +421,7 @@ class OrderServiceTest {
                                                     .build()))
                             .build();
 
-            when(repository.findById(ORDER_ID)).thenReturn(Optional.of(existingOrder));
-            when(repository.save(existingOrder)).thenReturn(existingOrder);
+            when(repository.findByIdAndCustomerId(ORDER_ID, CUSTOMER_ID)).thenReturn(Optional.of(existingOrder));
             when(orderMapper.toResponse(existingOrder)).thenReturn(expectedResponse);
 
             // Act
@@ -453,26 +432,24 @@ class OrderServiceTest {
 
             assertThat(response).isSameAs(expectedResponse);
 
-            verify(repository).findById(ORDER_ID);
-            verify(repository).save(existingOrder);
+            verify(repository).findByIdAndCustomerId(ORDER_ID, CUSTOMER_ID);
             verify(orderMapper).toResponse(existingOrder);
 
             verifyNoMoreInteractions(repository, orderMapper);
-            verify(orderMetrics).orderCreated();
+            verify(orderMetrics).orderCancelled();
         }
 
         @Test
         void shouldThrowWhenOrderNotFound() {
-            when(repository.findById(ORDER_ID)).thenReturn(Optional.empty());
-            assertThrows(OrderNotFoundException.class, () -> orderService.cancelOrder(ORDER_ID));
+            when(repository.findByIdAndCustomerId(ORDER_ID, CUSTOMER_ID)).thenReturn(Optional.empty());
+            assertThatThrownBy(() -> orderService.cancelOrder(ORDER_ID)).isInstanceOf(OrderNotFoundException.class);
             verify(repository, never()).save(any());
         }
 
         @Test
         void shouldThrowWhenOrderAlreadyCancelled() {
-            when(repository.findById(ORDER_ID)).thenReturn(Optional.of(cancelledOrder()));
-            assertThrows(
-                    OrderAlreadyCancelledException.class, () -> orderService.cancelOrder(ORDER_ID));
+            when(repository.findByIdAndCustomerId(ORDER_ID, CUSTOMER_ID)).thenReturn(Optional.of(cancelledOrder()));
+            assertThatThrownBy(() -> orderService.cancelOrder(ORDER_ID)).isInstanceOf(OrderAlreadyCancelledException.class);
             verify(repository, never()).save(any());
         }
     }
@@ -519,27 +496,6 @@ class OrderServiceTest {
                 .build();
     }
 
-    private void authenticateCustomer() {
-        AuthenticatedUser user =
-                new AuthenticatedUser(
-                        CUSTOMER_ID, "alice.smith@example.com", Set.of(Role.ROLE_CUSTOMER));
-
-        Authentication authentication =
-                new UsernamePasswordAuthenticationToken(user, null, List.of());
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-    }
-
-    private void mockAuthenticatedCustomer(UUID customerId) {
-        AuthenticatedUser principal =
-                new AuthenticatedUser(
-                        customerId, "alice.smith@example.com", Set.of(Role.ROLE_CUSTOMER));
-
-        Authentication authentication =
-                new UsernamePasswordAuthenticationToken(principal, null, List.of());
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-    }
 
     private void configureRepositoryToAssignIds() {
         when(orderPersistenceService.save(any(Order.class)))
@@ -578,6 +534,11 @@ class OrderServiceTest {
         assertThat(paidOrder.getId()).isEqualTo(placedOrder.getId());
     
         verify(orderMapper).toResponse(paidOrder);
+        assertThat(placedOrder.getIdempotencyKey())
+        .isEqualTo(IDEMPOTENCY_KEY);
+
+        assertThat(placedOrder.getIdempotencyRequestHash())
+                .isNotBlank();
     
         return new SavedOrders(placedOrder, paidOrder);
     }

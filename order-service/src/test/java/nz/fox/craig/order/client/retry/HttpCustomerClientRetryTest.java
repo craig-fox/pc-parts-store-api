@@ -136,11 +136,11 @@ class HttpCustomerClientRetryTest {
         RestClient customerRestClient(
                 RestClient.Builder builder,
                 CustomerServiceProperties properties,
-                JwtPropagationInterceptor interceptor) {
+                JwtPropagationInterceptor jwtInterceptor) {
 
             return builder
                     .baseUrl(properties.baseUrl())
-                    .requestInterceptor(interceptor)
+                    .requestInterceptor(jwtInterceptor)
                     .build();
         }
 

@@ -29,12 +29,12 @@ public class HttpInventoryClient implements InventoryClient {
     public void reserveStock(UUID productId, int quantity) {
         try {
             restClient
-                    .post()
-                    .uri("/api/inventory/{productId}/reserve", productId)
-                    .body(new InventoryReservationRequest(quantity))
-                    .retrieve()
-                    .toBodilessEntity();
-    
+                .post()
+                .uri("/api/inventory/{productId}/reserve", productId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new InventoryReservationRequest(quantity))
+                .retrieve()
+                .toBodilessEntity();
         } catch (HttpClientErrorException.Conflict ex) {
             throw new InsufficientStockException(productId);
     
@@ -49,12 +49,12 @@ public class HttpInventoryClient implements InventoryClient {
     public void releaseStock(UUID productId, int quantity) {
         try {
             restClient
-                    .post()
-                    .uri("/api/inventory/{productId}/release", productId)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(new InventoryReservationRequest(quantity))
-                    .retrieve()
-                    .toBodilessEntity();
+                .post()
+                .uri("/api/inventory/{productId}/release", productId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new InventoryReservationRequest(quantity))
+                .retrieve()
+                .toBodilessEntity();
     
         } catch (HttpServerErrorException | ResourceAccessException ex) {
             throw new DownstreamServiceUnavailableException(

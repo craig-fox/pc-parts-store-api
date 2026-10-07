@@ -93,6 +93,9 @@ class HttpInventoryClientTest {
         when(requestBodySpec.retrieve())
                 .thenReturn(responseSpec);
 
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON))
+                .thenReturn(requestBodySpec);
+
         HttpClientErrorException.Conflict conflict =
                 mock(HttpClientErrorException.Conflict.class);
 
@@ -110,21 +113,23 @@ class HttpInventoryClientTest {
         when(restClient.post()).thenReturn(requestBodyUriSpec);
 
         when(requestBodyUriSpec.uri(
-                eq("/api/inventory/{productId}/reserve"),
-                eq(PRODUCT_ID)))
-                .thenReturn(requestBodySpec);
+            eq("/api/inventory/{productId}/reserve"),
+            eq(PRODUCT_ID)))
+            .thenReturn(requestBodySpec);
 
         when(requestBodySpec.body(any(InventoryReservationRequest.class)))
-                .thenReturn(requestBodySpec);
+            .thenReturn(requestBodySpec);
 
         when(requestBodySpec.retrieve())
-                .thenReturn(responseSpec);
+            .thenReturn(responseSpec);
 
-        HttpServerErrorException serverError =
-                mock(HttpServerErrorException.class);
+        HttpServerErrorException serverError = mock(HttpServerErrorException.class);
 
         when(responseSpec.toBodilessEntity())
-                .thenThrow(serverError);
+            .thenThrow(serverError);
+
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON))
+            .thenReturn(requestBodySpec);
 
         assertThatThrownBy(() ->
                 client.reserveStock(PRODUCT_ID, QUANTITY))
@@ -178,6 +183,9 @@ class HttpInventoryClientTest {
 
         when(requestBodySpec.retrieve())
                 .thenReturn(responseSpec);
+
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON))
+            .thenReturn(requestBodySpec);
 
         ResourceAccessException resourceAccessException =
                 new ResourceAccessException("Connection refused");
