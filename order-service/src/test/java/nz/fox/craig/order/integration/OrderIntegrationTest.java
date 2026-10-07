@@ -604,84 +604,79 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         UUID customerId = UUID.randomUUID();
         String token = createToken(customerId);
         String idempotencyKey = UUID.randomUUID().toString();
-
+    
         OrderRequest request =
                 new OrderRequest(
                         List.of(new OrderItemRequest(productId, 2)),
                         shippingAddress(),
                         ShippingMethod.STANDARD);
-
-        // Customer
-        mockWebServer.enqueue(
-                new MockResponse().setResponseCode(200));
-
-        // Inventory reservation
-        mockWebServer.enqueue(
-                new MockResponse().setResponseCode(200));
-
-        // Product
-        mockWebServer.enqueue(
-            new MockResponse()
-                    .setResponseCode(200)
-                    .setBody(
-                            objectMapper.writeValueAsString(
-                                    productSnapshot()))
-                    .addHeader("Content-Type", "application/json"));
-
-        // Shipping attempt 1
-        mockWebServer.enqueue(new MockResponse().setResponseCode(500));
-
-        // Shipping attempt 2
-        mockWebServer.enqueue(new MockResponse().setResponseCode(500));
-
-        // Shipping attempt 3
-        mockWebServer.enqueue(new MockResponse().setResponseCode(500));
-
-        // Inventory release
-        mockWebServer.enqueue(
-                new MockResponse().setResponseCode(200));
-
+    
+        enqueueShippingFailureResponses();
+    
         mockMvc.perform(
                 createOrderRequest(token, idempotencyKey, request))
                 .andExpect(status().isBadGateway());
+    
+        assertShippingFailureRequests();
+    }
 
+    private void enqueueShippingFailureResponses() throws JsonProcessingException {
         // Customer
-        RecordedRequest customer = mockWebServer.takeRequest();
-
-        // Reservation
-        RecordedRequest reservation = mockWebServer.takeRequest();
-
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(200));
+    
+        // Inventory reservation
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(200));
+    
         // Product
-        RecordedRequest product = mockWebServer.takeRequest();
+        mockWebServer.enqueue(
+                new MockResponse()
+                        .setResponseCode(200)
+                        .setBody(
+                                objectMapper.writeValueAsString(
+                                        productSnapshot()))
+                        .addHeader("Content-Type", "application/json"));
+    
+        // Shipping attempts
+        mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+        mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+        mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+    
+        // Inventory release
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(200));
+    }
 
-        // Shipping
+    private void assertShippingFailureRequests() throws InterruptedException {
+        RecordedRequest customer = mockWebServer.takeRequest();
+        RecordedRequest reservation = mockWebServer.takeRequest();
+        RecordedRequest product = mockWebServer.takeRequest();
         RecordedRequest shippingAttempt1 = mockWebServer.takeRequest();
         RecordedRequest shippingAttempt2 = mockWebServer.takeRequest();
         RecordedRequest shippingAttempt3 = mockWebServer.takeRequest();
-
-        // Compensation
         RecordedRequest release = mockWebServer.takeRequest();
-
+    
         assertThat(customer.getMethod()).isEqualTo("HEAD");
         assertThat(customer.getPath()).startsWith("/api/customers/");
-
+    
         assertThat(reservation.getMethod()).isEqualTo("POST");
         assertThat(reservation.getPath()).endsWith("/reserve");
-
+    
         assertThat(product.getMethod()).isEqualTo("GET");
         assertThat(product.getPath()).startsWith("/api/products/");
-
-        assertThat(shippingAttempt1.getMethod()).isEqualTo("POST");
-        assertThat(shippingAttempt1.getPath()).isEqualTo("/api/shipping/quotes");
-
-        assertThat(shippingAttempt2.getMethod()).isEqualTo("POST");
-        assertThat(shippingAttempt2.getPath()).isEqualTo("/api/shipping/quotes");
-
-        assertThat(shippingAttempt3.getMethod()).isEqualTo("POST");
-        assertThat(shippingAttempt3.getPath()).isEqualTo("/api/shipping/quotes");
-
+    
+        assertShippingAttempt(shippingAttempt1);
+        assertShippingAttempt(shippingAttempt2);
+        assertShippingAttempt(shippingAttempt3);
+    
         assertThat(release.getMethod()).isEqualTo("POST");
         assertThat(release.getPath()).endsWith("/release");
+    }
+
+    private void assertShippingAttempt(RecordedRequest request) {
+        assertThat(request.getMethod()).isEqualTo("POST");
+        assertThat(request.getPath()).isEqualTo("/api/shipping/quotes");
     }
 
     private MockHttpServletRequestBuilder createOrderRequest(
