@@ -9,10 +9,10 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.config.HttpClientProperties;
 import nz.fox.craig.order.config.ProductServiceProperties;
 import nz.fox.craig.order.config.RestClientConfig;
-import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
 import nz.fox.craig.security.service.JwtPropagationInterceptor;
 
 import org.junit.jupiter.api.AfterAll;

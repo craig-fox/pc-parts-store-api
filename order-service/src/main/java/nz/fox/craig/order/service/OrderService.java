@@ -13,6 +13,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.client.CustomerClient;
 import nz.fox.craig.order.client.InventoryClient;
 import nz.fox.craig.order.client.PaymentClient;
@@ -25,7 +26,6 @@ import nz.fox.craig.order.dto.request.ShippingAddressRequest;
 import nz.fox.craig.order.dto.request.ShippingQuoteRequest;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.dto.response.ShippingQuoteResponse;
-import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.exception.IdempotencyKeyReuseException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
@@ -213,7 +213,6 @@ public class OrderService {
                         item -> {
                             final ProductSnapshot product =
                                     productClient.getProduct(item.productId());
-
                             final BigDecimal unitPrice = product.price();
 
                             return OrderItem.builder()

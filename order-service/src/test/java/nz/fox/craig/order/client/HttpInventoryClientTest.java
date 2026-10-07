@@ -8,8 +8,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.UUID;
+
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.dto.request.InventoryReservationRequest;
-import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.exception.InsufficientStockException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

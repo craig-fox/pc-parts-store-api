@@ -5,6 +5,8 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
 import nz.fox.craig.api.ApiError;
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -71,6 +73,22 @@ public class AuthenticationExceptionHandler {
                                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                                 message,
                                 validationErrors,
+                                request.getRequestURI()));
+    }
+
+    @ExceptionHandler(DownstreamServiceUnavailableException.class)
+    public ResponseEntity<ApiError> handleDownstreamServiceUnavailable(
+                DownstreamServiceUnavailableException ex,
+                HttpServletRequest request) {
+
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(
+                        new ApiError(
+                                Instant.now(),
+                                HttpStatus.BAD_GATEWAY.value(),
+                                HttpStatus.BAD_GATEWAY.getReasonPhrase(),
+                                ex.getMessage(),
+                                Map.of(),
                                 request.getRequestURI()));
     }
 }

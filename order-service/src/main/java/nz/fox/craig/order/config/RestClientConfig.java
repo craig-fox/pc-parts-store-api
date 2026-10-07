@@ -38,8 +38,6 @@ public class RestClientConfig {
         return factory;
     }
 
-    
-
     @Bean(name = "customerRestClient")
     RestClient customerRestClient(
             RestClient.Builder builder,
@@ -138,13 +136,13 @@ public class RestClientConfig {
         RestClientLoggingInterceptor loggingInterceptor,
         ClientHttpRequestFactory requestFactory) {
 
-    return builder
-            .baseUrl(baseUrl)
-            .requestInterceptor(jwtInterceptor)
-            .requestInterceptor(correlationIdInterceptor)
-            .requestInterceptor(loggingInterceptor)
-            .requestFactory(requestFactory)
-            .build();
-}
+        return builder
+                .baseUrl(baseUrl)
+                .requestInterceptor(jwtInterceptor)
+                .requestInterceptor(correlationIdInterceptor)
+                .requestInterceptor(loggingInterceptor)
+                .requestFactory(requestFactory)
+                .build();
+    }
 
 }

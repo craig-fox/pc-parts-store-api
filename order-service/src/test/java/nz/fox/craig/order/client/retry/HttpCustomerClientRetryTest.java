@@ -10,7 +10,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration;
@@ -19,15 +18,16 @@ import org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.web.client.RestClient;
 
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.client.CustomerClient;
 import nz.fox.craig.order.client.HttpCustomerClient;
 import nz.fox.craig.order.config.CustomerServiceProperties;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
-import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
 import nz.fox.craig.security.service.JwtPropagationInterceptor;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -119,6 +119,7 @@ class HttpCustomerClientRetryTest {
 
 
     @Configuration
+    @Import(HttpCustomerClient.class)
     @EnableAutoConfiguration(exclude = {
             DataSourceAutoConfiguration.class,
             FlywayAutoConfiguration.class,
@@ -142,13 +143,6 @@ class HttpCustomerClientRetryTest {
                     .baseUrl(properties.baseUrl())
                     .requestInterceptor(jwtInterceptor)
                     .build();
-        }
-
-        @Bean
-        CustomerClient customerClient(
-                @Qualifier("customerRestClient") RestClient restClient) {
-
-            return new HttpCustomerClient(restClient);
         }
     }
 

@@ -2,8 +2,9 @@ package nz.fox.craig.order.client;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.dto.request.PaymentRequest;
-import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
