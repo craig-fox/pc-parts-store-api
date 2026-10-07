@@ -10,7 +10,7 @@ import nz.fox.craig.api.ShippingMethod;
 
 @Builder
 public record OrderRequest(
-        @Valid @NotEmpty(message = "Items must not be empty") List<OrderItemRequest> items,
+        @NotEmpty(message = "Items must not be empty") List< @Valid OrderItemRequest> items,
        
         @Valid @NotNull(message = "Shipping address is required") ShippingAddressRequest shippingAddress,
         @Valid @NotNull(message = "Must choose a shipping method") ShippingMethod shippingMethod) {

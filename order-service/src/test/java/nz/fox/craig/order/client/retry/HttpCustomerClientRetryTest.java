@@ -10,7 +10,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration;
@@ -19,6 +18,7 @@ import org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.web.client.RestClient;
@@ -119,6 +119,7 @@ class HttpCustomerClientRetryTest {
 
 
     @Configuration
+    @Import(HttpCustomerClient.class)
     @EnableAutoConfiguration(exclude = {
             DataSourceAutoConfiguration.class,
             FlywayAutoConfiguration.class,
@@ -142,13 +143,6 @@ class HttpCustomerClientRetryTest {
                     .baseUrl(properties.baseUrl())
                     .requestInterceptor(jwtInterceptor)
                     .build();
-        }
-
-        @Bean
-        CustomerClient customerClient(
-                @Qualifier("customerRestClient") RestClient restClient) {
-
-            return new HttpCustomerClient(restClient);
         }
     }
 

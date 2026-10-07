@@ -67,6 +67,7 @@
 			<artifactId>api-common</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>nz.fox.craig</groupId>
 			<artifactId>observability-common</artifactId>

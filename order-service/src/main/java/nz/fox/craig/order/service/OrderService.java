@@ -213,7 +213,6 @@ public class OrderService {
                         item -> {
                             final ProductSnapshot product =
                                     productClient.getProduct(item.productId());
-
                             final BigDecimal unitPrice = product.price();
 
                             return OrderItem.builder()
