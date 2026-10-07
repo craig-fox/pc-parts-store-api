@@ -15,11 +15,9 @@ import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import nz.fox.craig.security.service.JwtPropagationInterceptor;
-
 class JwtPropagationInterceptorTest {
 
-    private final JwtPropagationInterceptor interceptor = new JwtPropagationInterceptor();
+    private final JwtPropagationInterceptor jwtInterceptor = new JwtPropagationInterceptor();
 
     @AfterEach
     void clearSecurityContext() {
@@ -46,7 +44,7 @@ class JwtPropagationInterceptorTest {
 
         when(execution.execute(request, body)).thenReturn(response);
 
-        ClientHttpResponse result = interceptor.intercept(request, body, execution);
+        ClientHttpResponse result = jwtInterceptor.intercept(request, body, execution);
 
         assertThat(headers.getFirst(HttpHeaders.AUTHORIZATION)).isEqualTo("Bearer " + jwt);
 
@@ -69,7 +67,7 @@ class JwtPropagationInterceptorTest {
         byte[] body = new byte[0];
         ClientHttpRequestExecution execution = mock(ClientHttpRequestExecution.class);
 
-        interceptor.intercept(request, body, execution);
+        jwtInterceptor.intercept(request, body, execution);
 
         assertThat(headers.getFirst(HttpHeaders.AUTHORIZATION)).isNull();
 
@@ -85,7 +83,7 @@ class JwtPropagationInterceptorTest {
         byte[] body = new byte[0];
         ClientHttpRequestExecution execution = mock(ClientHttpRequestExecution.class);
 
-        interceptor.intercept(request, body, execution);
+        jwtInterceptor.intercept(request, body, execution);
 
         assertThat(headers.getFirst(HttpHeaders.AUTHORIZATION)).isNull();
         

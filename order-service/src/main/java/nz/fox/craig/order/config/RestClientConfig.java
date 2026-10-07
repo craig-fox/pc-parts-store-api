@@ -44,7 +44,7 @@ public class RestClientConfig {
     RestClient customerRestClient(
             RestClient.Builder builder,
             CustomerServiceProperties properties,
-            JwtPropagationInterceptor interceptor,
+            JwtPropagationInterceptor jwtInterceptor,
             CorrelationIdInterceptor correlationIdInterceptor,
             RestClientLoggingInterceptor loggingInterceptor,
             ClientHttpRequestFactory requestFactory) {
@@ -52,7 +52,7 @@ public class RestClientConfig {
     return createRestClient(
             builder,
             properties.baseUrl(),
-            interceptor,
+            jwtInterceptor,
             correlationIdInterceptor,
             loggingInterceptor,
             requestFactory);
@@ -62,7 +62,7 @@ public class RestClientConfig {
         RestClient productRestClient(
             RestClient.Builder builder,
             ProductServiceProperties properties,
-            JwtPropagationInterceptor interceptor,
+            JwtPropagationInterceptor jwtInterceptor,
             CorrelationIdInterceptor correlationIdInterceptor,
             RestClientLoggingInterceptor loggingInterceptor,
             ClientHttpRequestFactory requestFactory) {
@@ -70,7 +70,7 @@ public class RestClientConfig {
         return createRestClient(
                 builder,
                 properties.baseUrl(),
-                interceptor,
+                jwtInterceptor,
                 correlationIdInterceptor,
                 loggingInterceptor,
                 requestFactory);
@@ -80,7 +80,7 @@ public class RestClientConfig {
         RestClient inventoryRestClient(
             RestClient.Builder builder,
             InventoryServiceProperties properties,
-            JwtPropagationInterceptor interceptor,
+            JwtPropagationInterceptor jwtInterceptor,
             CorrelationIdInterceptor correlationIdInterceptor,
             RestClientLoggingInterceptor loggingInterceptor,
             ClientHttpRequestFactory requestFactory) {
@@ -88,7 +88,7 @@ public class RestClientConfig {
         return createRestClient(
                 builder,
                 properties.baseUrl(),
-                interceptor,
+                jwtInterceptor,
                 correlationIdInterceptor,
                 loggingInterceptor,
                 requestFactory);
@@ -116,7 +116,7 @@ public class RestClientConfig {
         RestClient shippingRestClient(
             RestClient.Builder builder,
             ShippingServiceProperties properties,
-            JwtPropagationInterceptor interceptor,
+            JwtPropagationInterceptor jwtInterceptor,
             CorrelationIdInterceptor correlationIdInterceptor,
             RestClientLoggingInterceptor loggingInterceptor,
             ClientHttpRequestFactory requestFactory) {
@@ -124,7 +124,7 @@ public class RestClientConfig {
         return createRestClient(
                 builder,
                 properties.baseUrl(),
-                interceptor,
+                jwtInterceptor,
                 correlationIdInterceptor,
                 loggingInterceptor,
                 requestFactory);

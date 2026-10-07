@@ -6,6 +6,7 @@ import nz.fox.craig.order.dto.request.PaymentRequest;
 import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
@@ -35,6 +36,7 @@ public class HttpPaymentClient implements PaymentClient {
         try {
             restClient.post()
                     .uri("/api/payments")
+                    .contentType(MediaType.APPLICATION_JSON)
                     .body(new PaymentRequest(
                             orderId,
                             customerId,

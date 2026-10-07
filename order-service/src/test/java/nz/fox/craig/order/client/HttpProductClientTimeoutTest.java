@@ -125,12 +125,12 @@ class HttpProductClientTimeoutTest {
         RestClient productRestClient(
                 RestClient.Builder builder,
                 ProductServiceProperties properties,
-                JwtPropagationInterceptor interceptor,
+                JwtPropagationInterceptor jwtInterceptor,
                 ClientHttpRequestFactory requestFactory) {
     
             return builder
                     .baseUrl(properties.baseUrl())
-                    .requestInterceptor(interceptor)
+                    .requestInterceptor(jwtInterceptor)
                     .requestFactory(requestFactory)
                     .build();
         }

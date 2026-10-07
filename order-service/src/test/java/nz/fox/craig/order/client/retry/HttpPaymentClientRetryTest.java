@@ -129,11 +129,11 @@ public class HttpPaymentClientRetryTest {
         RestClient paymentRestClient(
                 RestClient.Builder builder,
                 PaymentServiceProperties properties,
-                JwtPropagationInterceptor interceptor) {
+                JwtPropagationInterceptor jwtInterceptor) {
 
             return builder
                     .baseUrl(properties.baseUrl())
-                    .requestInterceptor(interceptor)
+                    .requestInterceptor(jwtInterceptor)
                     .build();
         }
 

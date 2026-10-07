@@ -20,24 +20,20 @@ public class HttpCustomerClient implements CustomerClient {
 
     public HttpCustomerClient(
             @Qualifier("customerRestClient") RestClient restClient) {
-
         this.restClient = restClient;
     }
 
     @Retry(name = "downstreamRead")
     @Override
     public void validateCustomerExists(UUID customerId) {
-
         try {
             restClient
                     .head()
                     .uri("/api/customers/{id}", customerId)
                     .retrieve()
                     .toBodilessEntity();
-
         } catch (HttpClientErrorException.NotFound ex) {
             throw new CustomerNotFoundException(customerId);
-
         } catch (HttpServerErrorException | ResourceAccessException ex) {
             throw new DownstreamServiceUnavailableException(
                     "Customer",

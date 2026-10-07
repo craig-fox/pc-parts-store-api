@@ -1,5 +1,7 @@
 package nz.fox.craig.order.controller;
 
+import static org.mockito.ArgumentMatchers.eq;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
@@ -33,19 +35,19 @@ import tools.jackson.databind.json.JsonMapper;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
 
 @WebMvcTest(OrderController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(OrderExceptionHandler.class)
-@WithMockUser
 class OrderControllerTest {
     @Autowired private MockMvc mockMvc;
 
@@ -59,27 +61,48 @@ class OrderControllerTest {
 
     private static final UUID ORDER_ID = UUID.randomUUID();
     private static final UUID PRODUCT_ID = UUID.randomUUID();
+    private static final String IDEMPOTENCY_KEY = "Idempotency-Key";
+    private static final String IDEMPOTENCY_VALUE = UUID.randomUUID().toString();
 
     @Nested
     class CreateOrder {
         @Test
         void returnsCreatedOrder() throws Exception {
-                OrderRequest request = OrderFixture.anOrderRequest();
-                OrderResponse response = OrderFixture.anOrderResponse();
+            OrderRequest request = OrderFixture.anOrderRequest();
+            OrderResponse response = OrderFixture.anOrderResponse();
             
-                when(orderService.createOrder(anyString(), any(OrderRequest.class))).thenReturn(new OrderCreationResult(response, true));
+            when(orderService.createOrder(anyString(), any(OrderRequest.class))).thenReturn(new OrderCreationResult(response, true));
             
-                mockMvc.perform(
-                                post("/api/orders")
-                                        .header("Idempotency-Key", UUID.randomUUID().toString())
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .content(objectMapper.writeValueAsString(request)))
-                        .andExpect(status().isCreated())
-                        .andExpect(jsonPath("$.id").value(response.id().toString()))
-                        .andExpect(jsonPath("$.items").isArray());
-            
-                verify(orderService).createOrder(anyString(), any(OrderRequest.class));
-            }
+            ArgumentCaptor<OrderRequest> requestCaptor = ArgumentCaptor.forClass(OrderRequest.class);
+            mockMvc.perform(
+                post("/api/orders")
+                        .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(response.id().toString()))
+                .andExpect(jsonPath("$.items").isArray());
+                
+            verify(orderService).createOrder(eq(IDEMPOTENCY_VALUE), requestCaptor.capture());
+            assertThat(requestCaptor.getValue().items()).hasSize(request.items().size());
+        }
+
+        @Test
+        void returnsExistingOrderForIdempotencyKey() throws Exception {
+            OrderRequest request = OrderFixture.anOrderRequest();
+            OrderResponse response = OrderFixture.anOrderResponse();
+                
+            when(orderService.createOrder(anyString(), any(OrderRequest.class)))
+                .thenReturn(new OrderCreationResult(response, false));
+                
+            mockMvc.perform(
+                post("/api/orders")
+                        .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(response.id().toString()));
+        }
 
         @Test
         void emptyOrderItemsReturnsBadRequest() throws Exception {
@@ -87,7 +110,7 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
@@ -104,7 +127,7 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isNotFound())
@@ -122,7 +145,7 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
                                 .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict())
@@ -142,7 +165,7 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isNotFound())
@@ -159,7 +182,7 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
@@ -177,7 +200,7 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
                                 .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
@@ -195,7 +218,7 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
@@ -226,7 +249,7 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header("Idempotency-Key", UUID.randomUUID().toString())
+                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
@@ -256,8 +279,8 @@ class OrderControllerTest {
         mockMvc.perform(
                         post("/api/orders")
                                 .header(
-                                        "Idempotency-Key",
-                                        UUID.randomUUID().toString())
+                                        IDEMPOTENCY_KEY,
+                                        IDEMPOTENCY_VALUE)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         objectMapper.writeValueAsString(request)))
@@ -267,7 +290,20 @@ class OrderControllerTest {
                                 .value(
                                         "shippingMethod: Must choose a shipping method"));
 
-        verifyNoInteractions(orderService);
+            verifyNoInteractions(orderService);
+        }
+
+        @Test
+        void missingIdempotencyKeyReturnsBadRequest() throws Exception {
+            OrderRequest request = OrderFixture.anOrderRequest();
+
+            mockMvc.perform(
+                post("/api/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+
+            verifyNoInteractions(orderService);
         }
 
     }

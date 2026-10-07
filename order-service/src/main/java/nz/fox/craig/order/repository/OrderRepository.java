@@ -7,7 +7,8 @@ import nz.fox.craig.order.model.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface OrderRepository extends JpaRepository<Order, UUID> {
-    List<Order> findByCustomerId(UUID customerId);
+
+    Optional<Order> findByIdAndCustomerId(UUID id, UUID customerId);
 
     List<Order> findByCustomerIdOrderByOrderDateDesc(UUID customerId);
 

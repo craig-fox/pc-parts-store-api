@@ -57,6 +57,12 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+		</dependency>
+	
+		
+		<dependency>
 			<groupId>nz.fox.craig</groupId>
 			<artifactId>api-common</artifactId>
 			<version>${project.version}</version>

@@ -1,19 +1,16 @@
 package nz.fox.craig.order.service;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
-import java.util.stream.Collectors;
-import nz.fox.craig.order.dto.request.ShippingAddressRequest;
-import nz.fox.craig.order.dto.request.ShippingQuoteRequest;
-
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nz.fox.craig.order.client.CustomerClient;
@@ -24,6 +21,8 @@ import nz.fox.craig.order.client.ShippingClient;
 import nz.fox.craig.order.dto.client.ProductSnapshot;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
+import nz.fox.craig.order.dto.request.ShippingAddressRequest;
+import nz.fox.craig.order.dto.request.ShippingQuoteRequest;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.dto.response.ShippingQuoteResponse;
 import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
@@ -37,11 +36,8 @@ import nz.fox.craig.order.model.OrderItem;
 import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.model.ShippingAddress;
 import nz.fox.craig.order.repository.OrderRepository;
-import nz.fox.craig.security.dto.AuthenticatedUser;
-
+import nz.fox.craig.security.service.CurrentUser;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,11 +55,12 @@ public class OrderService {
     private final OrderMapper orderMapper;
     private final OrderPersistenceService orderPersistenceService;
     private final OrderMetrics orderMetrics;
+    private final CurrentUser currentUser;
 
     @Transactional
     public OrderCreationResult createOrder(String idempotencyKey, OrderRequest request) {
        
-        UUID customerId = getAuthenticatedCustomerId();
+        UUID customerId = currentUser.customerId();
         String requestHash = hashOrderRequest(request);
         log.info("Creating order for customer {}", customerId);
         Optional<Order> existingOrder = orderRepository.findByCustomerIdAndIdempotencyKey(
@@ -206,14 +203,6 @@ public class OrderService {
         }
     }
 
-    private UUID getAuthenticatedCustomerId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        AuthenticatedUser user = (AuthenticatedUser) authentication.getPrincipal();
-
-        return user.id();
-    }
-
     private void validateCustomer(UUID customerId) {
         customerClient.validateCustomerExists(customerId);
     }
@@ -304,23 +293,27 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderResponse getOrder(UUID id) {
-        Order order = findOrderById(id);
+        UUID customerId = currentUser.customerId();
+
+        Order order = orderRepository.findByIdAndCustomerId(id, customerId)
+                .orElseThrow(() -> new OrderNotFoundException(id));
+
         return orderMapper.toResponse(order);
     }
 
-    private Order findOrderById(UUID id) {
-        return orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException(id));
-    }
 
     @Transactional
     public OrderResponse cancelOrder(UUID id) {
-        Order order = findOrderById(id);
+        UUID customerId = currentUser.customerId();
+        Order order = orderRepository.findByIdAndCustomerId(id, customerId)
+                .orElseThrow(() -> new OrderNotFoundException(id));
         validateOrderCanBeCancelled(order);
         order.setStatus(OrderStatus.CANCELLED);
-        Order savedOrder = orderRepository.save(order);
-        log.info("Order {} cancelled", savedOrder.getId());
-        orderMetrics.orderCreated();
-        return orderMapper.toResponse(savedOrder);
+    
+        log.info("Order {} cancelled", order.getId());
+        orderMetrics.orderCancelled();
+    
+        return orderMapper.toResponse(order);
     }
 
     private void validateOrderCanBeCancelled(Order order) {
@@ -332,7 +325,7 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrdersForAuthenticatedCustomer() {
-        UUID customerId = getAuthenticatedCustomerId();
+        UUID customerId = currentUser.customerId();
 
         return orderRepository.findByCustomerIdOrderByOrderDateDesc(customerId).stream()
                 .map(orderMapper::toResponse)
