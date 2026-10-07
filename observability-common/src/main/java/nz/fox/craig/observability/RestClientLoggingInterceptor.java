@@ -2,6 +2,8 @@ package nz.fox.craig.observability;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
+
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
@@ -11,16 +13,12 @@ import org.springframework.http.client.ClientHttpResponse;
 public class RestClientLoggingInterceptor
         implements ClientHttpRequestInterceptor {
 
-    public RestClientLoggingInterceptor() {
-        log.info("RestClientLoggingInterceptor created");
-    }
-
     @Override
     public ClientHttpResponse intercept(
             HttpRequest request,
             byte[] body,
             ClientHttpRequestExecution execution)
-            throws java.io.IOException {
+            throws IOException {
 
         long start = System.nanoTime();
 
@@ -48,7 +46,7 @@ public class RestClientLoggingInterceptor
             log.warn(
                     "Downstream HTTP request failed: {} {} after {} ms",
                     request.getMethod(),
-                    request.getURI(),
+                    request.getURI().getPath(),
                     durationMs,
                     ex);
 
