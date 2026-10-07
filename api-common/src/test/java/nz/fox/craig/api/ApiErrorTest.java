@@ -1,5 +1,6 @@
 package nz.fox.craig.api;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
@@ -21,20 +22,25 @@ class ApiErrorTest {
 
     @Test
     void shouldCopyValidationErrors() {
-        Map<String, String> validationErrors =
-                new HashMap<>();
-
+        Map<String, String> validationErrors = new HashMap<>();
         validationErrors.put("email", "must be valid");
-
-        ApiError error = new ApiError(
-                Instant.now(),
-                400,
-                "Bad Request",
-                "Validation failed",
-                validationErrors,
-                "/api/test");
-
+    
+        ApiError error =
+                new ApiError(
+                        Instant.now(),
+                        400,
+                        "Bad Request",
+                        "Validation failed",
+                        validationErrors,
+                        "/api/test");
+    
+        validationErrors.put("email", "changed");
+    
         assertThat(error.validationErrors())
                 .containsEntry("email", "must be valid");
+    
+        assertThatThrownBy(
+                () -> error.validationErrors().put("name", "required"))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 }
