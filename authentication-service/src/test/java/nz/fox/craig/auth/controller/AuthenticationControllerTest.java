@@ -2,13 +2,18 @@ package nz.fox.craig.auth.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.UUID;
+
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.auth.dto.LoginRequest;
 import nz.fox.craig.auth.dto.LoginResponse;
+import nz.fox.craig.auth.exception.CustomerInactiveException;
+import nz.fox.craig.auth.exception.InvalidCredentialsException;
 import nz.fox.craig.auth.service.AuthenticationService;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -58,19 +63,20 @@ class AuthenticationControllerTest {
 
         @Test
         void shouldReturn400WhenEmailIsMissing() throws Exception {
-
             String json =
                     """
                     {
                       "password": "password"
                     }
                     """;
-
+        
             mockMvc.perform(
                             post("/api/auth/login")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(json))
                     .andExpect(status().isBadRequest());
+        
+            then(authenticationService).shouldHaveNoInteractions();
         }
 
         @Test
@@ -88,6 +94,7 @@ class AuthenticationControllerTest {
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(json))
                     .andExpect(status().isBadRequest());
+            then(authenticationService).shouldHaveNoInteractions();
         }
 
         @Test
@@ -100,6 +107,52 @@ class AuthenticationControllerTest {
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
+            then(authenticationService).shouldHaveNoInteractions();
+        }
+
+        @Test
+        void shouldReturn401WhenCredentialsAreInvalid() throws Exception {
+            LoginRequest request =
+                    new LoginRequest("craig@example.com", "wrong-password");
+
+            given(authenticationService.login(any(LoginRequest.class)))
+                    .willThrow(new InvalidCredentialsException());
+
+            mockMvc.perform(
+                            post("/api/auth/login")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        void shouldReturn401WhenCustomerIsInactive() throws Exception {
+            LoginRequest request =
+                    new LoginRequest("craig@example.com", "password");
+
+            given(authenticationService.login(any(LoginRequest.class)))
+                    .willThrow(new CustomerInactiveException());
+
+            mockMvc.perform(
+                            post("/api/auth/login")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        void shouldReturn502WhenDownstreamServiceUnavailable() throws Exception {
+            LoginRequest request =
+                    new LoginRequest("craig@example.com", "password");
+
+            given(authenticationService.login(any(LoginRequest.class)))
+                    .willThrow(new DownstreamServiceUnavailableException("customer-service", new Throwable()));
+
+            mockMvc.perform(
+                    post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().is5xxServerError());
         }
     }
 }

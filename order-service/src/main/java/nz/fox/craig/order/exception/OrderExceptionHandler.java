@@ -7,6 +7,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
+
 @RestControllerAdvice
 public class OrderExceptionHandler {
 

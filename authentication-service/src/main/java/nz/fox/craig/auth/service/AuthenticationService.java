@@ -24,7 +24,6 @@ public class AuthenticationService {
     private final TokenService tokenService;
 
     public LoginResponse login(LoginRequest request) {
-
         AuthenticatedCustomer customer = customerClient.findByEmail(request.email());
 
         if (!customer.active()) {

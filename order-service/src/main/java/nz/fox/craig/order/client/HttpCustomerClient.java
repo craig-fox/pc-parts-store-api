@@ -1,8 +1,9 @@
 package nz.fox.craig.order.client;
 
 import java.util.UUID;
+
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
-import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;

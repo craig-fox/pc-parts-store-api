@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
-import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;

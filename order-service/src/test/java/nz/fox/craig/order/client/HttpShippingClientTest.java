@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.dto.request.ShippingQuoteRequest;
 import nz.fox.craig.order.dto.response.ShippingQuoteResponse;
-import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.fixture.ShippingFixture;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;

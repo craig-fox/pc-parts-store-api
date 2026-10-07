@@ -1,4 +1,4 @@
-package nz.fox.craig.order.exception;
+package nz.fox.craig.api;
 
 public class DownstreamServiceUnavailableException
         extends RuntimeException {

@@ -6,9 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.io.IOException;
 import java.util.UUID;
 
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
-import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
-
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;

@@ -8,9 +8,9 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
 import io.github.resilience4j.retry.annotation.Retry;
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.dto.request.ShippingQuoteRequest;
 import nz.fox.craig.order.dto.response.ShippingQuoteResponse;
-import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
 
 @Component
 public class HttpShippingClient implements ShippingClient {
