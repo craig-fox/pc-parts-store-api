@@ -2,10 +2,7 @@ package nz.fox.craig.product.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -15,7 +12,6 @@ import java.util.UUID;
 import nz.fox.craig.product.dto.ProductResponse;
 import nz.fox.craig.product.exception.ProductNotFoundException;
 import nz.fox.craig.product.fixture.ProductFixtures;
-import nz.fox.craig.product.fixture.ProductResponseFixtures;
 import nz.fox.craig.product.model.Product;
 import nz.fox.craig.product.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
