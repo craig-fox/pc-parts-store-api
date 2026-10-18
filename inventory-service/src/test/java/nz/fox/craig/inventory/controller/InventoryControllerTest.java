@@ -17,7 +17,6 @@ import nz.fox.craig.inventory.exception.InventoryExceptionHandler;
 import nz.fox.craig.inventory.exception.InventoryNotFoundException;
 import nz.fox.craig.inventory.model.InventoryStatus;
 import nz.fox.craig.inventory.service.InventoryService;
-import nz.fox.craig.security.service.TokenService;
 import tools.jackson.databind.json.JsonMapper;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +30,6 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -49,7 +47,6 @@ class InventoryControllerTest {
 
     @MockitoBean private InventoryService inventoryService;
 
-    @MockitoBean private TokenService tokenService;
 
     private UUID productId;
     private InventoryResponse response;
@@ -99,7 +96,7 @@ class InventoryControllerTest {
     }
 
     @Test
-    @WithMockUser
+  //  @WithMockUser
     void shouldReturnNotFoundWhenInventoryMissing() throws Exception {
 
         when(inventoryService.getInventory(productId))
@@ -135,7 +132,6 @@ class InventoryControllerTest {
     }
 
     @Test
-    @WithMockUser
     void shouldReturnBadRequestWhenQuantityInvalid() throws Exception {
 
         InventoryReservationRequest request = new InventoryReservationRequest(0);
@@ -151,7 +147,6 @@ class InventoryControllerTest {
     }
 
     @Test
-    @WithMockUser
     void shouldReleaseReservation() throws Exception {
 
         InventoryReservationRequest request = new InventoryReservationRequest(3);
@@ -171,7 +166,6 @@ class InventoryControllerTest {
     }
 
     @Test
-    @WithMockUser
     void shouldReturnBadRequestWhenReleaseInvalid() throws Exception {
 
         InventoryReservationRequest request = new InventoryReservationRequest(0);
@@ -187,7 +181,6 @@ class InventoryControllerTest {
     }
 
     @Test
-    @WithMockUser
     void shouldConfirmReservation() throws Exception {
 
         InventoryReservationRequest request = new InventoryReservationRequest(3);
@@ -207,7 +200,6 @@ class InventoryControllerTest {
     }
 
     @Test
-    @WithMockUser
     void shouldReturnBadRequestWhenConfirmInvalid() throws Exception {
 
         InventoryReservationRequest request = new InventoryReservationRequest(0);
