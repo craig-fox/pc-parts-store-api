@@ -10,6 +10,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static org.assertj.core.api.Assertions.assertThat;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -102,7 +103,6 @@ class ApiGatewayRoutingTest {
                 )
         );
 
-        // The actual gateway request/assertion goes here.
         webTestClient
             .get()
             .uri("/api/products")
@@ -188,7 +188,7 @@ class ApiGatewayRoutingTest {
             .post()
             .uri("/api/customers")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(Payloads.CUSTOMER_RESPONSE)
+            .bodyValue(Payloads.CUSTOMER_REQUEST)
             .exchange()
             .expectStatus().isCreated()
             .expectHeader().contentType("application/json")
@@ -442,5 +442,23 @@ class ApiGatewayRoutingTest {
             exactly(1),
             postRequestedFor(urlEqualTo("/api/auth/login"))
         );
+    }
+
+    @Test
+    void shouldHandleCorsPreflightRequest() {
+        webTestClient
+                .options()
+                .uri("/api/products")
+                .header("Origin", "https://pcparts.craigfox.dev")
+                .header("Access-Control-Request-Method", "GET")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader()
+                .valueEquals(
+                        "Access-Control-Allow-Origin",
+                        "https://pcparts.craigfox.dev")
+                .expectHeader()
+                .value("Access-Control-Allow-Methods",
+                        methods -> assertThat(methods).contains("GET"));
     }
 }
