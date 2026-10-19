@@ -5,9 +5,5 @@ import java.util.UUID;
 
 public interface PaymentClient {
 
-    void processPayment(
-            UUID orderId,
-            UUID customerId,
-            BigDecimal amount,
-            String currency);
+    void processPayment(UUID orderId, UUID customerId, BigDecimal amount, String currency);
 }

@@ -11,7 +11,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,19 +26,17 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(
-    name = "orders",
-    uniqueConstraints =
-        @UniqueConstraint(
-            name = "uk_orders_customer_idempotency_key",
-            columnNames = {"customer_id", "idempotency_key"}))
+        name = "orders",
+        uniqueConstraints =
+                @UniqueConstraint(
+                        name = "uk_orders_customer_idempotency_key",
+                        columnNames = {"customer_id", "idempotency_key"}))
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Order {
 
-    @Id
-    @Builder.Default
-    private UUID id = UUID.randomUUID();
+    @Id @Builder.Default private UUID id = UUID.randomUUID();
 
     @Column(name = "idempotency_key", nullable = false)
     private String idempotencyKey;

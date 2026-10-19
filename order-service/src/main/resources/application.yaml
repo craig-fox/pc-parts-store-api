@@ -45,14 +45,13 @@ jwt:
 resilience4j:
   retry:
     instances:
-
       downstreamRead:
         max-attempts: 3
-        wait-duration: 10ms
-        enable-exponential-backoff: true
-        exponential-backoff-multiplier: 2
         retry-exceptions:
-          - nz.fox.craig.order.exception.DownstreamServiceUnavailableException
+          - nz.fox.craig.api.DownstreamServiceUnavailableException
+        ignore-exceptions:
+          - nz.fox.craig.order.exception.CustomerNotFoundException
+          - nz.fox.craig.order.exception.ProductNotFoundException
 
       payment:
         max-attempts: 3
@@ -60,7 +59,7 @@ resilience4j:
         enable-exponential-backoff: true
         exponential-backoff-multiplier: 2
         retry-exceptions:
-          - nz.fox.craig.order.exception.DownstreamServiceUnavailableException
+          - nz.fox.craig.api.DownstreamServiceUnavailableException
 
 services:
   http-client:

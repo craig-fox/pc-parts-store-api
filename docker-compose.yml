@@ -87,6 +87,12 @@ services:
       - payment-data:/var/lib/postgresql/data
     networks:
       - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
 
   shipping-postgres:
     image: postgres:17
@@ -222,7 +228,8 @@ services:
       context: ./payment-service
     container_name: payment-service
     depends_on:
-      - payment-postgres
+      payment-postgres:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:postgresql://payment-postgres:5432/paymentdb

@@ -20,5 +20,4 @@ public record OrderResponse(
     public OrderResponse {
         items = List.copyOf(items);
     }
-
 }

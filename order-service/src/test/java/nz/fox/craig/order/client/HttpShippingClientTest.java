@@ -4,19 +4,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.UUID;
-
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
+import nz.fox.craig.order.dto.request.ShippingQuoteRequest;
+import nz.fox.craig.order.dto.response.ShippingQuoteResponse;
+import nz.fox.craig.order.fixture.ShippingFixture;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
-
-import nz.fox.craig.order.dto.request.ShippingQuoteRequest;
-import nz.fox.craig.order.dto.response.ShippingQuoteResponse;
-import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
-import nz.fox.craig.order.fixture.ShippingFixture;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
 
 class HttpShippingClientTest {
     private MockWebServer mockWebServer;
@@ -28,9 +26,8 @@ class HttpShippingClientTest {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
 
-        RestClient restClient = RestClient.builder()
-                .baseUrl(mockWebServer.url("/").toString())
-                .build();
+        RestClient restClient =
+                RestClient.builder().baseUrl(mockWebServer.url("/").toString()).build();
 
         shippingClient = new HttpShippingClient(restClient);
     }
@@ -47,7 +44,8 @@ class HttpShippingClientTest {
                 new MockResponse()
                         .setResponseCode(201)
                         .setHeader("Content-Type", "application/json")
-                        .setBody("""
+                        .setBody(
+                                """
                                 {
                                 "id": "%s",
                                 "orderId": "%s",
@@ -66,17 +64,12 @@ class HttpShippingClientTest {
                                 "expiresAt": "2026-08-24T18:00:00",
                                 "createdAt": "2026-08-24T17:00:00"
                                 }
-                                """.formatted(
-                                        UUID.randomUUID(),
-                                        UUID.randomUUID()
-                                ))
-        );
-
+                                """
+                                        .formatted(UUID.randomUUID(), UUID.randomUUID())));
 
         ShippingQuoteRequest quoteRequest = ShippingFixture.shippingQuoteRequest();
 
-        ShippingQuoteResponse response =
-                shippingClient.calculateQuote(quoteRequest);
+        ShippingQuoteResponse response = shippingClient.calculateQuote(quoteRequest);
 
         assertThat(response).isNotNull();
         assertThat(response.price()).isEqualByComparingTo("15.00");
@@ -86,10 +79,7 @@ class HttpShippingClientTest {
     @Test
     void shouldThrowDownstreamServiceUnavailableWhenShippingReturnsServerError() {
 
-        mockWebServer.enqueue(
-                new MockResponse()
-                        .setResponseCode(503)
-        );
+        mockWebServer.enqueue(new MockResponse().setResponseCode(503));
 
         ShippingQuoteRequest request = ShippingFixture.shippingQuoteRequest();
 
@@ -101,10 +91,7 @@ class HttpShippingClientTest {
     @Test
     void shouldNotTreatClientErrorAsShippingServiceUnavailable() {
 
-        mockWebServer.enqueue(
-                new MockResponse()
-                        .setResponseCode(400)
-        );
+        mockWebServer.enqueue(new MockResponse().setResponseCode(400));
 
         ShippingQuoteRequest request = ShippingFixture.shippingQuoteRequest();
 

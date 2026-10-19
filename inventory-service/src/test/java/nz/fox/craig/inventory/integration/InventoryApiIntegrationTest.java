@@ -16,8 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -102,6 +102,64 @@ class InventoryApiIntegrationTest extends AbstractPostgresTest {
     }
 
     @Test
+    void shouldReleaseStock() throws Exception {
+
+        String request =
+                """
+                {
+                    "quantity": 3
+                }
+                """;
+
+        mockMvc.perform(
+                        post("/api/inventory/{productId}/release", productId)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productId").value(productId.toString()))
+                .andExpect(jsonPath("$.quantityOnHand").value(20))
+                .andExpect(jsonPath("$.quantityReserved").value(2))
+                .andExpect(jsonPath("$.availableQuantity").value(18))
+                .andExpect(jsonPath("$.status").value("IN_STOCK"));
+
+        Inventory inventory = inventoryRepository.findById(productId).orElseThrow();
+
+        assertEquals(20, inventory.getQuantityOnHand());
+        assertEquals(2, inventory.getQuantityReserved());
+        assertEquals(18, inventory.getAvailableQuantity());
+    }
+
+    @Test
+    void shouldConfirmReservation() throws Exception {
+
+        String request =
+                """
+                {
+                    "quantity": 3
+                }
+                """;
+
+        mockMvc.perform(
+                        post("/api/inventory/{productId}/confirm", productId)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productId").value(productId.toString()))
+                .andExpect(jsonPath("$.quantityOnHand").value(17))
+                .andExpect(jsonPath("$.quantityReserved").value(2))
+                .andExpect(jsonPath("$.availableQuantity").value(15))
+                .andExpect(jsonPath("$.status").value("IN_STOCK"));
+
+        Inventory inventory = inventoryRepository.findById(productId).orElseThrow();
+
+        assertEquals(17, inventory.getQuantityOnHand());
+        assertEquals(2, inventory.getQuantityReserved());
+        assertEquals(15, inventory.getAvailableQuantity());
+    }
+
+    @Test
     void shouldReturnConflictWhenInsufficientStock() throws Exception {
 
         String request =
@@ -144,6 +202,42 @@ class InventoryApiIntegrationTest extends AbstractPostgresTest {
     }
 
     @Test
+    void shouldReturnBadRequestWhenReleaseQuantityIsInvalid() throws Exception {
+
+        String request =
+                """
+                {
+                    "quantity": 0
+                }
+                """;
+
+        mockMvc.perform(
+                        post("/api/inventory/{productId}/release", productId)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenConfirmQuantityIsInvalid() throws Exception {
+
+        String request =
+                """
+                {
+                    "quantity": 0
+                }
+                """;
+
+        mockMvc.perform(
+                        post("/api/inventory/{productId}/confirm", productId)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void shouldRequireAuthenticationWhenReservingStock() throws Exception {
 
         String request =
@@ -162,5 +256,15 @@ class InventoryApiIntegrationTest extends AbstractPostgresTest {
         Inventory inventory = inventoryRepository.findById(productId).orElseThrow();
 
         assertEquals(5, inventory.getQuantityReserved());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenInventoryDoesNotExist() throws Exception {
+        UUID unknownProductId = UUID.randomUUID();
+
+        mockMvc.perform(
+                        get("/api/inventory/{productId}", unknownProductId)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNotFound());
     }
 }

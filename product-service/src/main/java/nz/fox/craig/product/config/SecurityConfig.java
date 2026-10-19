@@ -1,7 +1,7 @@
 package nz.fox.craig.product.config;
 
-import nz.fox.craig.security.JwtAuthenticationFilter;
-import nz.fox.craig.security.TokenService;
+import nz.fox.craig.security.service.JwtAuthenticationFilter;
+import nz.fox.craig.security.service.TokenService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -60,6 +60,4 @@ public class SecurityConfig {
     JwtAuthenticationFilter jwtAuthenticationFilter(TokenService tokenService) {
         return new JwtAuthenticationFilter(tokenService);
     }
-
-
 }

@@ -6,7 +6,7 @@ import nz.fox.craig.product.model.Product;
 
 public class ProductBuilder {
 
-    private UUID id = UUID.randomUUID();
+    private UUID id;
     private String sku = "CPU-001";
     private String name = "AMD Ryzen 7 9800X3D";
     private String description = name;
@@ -83,6 +83,7 @@ public class ProductBuilder {
     public Product build() {
         Product product = new Product();
 
+        product.setId(id);
         product.setSku(sku);
         product.setName(name);
         product.setDescription(description);

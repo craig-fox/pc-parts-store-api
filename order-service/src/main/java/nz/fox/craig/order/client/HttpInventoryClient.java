@@ -1,11 +1,9 @@
 package nz.fox.craig.order.client;
 
 import java.util.UUID;
-
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.dto.request.InventoryReservationRequest;
-import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.exception.InsufficientStockException;
-
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -19,8 +17,7 @@ public class HttpInventoryClient implements InventoryClient {
 
     private final RestClient restClient;
 
-    public HttpInventoryClient(
-            @Qualifier("inventoryRestClient") RestClient restClient) {
+    public HttpInventoryClient(@Qualifier("inventoryRestClient") RestClient restClient) {
 
         this.restClient = restClient;
     }
@@ -31,17 +28,15 @@ public class HttpInventoryClient implements InventoryClient {
             restClient
                     .post()
                     .uri("/api/inventory/{productId}/reserve", productId)
+                    .contentType(MediaType.APPLICATION_JSON)
                     .body(new InventoryReservationRequest(quantity))
                     .retrieve()
                     .toBodilessEntity();
-    
         } catch (HttpClientErrorException.Conflict ex) {
             throw new InsufficientStockException(productId);
-    
+
         } catch (HttpServerErrorException | ResourceAccessException ex) {
-            throw new DownstreamServiceUnavailableException(
-                    "Inventory",
-                    ex);
+            throw new DownstreamServiceUnavailableException("Inventory", ex);
         }
     }
 
@@ -55,11 +50,9 @@ public class HttpInventoryClient implements InventoryClient {
                     .body(new InventoryReservationRequest(quantity))
                     .retrieve()
                     .toBodilessEntity();
-    
+
         } catch (HttpServerErrorException | ResourceAccessException ex) {
-            throw new DownstreamServiceUnavailableException(
-                    "Inventory",
-                    ex);
+            throw new DownstreamServiceUnavailableException("Inventory", ex);
         }
     }
 }

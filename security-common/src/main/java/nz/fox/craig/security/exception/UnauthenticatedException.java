@@ -1,4 +1,4 @@
-package nz.fox.craig.exception;
+package nz.fox.craig.security.exception;
 
 public class UnauthenticatedException extends RuntimeException {
     public UnauthenticatedException() {

@@ -44,6 +44,7 @@ public class Product {
     @Column(nullable = false, precision = 6, scale = 2)
     private BigDecimal weightKg;
 
+    @Column(length = 500)
     private String imageUrl;
 
     @Column(nullable = false)

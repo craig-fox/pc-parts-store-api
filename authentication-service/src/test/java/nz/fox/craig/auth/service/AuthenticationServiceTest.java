@@ -14,8 +14,8 @@ import nz.fox.craig.auth.dto.LoginRequest;
 import nz.fox.craig.auth.dto.LoginResponse;
 import nz.fox.craig.auth.exception.CustomerInactiveException;
 import nz.fox.craig.auth.exception.InvalidCredentialsException;
-import nz.fox.craig.dto.AuthenticatedUser;
-import nz.fox.craig.security.TokenService;
+import nz.fox.craig.security.dto.AuthenticatedUser;
+import nz.fox.craig.security.service.TokenService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,17 +64,17 @@ class AuthenticationServiceTest {
 
         @Test
         void shouldRejectUnknownEmail() {
-        
+
             String email = "unknown@example.com";
-        
+
             when(customerClient.findByEmail(email)).thenThrow(new InvalidCredentialsException());
-        
+
             LoginRequest request = new LoginRequest(email, LOGIN_PASSWORD);
-        
+
             assertThatThrownBy(() -> authenticationService.login(request))
                     .isInstanceOf(InvalidCredentialsException.class)
                     .hasMessage("Invalid email or password");
-        
+
             verify(customerClient).findByEmail(email);
             verify(passwordEncoder, never()).matches(any(), any());
             verify(tokenService, never()).generateToken(any());
@@ -89,9 +89,7 @@ class AuthenticationServiceTest {
             when(passwordEncoder.matches(LOGIN_PASSWORD, customer.password())).thenReturn(false);
             LoginRequest request = new LoginRequest(customer.email(), LOGIN_PASSWORD);
 
-            assertThatThrownBy(
-                            () ->
-                                    authenticationService.login(request))
+            assertThatThrownBy(() -> authenticationService.login(request))
                     .isInstanceOf(InvalidCredentialsException.class)
                     .hasMessage("Invalid email or password");
 
@@ -108,9 +106,7 @@ class AuthenticationServiceTest {
             when(customerClient.findByEmail(customer.email())).thenReturn(customer);
             LoginRequest request = new LoginRequest(customer.email(), LOGIN_PASSWORD);
 
-            assertThatThrownBy(
-                            () ->
-                                    authenticationService.login(request))
+            assertThatThrownBy(() -> authenticationService.login(request))
                     .isInstanceOf(CustomerInactiveException.class)
                     .hasMessage("Customer account is inactive");
 

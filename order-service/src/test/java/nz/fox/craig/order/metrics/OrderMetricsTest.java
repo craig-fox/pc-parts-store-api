@@ -3,7 +3,6 @@ package nz.fox.craig.order.metrics;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,22 +21,14 @@ class OrderMetricsTest {
     void incrementsOrdersCreatedCounter() {
         orderMetrics.orderCreated();
 
-        assertThat(
-                meterRegistry
-                        .counter("orders.created")
-                        .count())
-                .isEqualTo(1.0);
+        assertThat(meterRegistry.counter("orders.created").count()).isEqualTo(1.0);
     }
 
     @Test
     void incrementsOrdersCancelledCounter() {
         orderMetrics.orderCancelled();
 
-        assertThat(
-                meterRegistry
-                        .counter("orders.cancelled")
-                        .count())
-                .isEqualTo(1.0);
+        assertThat(meterRegistry.counter("orders.cancelled").count()).isEqualTo(1.0);
     }
 
     @Test
@@ -45,10 +36,6 @@ class OrderMetricsTest {
         orderMetrics.orderCreated();
         orderMetrics.orderCreated();
 
-        assertThat(
-                meterRegistry
-                        .counter("orders.created")
-                        .count())
-                .isEqualTo(2.0);
+        assertThat(meterRegistry.counter("orders.created").count()).isEqualTo(2.0);
     }
 }

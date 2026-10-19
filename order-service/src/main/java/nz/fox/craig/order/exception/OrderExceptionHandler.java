@@ -1,6 +1,7 @@
 package nz.fox.craig.order.exception;
 
 import java.util.Map;
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -61,9 +62,7 @@ public class OrderExceptionHandler {
     @ExceptionHandler(DownstreamServiceUnavailableException.class)
     public ResponseEntity<Map<String, String>> handleDownstreamServiceUnavailable(
             DownstreamServiceUnavailableException ex) {
-    
-        return ResponseEntity
-                .status(HttpStatus.BAD_GATEWAY)
-                .body(Map.of(MESSAGE, ex.getMessage()));
+
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of(MESSAGE, ex.getMessage()));
     }
 }

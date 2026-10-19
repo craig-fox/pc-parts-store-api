@@ -1,4 +1,4 @@
-package nz.fox.craig.security;
+package nz.fox.craig.security.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -17,7 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 class JwtPropagationInterceptorTest {
 
-    private final JwtPropagationInterceptor interceptor = new JwtPropagationInterceptor();
+    private final JwtPropagationInterceptor jwtInterceptor = new JwtPropagationInterceptor();
 
     @AfterEach
     void clearSecurityContext() {
@@ -44,7 +44,7 @@ class JwtPropagationInterceptorTest {
 
         when(execution.execute(request, body)).thenReturn(response);
 
-        ClientHttpResponse result = interceptor.intercept(request, body, execution);
+        ClientHttpResponse result = jwtInterceptor.intercept(request, body, execution);
 
         assertThat(headers.getFirst(HttpHeaders.AUTHORIZATION)).isEqualTo("Bearer " + jwt);
 
@@ -67,9 +67,9 @@ class JwtPropagationInterceptorTest {
         byte[] body = new byte[0];
         ClientHttpRequestExecution execution = mock(ClientHttpRequestExecution.class);
 
-        interceptor.intercept(request, body, execution);
+        jwtInterceptor.intercept(request, body, execution);
 
-        assertThat(headers.containsKey(HttpHeaders.AUTHORIZATION)).isFalse();
+        assertThat(headers.getFirst(HttpHeaders.AUTHORIZATION)).isNull();
 
         verify(execution).execute(request, body);
     }
@@ -83,9 +83,9 @@ class JwtPropagationInterceptorTest {
         byte[] body = new byte[0];
         ClientHttpRequestExecution execution = mock(ClientHttpRequestExecution.class);
 
-        interceptor.intercept(request, body, execution);
+        jwtInterceptor.intercept(request, body, execution);
 
-        assertThat(headers.containsKey(HttpHeaders.AUTHORIZATION)).isFalse();
+        assertThat(headers.getFirst(HttpHeaders.AUTHORIZATION)).isNull();
 
         verify(execution).execute(request, body);
     }

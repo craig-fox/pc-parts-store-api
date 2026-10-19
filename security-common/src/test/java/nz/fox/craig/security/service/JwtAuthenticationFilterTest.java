@@ -1,20 +1,18 @@
-package nz.fox.craig.security;
+package nz.fox.craig.security.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import nz.fox.craig.dto.AuthenticatedUser;
-import nz.fox.craig.dto.Role;
+import nz.fox.craig.security.dto.AuthenticatedUser;
+import nz.fox.craig.security.dto.Role;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,37 +53,53 @@ class JwtAuthenticationFilterTest {
 
     @Test
     void shouldAuthenticateValidJwt() throws Exception {
+        String jwt = "jwt-token";
 
-        when(request.getHeader("Authorization")).thenReturn("Bearer jwt-token");
+        AuthenticatedUser user =
+                new AuthenticatedUser(CUSTOMER_ID, EMAIL, Set.of(Role.ROLE_CUSTOMER));
 
-        when(tokenService.isTokenValid("jwt-token")).thenReturn(true);
-
-        when(tokenService.extractCustomerId("jwt-token")).thenReturn(CUSTOMER_ID);
-
-        when(tokenService.extractEmail("jwt-token")).thenReturn(EMAIL);
+        when(request.getHeader("Authorization")).thenReturn("Bearer " + jwt);
+        when(tokenService.parseUser(jwt)).thenReturn(user);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         assertThat(authentication).isNotNull();
-
-        assertThat(authentication.getPrincipal()).isInstanceOf(AuthenticatedUser.class);
-
-        AuthenticatedUser principal = (AuthenticatedUser) authentication.getPrincipal();
-
-        assertThat(principal.id()).isEqualTo(CUSTOMER_ID);
-        assertThat(principal.email()).isEqualTo(EMAIL);
+        assertThat(authentication.getPrincipal()).isEqualTo(user);
         assertThat(authentication.getAuthorities())
                 .extracting("authority")
                 .containsExactly("ROLE_CUSTOMER");
 
+        verify(tokenService).parseUser(jwt);
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    void shouldCreateAuthoritiesFromUserRoles() throws Exception {
+        String jwt = "jwt-token";
+
+        AuthenticatedUser user =
+                new AuthenticatedUser(
+                        CUSTOMER_ID, EMAIL, Set.of(Role.ROLE_CUSTOMER, Role.ROLE_ADMIN));
+
+        when(request.getHeader("Authorization")).thenReturn("Bearer " + jwt);
+        when(tokenService.parseUser(jwt)).thenReturn(user);
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        assertThat(authentication.getAuthorities())
+                .extracting("authority")
+                .containsExactlyInAnyOrder("ROLE_CUSTOMER", "ROLE_ADMIN");
+
+        verify(tokenService).parseUser(jwt);
         verify(filterChain).doFilter(request, response);
     }
 
     @Test
     void shouldContinueWhenAuthorizationHeaderMissing() throws Exception {
-
         when(request.getHeader("Authorization")).thenReturn(null);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -93,11 +107,12 @@ class JwtAuthenticationFilterTest {
         verify(filterChain).doFilter(request, response);
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+
+        verify(tokenService, never()).parseUser(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
     void shouldContinueWhenAuthorizationHeaderIsNotBearerToken() throws Exception {
-
         when(request.getHeader("Authorization")).thenReturn("Basic abc123");
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -105,47 +120,22 @@ class JwtAuthenticationFilterTest {
         verify(filterChain).doFilter(request, response);
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+
+        verify(tokenService, never()).parseUser(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
     void shouldIgnoreInvalidJwt() throws Exception {
+        String jwt = "invalid-jwt";
 
-        when(request.getHeader("Authorization")).thenReturn("Bearer jwt-token");
-
-        when(tokenService.isTokenValid("jwt-token")).thenThrow(new JwtException("Invalid"));
-
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
-        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-
-        verify(filterChain).doFilter(request, response);
-    }
-
-    @Test
-    void shouldIgnoreJwtWhenCustomerIdCannotBeExtracted() throws Exception {
-        when(request.getHeader("Authorization")).thenReturn("Bearer jwt-token");
-        when(tokenService.isTokenValid("jwt-token")).thenReturn(true);
-        when(tokenService.extractCustomerId("jwt-token"))
-                .thenThrow(new JwtException("Invalid customer id"));
+        when(request.getHeader("Authorization")).thenReturn("Bearer " + jwt);
+        when(tokenService.parseUser(jwt)).thenThrow(new IllegalArgumentException("Invalid JWT"));
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
 
-        verify(filterChain).doFilter(request, response);
-    }
-
-    @Test
-    void shouldIgnoreJwtWhenEmailCannotBeExtracted() throws Exception {
-        when(request.getHeader("Authorization")).thenReturn("Bearer jwt-token");
-        when(tokenService.isTokenValid("jwt-token")).thenReturn(true);
-        when(tokenService.extractCustomerId("jwt-token")).thenReturn(CUSTOMER_ID);
-        when(tokenService.extractEmail("jwt-token")).thenThrow(new JwtException("Invalid email"));
-
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
-        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-
+        verify(tokenService).parseUser(jwt);
         verify(filterChain).doFilter(request, response);
     }
 
@@ -163,12 +153,6 @@ class JwtAuthenticationFilterTest {
 
         SecurityContextHolder.getContext().setAuthentication(existingAuthentication);
 
-        when(tokenService.isTokenValid(jwt)).thenReturn(true);
-
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        HttpServletResponse response = mock(HttpServletResponse.class);
-        FilterChain filterChain = mock(FilterChain.class);
-
         when(request.getHeader("Authorization")).thenReturn("Bearer " + jwt);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -176,31 +160,7 @@ class JwtAuthenticationFilterTest {
         assertThat(SecurityContextHolder.getContext().getAuthentication())
                 .isSameAs(existingAuthentication);
 
-        verify(tokenService).isTokenValid(jwt);
-        verify(tokenService, never()).extractCustomerId(jwt);
-        verify(tokenService, never()).extractEmail(jwt);
-        verify(filterChain).doFilter(request, response);
-    }
-
-    @Test
-    void shouldNotAuthenticateWhenTokenIsInvalid() throws Exception {
-        String jwt = "invalid-jwt";
-
-        when(tokenService.isTokenValid(jwt)).thenReturn(false);
-
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        HttpServletResponse response = mock(HttpServletResponse.class);
-        FilterChain filterChain = mock(FilterChain.class);
-
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + jwt);
-
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
-        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-
-        verify(tokenService).isTokenValid(jwt);
-        verify(tokenService, never()).extractCustomerId(jwt);
-        verify(tokenService, never()).extractEmail(jwt);
+        verify(tokenService, never()).parseUser(jwt);
         verify(filterChain).doFilter(request, response);
     }
 }

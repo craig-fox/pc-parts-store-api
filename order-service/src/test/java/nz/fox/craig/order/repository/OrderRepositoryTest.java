@@ -5,9 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
-
 import nz.fox.craig.order.fixture.OrderFixture;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
@@ -15,13 +16,13 @@ import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.test.AbstractPostgresTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
-public class OrderRepositoryTest extends AbstractPostgresTest {
+class OrderRepositoryTest extends AbstractPostgresTest {
 
     @Autowired private OrderRepository orderRepository;
 
@@ -65,26 +66,6 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
     }
 
     @Test
-    void shouldFindOrdersByCustomerId() {
-        final UUID customerId = UUID.randomUUID();
-
-        final Order order1 = OrderFixture.anOrder();
-        final Order order2 = OrderFixture.anOrder();
-        order1.setCustomerId(customerId);
-        order2.setCustomerId(customerId);
-
-        orderRepository.save(order1);
-        orderRepository.save(order2);
-
-        final List<Order> orders = orderRepository.findByCustomerId(customerId);
-
-        assertThat(orders)
-                .hasSize(2)
-                .extracting(Order::getId)
-                .containsExactlyInAnyOrder(order1.getId(), order2.getId());
-    }
-
-    @Test
     void shouldRemoveItemFromOrder() {
         final Order order = OrderFixture.anOrder();
         addItemsToOrder(order);
@@ -103,31 +84,53 @@ public class OrderRepositoryTest extends AbstractPostgresTest {
     }
 
     @Test
-    void shouldReturnEmptyListWhenCustomerHasNoOrders() {
-        final List<Order> orders = orderRepository.findByCustomerId(UUID.randomUUID());
-        assertThat(orders).isEmpty();
+    void shouldFindOrderForCustomer() {
+        UUID customerId = UUID.randomUUID();
+
+        Order order = OrderFixture.anOrder();
+        order.setCustomerId(customerId);
+        orderRepository.saveAndFlush(order);
+
+        Optional<Order> found = orderRepository.findByIdAndCustomerId(order.getId(), customerId);
+
+        assertThat(found).isPresent().get().extracting(Order::getId).isEqualTo(order.getId());
     }
 
     @Test
-    void shouldOnlyFindOrdersForSpecifiedCustomer() {
-        final UUID customerId = UUID.randomUUID();
-        final UUID otherCustomerId = UUID.randomUUID();
+    void shouldNotFindOrderForDifferentCustomer() {
+        UUID customerId = UUID.randomUUID();
+        UUID otherCustomerId = UUID.randomUUID();
 
-        final Order customerOrder = OrderFixture.anOrder();
-        customerOrder.setCustomerId(customerId);
-        final Order otherCustomerOrder = OrderFixture.anOrder();
-        otherCustomerOrder.setCustomerId(otherCustomerId);
+        Order order = OrderFixture.anOrder();
+        order.setCustomerId(customerId);
+        orderRepository.saveAndFlush(order);
 
-        orderRepository.save(customerOrder);
-        orderRepository.save(otherCustomerOrder);
+        Optional<Order> found =
+                orderRepository.findByIdAndCustomerId(order.getId(), otherCustomerId);
 
-        final List<Order> orders = orderRepository.findByCustomerId(customerId);
+        assertThat(found).isEmpty();
+    }
+
+    @Test
+    void shouldFindCustomerOrdersNewestFirst() {
+        UUID customerId = UUID.randomUUID();
+
+        Order olderOrder = OrderFixture.anOrder();
+        olderOrder.setCustomerId(customerId);
+        olderOrder.setOrderDate(LocalDateTime.of(2026, 1, 1, 10, 0));
+
+        Order newerOrder = OrderFixture.anOrder();
+        newerOrder.setCustomerId(customerId);
+        newerOrder.setOrderDate(LocalDateTime.of(2026, 1, 2, 10, 0));
+
+        orderRepository.save(olderOrder);
+        orderRepository.save(newerOrder);
+
+        List<Order> orders = orderRepository.findByCustomerIdOrderByOrderDateDesc(customerId);
 
         assertThat(orders)
-                .hasSize(1)
-                .first()
-                .extracting(Order::getCustomerId)
-                .isEqualTo(customerId);
+                .extracting(Order::getId)
+                .containsExactly(newerOrder.getId(), olderOrder.getId());
     }
 
     private OrderItem createOrderItem(

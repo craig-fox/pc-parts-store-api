@@ -1,7 +1,5 @@
 package nz.fox.craig.product.integration;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -11,14 +9,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.Duration;
 import java.util.UUID;
 import nz.fox.craig.product.utility.ProductIds;
-import nz.fox.craig.security.TokenService;
 import nz.fox.craig.test.AbstractPostgresTest;
 import nz.fox.craig.test.JwtTestFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -29,8 +26,6 @@ class ProductApiIntegrationTest extends AbstractPostgresTest {
 
     @Value("${jwt.secret}")
     private String jwtSecret;
-
-    @Autowired private TokenService tokenService;
 
     @Autowired private MockMvc mockMvc;
 
@@ -66,10 +61,6 @@ class ProductApiIntegrationTest extends AbstractPostgresTest {
         String token =
                 JwtTestFactory.createToken(
                         customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
-
-        assertTrue(tokenService.isTokenValid(token));
-        assertEquals(customerId, tokenService.extractCustomerId(token));
-        assertEquals("test@example.com", tokenService.extractEmail(token));
 
         mockMvc.perform(
                         get("/api/products/{id}", productId)

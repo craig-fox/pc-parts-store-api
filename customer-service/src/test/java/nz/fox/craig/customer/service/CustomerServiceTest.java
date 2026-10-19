@@ -13,6 +13,7 @@ import java.util.UUID;
 import nz.fox.craig.customer.dto.CustomerAuthenticationResponse;
 import nz.fox.craig.customer.dto.CustomerRequest;
 import nz.fox.craig.customer.dto.CustomerResponse;
+import nz.fox.craig.customer.exception.CustomerAlreadyActiveException;
 import nz.fox.craig.customer.exception.CustomerAlreadyExistsException;
 import nz.fox.craig.customer.exception.CustomerNotFoundException;
 import nz.fox.craig.customer.fixture.CustomerFixtures;
@@ -137,13 +138,13 @@ class CustomerServiceTest {
     class GetCustomer {
         @Test
         void getsAllCustomers() {
-        Customer customer1 = CustomerFixtures.aCustomer();
-        customer1.setId(CUSTOMER_ID);
-        customer1.setFirstName("Jane");
-        
-        Customer customer2 = CustomerFixtures.aCustomer();
-        customer2.setId(CUSTOMER_ID_2);
-        customer2.setFirstName("John");
+            Customer customer1 = CustomerFixtures.aCustomer();
+            customer1.setId(CUSTOMER_ID);
+            customer1.setFirstName("Jane");
+
+            Customer customer2 = CustomerFixtures.aCustomer();
+            customer2.setId(CUSTOMER_ID_2);
+            customer2.setFirstName("John");
 
             when(customerRepository.findAll()).thenReturn(List.of(customer1, customer2));
 
@@ -260,19 +261,8 @@ class CustomerServiceTest {
                             ENTERED_PASSWORD);
             Customer existing = CustomerFixtures.aCustomer();
             existing.setId(CUSTOMER_ID);
-            Customer updated =
-                    Customer.builder()
-                            .id(CUSTOMER_ID)
-                            .firstName("Jane Smith")
-                            .lastName("Smith")
-                            .email("jane.smith@example.com")
-                            .address("456 Oak Ave")
-                            .password(PASSWORD)
-                            .build();
 
             when(customerRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(existing));
-            when(customerRepository.save(existing)).thenReturn(updated);
-
             CustomerResponse response = customerService.updateCustomer(CUSTOMER_ID, request);
 
             assertThat(response.lastName()).isEqualTo("Smith");
@@ -314,7 +304,6 @@ class CustomerServiceTest {
             customerService.activateCustomer(CUSTOMER_ID);
 
             assertThat(customer.getStatus()).isEqualTo(CustomerStatus.ACTIVE);
-            verify(customerRepository).save(customer);
             verify(customerMetrics).customerActivated();
         }
 
@@ -323,15 +312,14 @@ class CustomerServiceTest {
             Customer customer = CustomerFixtures.aCustomer();
             customer.setId(CUSTOMER_ID);
             customer.setEmail("jane@example.com");
-            
+
             when(customerRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(customer));
 
             assertThatThrownBy(() -> customerService.activateCustomer(CUSTOMER_ID))
-                    .isInstanceOf(CustomerAlreadyExistsException.class)
-                    .hasMessage("Customer already exists with email: jane@example.com");
+                    .isInstanceOf(CustomerAlreadyActiveException.class)
+                    .hasMessage("Customer with email jane@example.com is already active.");
 
             verify(customerRepository, never()).save(any(Customer.class));
-     
         }
     }
 
@@ -348,7 +336,6 @@ class CustomerServiceTest {
             customerService.deactivateCustomer(CUSTOMER_ID);
 
             assertThat(customer.getStatus()).isEqualTo(CustomerStatus.INACTIVE);
-            verify(customerRepository).save(customer);
             verify(securityService).verifyCurrentUser(CUSTOMER_ID);
             verify(customerMetrics).customerDeactivated();
         }

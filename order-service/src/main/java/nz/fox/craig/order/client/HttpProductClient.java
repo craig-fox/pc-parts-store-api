@@ -1,8 +1,9 @@
 package nz.fox.craig.order.client;
 
+import io.github.resilience4j.retry.annotation.Retry;
 import java.util.UUID;
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.dto.client.ProductSnapshot;
-import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.exception.ProductNotFoundException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -11,15 +12,12 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
-import io.github.resilience4j.retry.annotation.Retry;
-
 @Component
 public class HttpProductClient implements ProductClient {
 
     private final RestClient restClient;
 
-    public HttpProductClient(
-            @Qualifier("productRestClient") RestClient restClient) {
+    public HttpProductClient(@Qualifier("productRestClient") RestClient restClient) {
 
         this.restClient = restClient;
     }
@@ -39,10 +37,7 @@ public class HttpProductClient implements ProductClient {
             throw new ProductNotFoundException(productId);
 
         } catch (HttpServerErrorException | ResourceAccessException ex) {
-            throw new DownstreamServiceUnavailableException(
-                    "Product",
-                    ex);
+            throw new DownstreamServiceUnavailableException("Product", ex);
         }
     }
 }
-

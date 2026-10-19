@@ -5,18 +5,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.util.UUID;
-
+import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
-import nz.fox.craig.order.exception.DownstreamServiceUnavailableException;
-
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import org.springframework.web.client.RestClient;
 
 class HttpCustomerClientTest {
@@ -31,10 +27,7 @@ class HttpCustomerClientTest {
         server = new MockWebServer();
         server.start();
 
-        RestClient restClient =
-                RestClient.builder()
-                        .baseUrl(server.url("/").toString())
-                        .build();
+        RestClient restClient = RestClient.builder().baseUrl(server.url("/").toString()).build();
 
         customerClient = new HttpCustomerClient(restClient);
     }
@@ -49,61 +42,48 @@ class HttpCustomerClientTest {
 
         UUID customerId = UUID.randomUUID();
 
-        server.enqueue(
-                new MockResponse()
-                        .setResponseCode(200));
+        server.enqueue(new MockResponse().setResponseCode(200));
 
         customerClient.validateCustomerExists(customerId);
 
         RecordedRequest request = server.takeRequest();
 
         assertThat(request.getMethod()).isEqualTo("HEAD");
-        assertThat(request.getPath())
-                .isEqualTo("/api/customers/" + customerId);
+        assertThat(request.getPath()).isEqualTo("/api/customers/" + customerId);
     }
 
     @Test
-    void shouldThrowCustomerNotFoundException()
-            throws InterruptedException {
+    void shouldThrowCustomerNotFoundException() throws InterruptedException {
 
         UUID customerId = UUID.randomUUID();
 
-        server.enqueue(
-                new MockResponse()
-                        .setResponseCode(404));
+        server.enqueue(new MockResponse().setResponseCode(404));
 
-        assertThatThrownBy(
-                () -> customerClient.validateCustomerExists(customerId))
+        assertThatThrownBy(() -> customerClient.validateCustomerExists(customerId))
                 .isInstanceOf(CustomerNotFoundException.class)
                 .hasMessageContaining(customerId.toString());
 
         RecordedRequest request = server.takeRequest();
 
         assertThat(request.getMethod()).isEqualTo("HEAD");
-        assertThat(request.getPath())
-                .isEqualTo("/api/customers/" + customerId);
+        assertThat(request.getPath()).isEqualTo("/api/customers/" + customerId);
     }
 
     @Test
-    void shouldThrowDownstreamServiceUnavailableWhenServerReturns500()
-            throws InterruptedException {
+    void shouldThrowDownstreamServiceUnavailableWhenServerReturns500() throws InterruptedException {
 
         UUID customerId = UUID.randomUUID();
 
-        server.enqueue(
-                new MockResponse()
-                        .setResponseCode(500));
+        server.enqueue(new MockResponse().setResponseCode(500));
 
-        assertThatThrownBy(
-                () -> customerClient.validateCustomerExists(customerId))
+        assertThatThrownBy(() -> customerClient.validateCustomerExists(customerId))
                 .isInstanceOf(DownstreamServiceUnavailableException.class)
                 .hasMessage("Customer service is unavailable");
 
         RecordedRequest request = server.takeRequest();
 
         assertThat(request.getMethod()).isEqualTo("HEAD");
-        assertThat(request.getPath())
-                .isEqualTo("/api/customers/" + customerId);
+        assertThat(request.getPath()).isEqualTo("/api/customers/" + customerId);
     }
 
     @Test
@@ -114,11 +94,8 @@ class HttpCustomerClientTest {
 
         server.shutdown();
 
-        assertThatThrownBy(
-                () -> customerClient.validateCustomerExists(customerId))
+        assertThatThrownBy(() -> customerClient.validateCustomerExists(customerId))
                 .isInstanceOf(DownstreamServiceUnavailableException.class)
                 .hasMessage("Customer service is unavailable");
     }
-
-    
 }

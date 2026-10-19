@@ -2,7 +2,6 @@ package nz.fox.craig.customer.metrics;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-
 import org.springframework.stereotype.Component;
 
 @Component
@@ -13,17 +12,20 @@ public class CustomerMetrics {
     private final Counter customersDeactivated;
 
     public CustomerMetrics(MeterRegistry meterRegistry) {
-        customersRegistered = Counter.builder("customers.registered")
-                .description("Number of customers successfully registered")
-                .register(meterRegistry);
+        customersRegistered =
+                Counter.builder("customers.registered")
+                        .description("Number of customers successfully registered")
+                        .register(meterRegistry);
 
-        customersActivated = Counter.builder("customers.activated")
-                .description("Number of customers successfully activated")
-                .register(meterRegistry);
+        customersActivated =
+                Counter.builder("customers.activated")
+                        .description("Number of customers successfully activated")
+                        .register(meterRegistry);
 
-        customersDeactivated = Counter.builder("customers.deactivated")
-                .description("Number of customers successfully deactivated")
-                .register(meterRegistry);
+        customersDeactivated =
+                Counter.builder("customers.deactivated")
+                        .description("Number of customers successfully deactivated")
+                        .register(meterRegistry);
     }
 
     public void customerRegistered() {

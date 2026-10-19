@@ -2,9 +2,9 @@ package nz.fox.craig.payment.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.never;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -27,11 +27,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceTest {
 
-    @Mock
-    private PaymentRepository paymentRepository;
+    @Mock private PaymentRepository paymentRepository;
 
-    @InjectMocks
-    private PaymentService paymentService;
+    @InjectMocks private PaymentService paymentService;
 
     private UUID paymentId;
     private UUID orderId;
@@ -46,11 +44,8 @@ class PaymentServiceTest {
 
     @Test
     void shouldCreatePayment() {
-        CreatePaymentRequest request = new CreatePaymentRequest(
-                orderId,
-                customerId,
-                new BigDecimal("149.99"),
-                "NZD");
+        CreatePaymentRequest request =
+                new CreatePaymentRequest(orderId, customerId, new BigDecimal("149.99"), "NZD");
 
         Payment savedPayment = createPayment();
 
@@ -67,25 +62,23 @@ class PaymentServiceTest {
         assertThat(response.status()).isEqualTo(PaymentStatus.COMPLETED);
         assertThat(response.createdAt()).isEqualTo(savedPayment.getCreatedAt());
         assertThat(response.updatedAt()).isEqualTo(savedPayment.getUpdatedAt());
-       
+
+        verify(paymentRepository).save(any(Payment.class));
     }
 
     @Test
     void shouldCreatePaymentWithCompletedStatus() {
-        CreatePaymentRequest request = new CreatePaymentRequest(
-                orderId,
-                customerId,
-                new BigDecimal("149.99"),
-                "NZD");
+        CreatePaymentRequest request =
+                new CreatePaymentRequest(orderId, customerId, new BigDecimal("149.99"), "NZD");
 
         Payment savedPayment = createPayment();
 
+        when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
         when(paymentRepository.save(any(Payment.class))).thenReturn(savedPayment);
 
         paymentService.createPayment(request);
 
-        ArgumentCaptor<Payment> paymentCaptor =
-                ArgumentCaptor.forClass(Payment.class);
+        ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
 
         verify(paymentRepository).save(paymentCaptor.capture());
 
@@ -107,8 +100,7 @@ class PaymentServiceTest {
         when(paymentRepository.findByCustomerId(customerId))
                 .thenReturn(List.of(firstPayment, secondPayment));
 
-        List<PaymentResponse> responses =
-                paymentService.getPaymentsByCustomer(customerId);
+        List<PaymentResponse> responses = paymentService.getPaymentsByCustomer(customerId);
 
         assertThat(responses).hasSize(2);
 
@@ -122,11 +114,9 @@ class PaymentServiceTest {
 
     @Test
     void shouldReturnEmptyListWhenCustomerHasNoPayments() {
-        when(paymentRepository.findByCustomerId(customerId))
-                .thenReturn(List.of());
+        when(paymentRepository.findByCustomerId(customerId)).thenReturn(List.of());
 
-        List<PaymentResponse> responses =
-                paymentService.getPaymentsByCustomer(customerId);
+        List<PaymentResponse> responses = paymentService.getPaymentsByCustomer(customerId);
 
         assertThat(responses).isEmpty();
 
@@ -135,26 +125,22 @@ class PaymentServiceTest {
 
     @Test
     void shouldReturnExistingPaymentWhenPaymentAlreadyExistsForOrder() {
-        CreatePaymentRequest request = new CreatePaymentRequest(
-                orderId,
-                customerId,
-                new BigDecimal("149.99"),
-                "NZD");
-    
+        CreatePaymentRequest request =
+                new CreatePaymentRequest(orderId, customerId, new BigDecimal("149.99"), "NZD");
+
         Payment existingPayment = createPayment();
-    
-        when(paymentRepository.findByOrderId(orderId))
-                .thenReturn(Optional.of(existingPayment));
-    
+
+        when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.of(existingPayment));
+
         PaymentResponse response = paymentService.createPayment(request);
-    
+
         assertThat(response.id()).isEqualTo(paymentId);
         assertThat(response.orderId()).isEqualTo(orderId);
         assertThat(response.customerId()).isEqualTo(customerId);
         assertThat(response.amount()).isEqualByComparingTo("149.99");
         assertThat(response.currency()).isEqualTo("NZD");
         assertThat(response.status()).isEqualTo(PaymentStatus.COMPLETED);
-    
+
         verify(paymentRepository).findByOrderId(orderId);
         verify(paymentRepository, never()).save(any(Payment.class));
     }
@@ -167,8 +153,9 @@ class PaymentServiceTest {
         payment.setAmount(new BigDecimal("149.99"));
         payment.setCurrency("NZD");
         payment.setStatus(PaymentStatus.COMPLETED);
-        payment.setCreatedAt(Instant.now());
-        payment.setUpdatedAt(Instant.now());
+        Instant now = Instant.now();
+        payment.setCreatedAt(now);
+        payment.setUpdatedAt(now);
         return payment;
     }
 }

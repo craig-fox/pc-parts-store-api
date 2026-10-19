@@ -11,17 +11,16 @@ import nz.fox.craig.payment.model.PaymentStatus;
 import nz.fox.craig.test.AbstractPostgresTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace;
 import org.springframework.dao.DataIntegrityViolationException;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 class PaymentRepositoryTest extends AbstractPostgresTest {
 
-    @Autowired
-    private PaymentRepository paymentRepository;
+    @Autowired private PaymentRepository paymentRepository;
 
     @Test
     void shouldFindPaymentsByCustomerId() {
@@ -41,8 +40,7 @@ class PaymentRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldReturnEmptyListWhenCustomerHasNoPayments() {
-        List<Payment> payments =
-                paymentRepository.findByCustomerId(UUID.randomUUID());
+        List<Payment> payments = paymentRepository.findByCustomerId(UUID.randomUUID());
 
         assertThat(payments).isEmpty();
     }
@@ -71,5 +69,20 @@ class PaymentRepositoryTest extends AbstractPostgresTest {
 
         assertThatThrownBy(() -> paymentRepository.saveAndFlush(secondPayment))
                 .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void shouldFindPaymentByOrderId() {
+        UUID orderId = UUID.randomUUID();
+
+        Payment payment = createPayment(UUID.randomUUID());
+        payment.setOrderId(orderId);
+        paymentRepository.saveAndFlush(payment);
+
+        assertThat(paymentRepository.findByOrderId(orderId))
+                .isPresent()
+                .get()
+                .extracting(Payment::getOrderId)
+                .isEqualTo(orderId);
     }
 }

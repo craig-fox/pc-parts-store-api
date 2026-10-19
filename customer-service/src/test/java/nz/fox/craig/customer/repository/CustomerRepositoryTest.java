@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Optional;
-
 import nz.fox.craig.customer.fixture.CustomerFixtures;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
@@ -12,9 +11,9 @@ import nz.fox.craig.test.AbstractPostgresTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
@@ -107,7 +106,6 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
 
             customerRepository.saveAll(List.of(active, inactive));
 
-
             List<Customer> activeCustomers = customerRepository.findByStatus(CustomerStatus.ACTIVE);
 
             List<Customer> inactiveCustomers =
@@ -130,6 +128,5 @@ class CustomerRepositoryTest extends AbstractPostgresTest {
         customer.setEmail("jane@example.com");
         customer.setPassword(HASHED_PASSWORD);
         return customer;
-
     }
 }

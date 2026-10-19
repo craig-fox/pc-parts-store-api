@@ -1,5 +1,8 @@
 package nz.fox.craig.payment.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -23,16 +26,25 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    @Operation(summary = "Create a payment")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Payment created"),
+        @ApiResponse(responseCode = "400", description = "Invalid payment request")
+    })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PaymentResponse createPayment(
-            @Valid @RequestBody CreatePaymentRequest request) {
+    public PaymentResponse createPayment(@Valid @RequestBody CreatePaymentRequest request) {
         return paymentService.createPayment(request);
     }
 
+    @Operation(summary = "Get payments for a customer")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Payments retrieved successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthenticated"),
+        @ApiResponse(responseCode = "403", description = "Access denied")
+    })
     @GetMapping("/customer/{customerId}")
-    public List<PaymentResponse> getPaymentsByCustomer(
-            @PathVariable UUID customerId) {
+    public List<PaymentResponse> getPaymentsByCustomer(@PathVariable UUID customerId) {
         return paymentService.getPaymentsByCustomer(customerId);
     }
 }
