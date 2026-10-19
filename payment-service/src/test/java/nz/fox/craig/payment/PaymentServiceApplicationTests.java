@@ -8,6 +8,5 @@ import org.springframework.boot.test.context.SpringBootTest;
 class PaymentServiceApplicationTests extends AbstractPostgresTest {
 
     @Test
-    void contextLoads() {
-    }
+    void contextLoads() {}
 }

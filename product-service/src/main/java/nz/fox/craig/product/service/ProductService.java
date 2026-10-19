@@ -18,17 +18,16 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public List<ProductResponse> getAllProducts() {
-        return productRepository.findByActiveTrue()
-                .stream()
-                .map(ProductResponse::from)
-                .toList();
+        return productRepository.findByActiveTrue().stream().map(ProductResponse::from).toList();
     }
 
     @Transactional(readOnly = true)
     public ProductResponse getProductById(UUID id) {
-        Product product = productRepository.findById(id)
-                .filter(Product::isActive)
-                .orElseThrow(() -> new ProductNotFoundException(id));
+        Product product =
+                productRepository
+                        .findById(id)
+                        .filter(Product::isActive)
+                        .orElseThrow(() -> new ProductNotFoundException(id));
 
         return ProductResponse.from(product);
     }

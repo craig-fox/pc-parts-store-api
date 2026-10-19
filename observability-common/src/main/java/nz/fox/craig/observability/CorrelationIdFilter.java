@@ -7,16 +7,16 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
 import org.slf4j.MDC;
+import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.core.Ordered;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CorrelationIdFilter extends OncePerRequestFilter {
 
     private String resolveCorrelationId(HttpServletRequest request) {
         String incoming = request.getHeader(CorrelationId.HEADER);
-    
+
         if (incoming != null && incoming.length() <= 36) {
             try {
                 return UUID.fromString(incoming).toString();
@@ -24,15 +24,13 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
                 // Invalid ID; generate a new one.
             }
         }
-    
+
         return UUID.randomUUID().toString();
     }
 
     @Override
     protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain)
+            HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
         String correlationId = resolveCorrelationId(request);

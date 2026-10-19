@@ -26,7 +26,7 @@ public class InventoryService {
         return inventoryMapper.toResponse(inventory);
     }
 
-    @Transactional 
+    @Transactional
     public InventoryResponse reserveStock(UUID productId, int quantity) {
         Inventory inventory = findInventory(productId);
 

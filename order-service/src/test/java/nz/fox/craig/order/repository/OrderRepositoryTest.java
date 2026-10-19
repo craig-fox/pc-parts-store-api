@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
 import nz.fox.craig.order.fixture.OrderFixture;
 import nz.fox.craig.order.model.Order;
 import nz.fox.craig.order.model.OrderItem;
@@ -20,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace;
-
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
@@ -67,7 +65,6 @@ class OrderRepositoryTest extends AbstractPostgresTest {
         assertThat(item.getQuantity()).isEqualTo(1);
     }
 
-
     @Test
     void shouldRemoveItemFromOrder() {
         final Order order = OrderFixture.anOrder();
@@ -94,14 +91,9 @@ class OrderRepositoryTest extends AbstractPostgresTest {
         order.setCustomerId(customerId);
         orderRepository.saveAndFlush(order);
 
-        Optional<Order> found =
-                orderRepository.findByIdAndCustomerId(order.getId(), customerId);
+        Optional<Order> found = orderRepository.findByIdAndCustomerId(order.getId(), customerId);
 
-        assertThat(found)
-                .isPresent()
-                .get()
-                .extracting(Order::getId)
-                .isEqualTo(order.getId());
+        assertThat(found).isPresent().get().extracting(Order::getId).isEqualTo(order.getId());
     }
 
     @Test
@@ -134,8 +126,7 @@ class OrderRepositoryTest extends AbstractPostgresTest {
         orderRepository.save(olderOrder);
         orderRepository.save(newerOrder);
 
-        List<Order> orders =
-                orderRepository.findByCustomerIdOrderByOrderDateDesc(customerId);
+        List<Order> orders = orderRepository.findByCustomerIdOrderByOrderDateDesc(customerId);
 
         assertThat(orders)
                 .extracting(Order::getId)

@@ -89,16 +89,15 @@ class InventoryServiceTest {
     class ReserveStock {
         @Test
         void shouldReserveStock() {
-            when(inventoryRepository.findById(PRODUCT_ID))
-                    .thenReturn(Optional.of(inventory));
+            when(inventoryRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(inventory));
             when(inventoryMapper.toResponse(inventory)).thenReturn(response);
-        
+
             InventoryResponse result = inventoryService.reserveStock(PRODUCT_ID, 3);
-        
+
             assertThat(result).isEqualTo(response);
             assertThat(inventory.getQuantityReserved()).isEqualTo(8);
             assertThat(inventory.getAvailableQuantity()).isEqualTo(12);
-        
+
             verify(inventoryMapper).toResponse(inventory);
             verify(inventoryMetrics).reservationMade();
             verify(inventoryRepository, never()).save(any());
@@ -163,18 +162,16 @@ class InventoryServiceTest {
     class ConfirmReservation {
         @Test
         void shouldConfirmReservation() {
-            when(inventoryRepository.findById(PRODUCT_ID))
-                    .thenReturn(Optional.of(inventory));
+            when(inventoryRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(inventory));
             when(inventoryMapper.toResponse(inventory)).thenReturn(response);
-        
-            InventoryResponse result =
-                    inventoryService.confirmReservation(PRODUCT_ID, 2);
-        
+
+            InventoryResponse result = inventoryService.confirmReservation(PRODUCT_ID, 2);
+
             assertThat(result).isEqualTo(response);
             assertThat(inventory.getQuantityOnHand()).isEqualTo(18);
             assertThat(inventory.getQuantityReserved()).isEqualTo(3);
             assertThat(inventory.getAvailableQuantity()).isEqualTo(15);
-        
+
             verify(inventoryRepository).findById(PRODUCT_ID);
             verify(inventoryMapper).toResponse(inventory);
         }
@@ -193,11 +190,9 @@ class InventoryServiceTest {
 
         @Test
         void shouldThrowWhenConfirmingMoreThanReserved() {
-            when(inventoryRepository.findById(PRODUCT_ID))
-                    .thenReturn(Optional.of(inventory));
+            when(inventoryRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(inventory));
 
-            assertThatThrownBy(
-                    () -> inventoryService.confirmReservation(PRODUCT_ID, 6))
+            assertThatThrownBy(() -> inventoryService.confirmReservation(PRODUCT_ID, 6))
                     .isInstanceOf(IllegalArgumentException.class);
 
             verify(inventoryMetrics, never()).reservationMade();

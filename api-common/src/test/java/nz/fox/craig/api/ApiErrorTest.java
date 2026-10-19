@@ -1,12 +1,11 @@
 package nz.fox.craig.api;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 
 class ApiErrorTest {
@@ -24,7 +23,7 @@ class ApiErrorTest {
     void shouldCopyValidationErrors() {
         Map<String, String> validationErrors = new HashMap<>();
         validationErrors.put("email", "must be valid");
-    
+
         ApiError error =
                 new ApiError(
                         Instant.now(),
@@ -33,14 +32,12 @@ class ApiErrorTest {
                         "Validation failed",
                         validationErrors,
                         "/api/test");
-    
+
         validationErrors.put("email", "changed");
-    
-        assertThat(error.validationErrors())
-                .containsEntry("email", "must be valid");
-    
-        assertThatThrownBy(
-                () -> error.validationErrors().put("name", "required"))
+
+        assertThat(error.validationErrors()).containsEntry("email", "must be valid");
+
+        assertThatThrownBy(() -> error.validationErrors().put("name", "required"))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 }

@@ -6,7 +6,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
@@ -17,8 +16,7 @@ import org.springframework.http.client.ClientHttpResponse;
 
 class CorrelationIdInterceptorTest {
 
-    private final CorrelationIdInterceptor interceptor =
-            new CorrelationIdInterceptor();
+    private final CorrelationIdInterceptor interceptor = new CorrelationIdInterceptor();
 
     @AfterEach
     void clearMdc() {
@@ -31,8 +29,7 @@ class CorrelationIdInterceptorTest {
         MDC.put(CorrelationId.MDC_KEY, correlationId);
 
         HttpRequest request = mock(HttpRequest.class);
-        ClientHttpRequestExecution execution =
-                mock(ClientHttpRequestExecution.class);
+        ClientHttpRequestExecution execution = mock(ClientHttpRequestExecution.class);
         ClientHttpResponse response = mock(ClientHttpResponse.class);
         HttpHeaders headers = new HttpHeaders();
 
@@ -41,8 +38,7 @@ class CorrelationIdInterceptorTest {
 
         interceptor.intercept(request, new byte[0], execution);
 
-        assertThat(headers.getFirst(CorrelationId.HEADER))
-                .isEqualTo(correlationId);
+        assertThat(headers.getFirst(CorrelationId.HEADER)).isEqualTo(correlationId);
 
         verify(execution).execute(request, new byte[0]);
     }
@@ -50,8 +46,7 @@ class CorrelationIdInterceptorTest {
     @Test
     void doesNotAddCorrelationIdWhenNotPresentInMdc() throws IOException {
         HttpRequest request = mock(HttpRequest.class);
-        ClientHttpRequestExecution execution =
-                mock(ClientHttpRequestExecution.class);
+        ClientHttpRequestExecution execution = mock(ClientHttpRequestExecution.class);
         ClientHttpResponse response = mock(ClientHttpResponse.class);
         HttpHeaders headers = new HttpHeaders();
 
@@ -60,8 +55,7 @@ class CorrelationIdInterceptorTest {
 
         interceptor.intercept(request, new byte[0], execution);
 
-        assertThat(headers.getFirst(CorrelationId.HEADER))
-                .isNull();
+        assertThat(headers.getFirst(CorrelationId.HEADER)).isNull();
 
         verify(execution).execute(request, new byte[0]);
     }

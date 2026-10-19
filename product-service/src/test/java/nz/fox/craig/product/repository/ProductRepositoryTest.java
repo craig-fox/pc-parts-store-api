@@ -14,7 +14,6 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace;
 
-
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 class ProductRepositoryTest extends AbstractPostgresTest {
@@ -80,5 +79,4 @@ class ProductRepositoryTest extends AbstractPostgresTest {
 
         assertThat(updated.getUpdatedAt()).isAfterOrEqualTo(originalUpdatedAt);
     }
-
 }

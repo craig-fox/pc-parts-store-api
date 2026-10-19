@@ -8,15 +8,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.UUID;
-
 import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.auth.dto.LoginRequest;
 import nz.fox.craig.auth.dto.LoginResponse;
 import nz.fox.craig.auth.exception.CustomerInactiveException;
 import nz.fox.craig.auth.exception.InvalidCredentialsException;
 import nz.fox.craig.auth.service.AuthenticationService;
-import tools.jackson.databind.json.JsonMapper;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +22,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
 @WebMvcTest(AuthenticationController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -69,13 +67,13 @@ class AuthenticationControllerTest {
                       "password": "password"
                     }
                     """;
-        
+
             mockMvc.perform(
                             post("/api/auth/login")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(json))
                     .andExpect(status().isBadRequest());
-        
+
             then(authenticationService).shouldHaveNoInteractions();
         }
 
@@ -112,8 +110,7 @@ class AuthenticationControllerTest {
 
         @Test
         void shouldReturn401WhenCredentialsAreInvalid() throws Exception {
-            LoginRequest request =
-                    new LoginRequest("craig@example.com", "wrong-password");
+            LoginRequest request = new LoginRequest("craig@example.com", "wrong-password");
 
             given(authenticationService.login(any(LoginRequest.class)))
                     .willThrow(new InvalidCredentialsException());
@@ -127,8 +124,7 @@ class AuthenticationControllerTest {
 
         @Test
         void shouldReturn401WhenCustomerIsInactive() throws Exception {
-            LoginRequest request =
-                    new LoginRequest("craig@example.com", "password");
+            LoginRequest request = new LoginRequest("craig@example.com", "password");
 
             given(authenticationService.login(any(LoginRequest.class)))
                     .willThrow(new CustomerInactiveException());
@@ -142,16 +138,17 @@ class AuthenticationControllerTest {
 
         @Test
         void shouldReturn502WhenDownstreamServiceUnavailable() throws Exception {
-            LoginRequest request =
-                    new LoginRequest("craig@example.com", "password");
+            LoginRequest request = new LoginRequest("craig@example.com", "password");
 
             given(authenticationService.login(any(LoginRequest.class)))
-                    .willThrow(new DownstreamServiceUnavailableException("customer-service", new Throwable()));
+                    .willThrow(
+                            new DownstreamServiceUnavailableException(
+                                    "customer-service", new Throwable()));
 
             mockMvc.perform(
-                    post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                            post("/api/auth/login")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().is5xxServerError());
         }
     }

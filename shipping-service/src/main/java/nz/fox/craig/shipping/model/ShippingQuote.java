@@ -1,25 +1,23 @@
 package nz.fox.craig.shipping.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
-import lombok.Getter;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
-import nz.fox.craig.api.ShippingMethod;
-import lombok.AllArgsConstructor;
-import lombok.AccessLevel;
-
-
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import nz.fox.craig.api.ShippingMethod;
 
 @Entity
 @Table(name = "shipping_quotes")
@@ -36,8 +34,7 @@ public class ShippingQuote {
     @Column(nullable = false)
     private UUID orderId;
 
-    @Embedded
-    private ShippingAddress destination;
+    @Embedded private ShippingAddress destination;
 
     @Column(nullable = false, precision = 10, scale = 3)
     private BigDecimal weightKg;

@@ -1,6 +1,7 @@
 package nz.fox.craig.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 
 class DownstreamServiceUnavailableExceptionTest {
@@ -12,8 +13,6 @@ class DownstreamServiceUnavailableExceptionTest {
         DownstreamServiceUnavailableException exception =
                 new DownstreamServiceUnavailableException("Customer", cause);
 
-        assertThat(exception)
-                .hasMessage("Customer service is unavailable")
-                .hasCause(cause);
+        assertThat(exception).hasMessage("Customer service is unavailable").hasCause(cause);
     }
 }

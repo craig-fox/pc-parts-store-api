@@ -5,7 +5,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import jakarta.servlet.FilterChain;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
@@ -33,8 +32,7 @@ class CorrelationIdFilterTest {
 
         filter.doFilter(request, response, filterChain);
 
-        assertThat(response.getHeader(CorrelationId.HEADER))
-                .isEqualTo(CORRELATION_ID);
+        assertThat(response.getHeader(CorrelationId.HEADER)).isEqualTo(CORRELATION_ID);
 
         verify(filterChain).doFilter(request, response);
     }
@@ -49,12 +47,9 @@ class CorrelationIdFilterTest {
 
         String correlationId = response.getHeader(CorrelationId.HEADER);
 
-        assertThat(correlationId)
-                .isNotNull()
-                .isNotBlank();
+        assertThat(correlationId).isNotNull().isNotBlank();
 
-        assertThat(correlationId)
-                .matches("[0-9a-fA-F-]{36}");
+        assertThat(correlationId).matches("[0-9a-fA-F-]{36}");
 
         verify(filterChain).doFilter(request, response);
     }
@@ -70,8 +65,7 @@ class CorrelationIdFilterTest {
 
         filter.doFilter(request, response, filterChain);
 
-        assertThat(MDC.get(CorrelationId.MDC_KEY))
-                .isNull();
+        assertThat(MDC.get(CorrelationId.MDC_KEY)).isNull();
     }
 
     @Test
@@ -81,9 +75,8 @@ class CorrelationIdFilterTest {
 
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        FilterChain filterChain = (req, res) ->
-                assertThat(MDC.get(CorrelationId.MDC_KEY))
-                        .isEqualTo(CORRELATION_ID);
+        FilterChain filterChain =
+                (req, res) -> assertThat(MDC.get(CorrelationId.MDC_KEY)).isEqualTo(CORRELATION_ID);
 
         filter.doFilter(request, response, filterChain);
     }

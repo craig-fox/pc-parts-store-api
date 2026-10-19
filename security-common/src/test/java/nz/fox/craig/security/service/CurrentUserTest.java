@@ -6,11 +6,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.UUID;
-
 import nz.fox.craig.security.dto.AuthenticatedUser;
 import nz.fox.craig.security.exception.UnauthenticatedException;
-import nz.fox.craig.security.service.CurrentUser;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.Authentication;

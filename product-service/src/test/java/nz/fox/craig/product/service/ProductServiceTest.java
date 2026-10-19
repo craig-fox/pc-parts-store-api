@@ -31,17 +31,14 @@ class ProductServiceTest {
     @Test
     void shouldReturnAllActiveProducts() {
         List<Product> products = ProductFixtures.catalogue();
-    
+
         when(productRepository.findByActiveTrue()).thenReturn(products);
-    
+
         List<ProductResponse> result = productService.getAllProducts();
-    
+
         assertThat(result)
-        .containsExactlyElementsOf(
-                products.stream()
-                        .map(ProductResponse::from)
-                        .toList());
-    
+                .containsExactlyElementsOf(products.stream().map(ProductResponse::from).toList());
+
         verify(productRepository).findByActiveTrue();
         verifyNoMoreInteractions(productRepository);
     }
@@ -49,15 +46,13 @@ class ProductServiceTest {
     @Test
     void shouldReturnProductById() {
         Product product = ProductFixtures.aProduct();
-    
-        when(productRepository.findById(product.getId()))
-                .thenReturn(Optional.of(product));
-    
-        ProductResponse result =
-                productService.getProductById(product.getId());
-    
+
+        when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
+
+        ProductResponse result = productService.getProductById(product.getId());
+
         assertThat(result).isEqualTo(ProductResponse.from(product));
-    
+
         verify(productRepository).findById(product.getId());
         verifyNoMoreInteractions(productRepository);
     }
@@ -66,13 +61,12 @@ class ProductServiceTest {
     @Test
     void shouldThrowWhenProductNotFound() {
         UUID id = UUID.randomUUID();
-    
-        when(productRepository.findById(id))
-                .thenReturn(Optional.empty());
-    
+
+        when(productRepository.findById(id)).thenReturn(Optional.empty());
+
         assertThatThrownBy(() -> productService.getProductById(id))
                 .isInstanceOf(ProductNotFoundException.class);
-    
+
         verify(productRepository).findById(id);
         verifyNoMoreInteractions(productRepository);
     }
@@ -80,14 +74,13 @@ class ProductServiceTest {
     @Test
     void shouldThrowWhenProductIsInactive() {
         Product inactiveProduct = ProductFixtures.inactiveProduct();
-    
+
         when(productRepository.findById(inactiveProduct.getId()))
                 .thenReturn(Optional.of(inactiveProduct));
-    
-        assertThatThrownBy(
-                () -> productService.getProductById(inactiveProduct.getId()))
+
+        assertThatThrownBy(() -> productService.getProductById(inactiveProduct.getId()))
                 .isInstanceOf(ProductNotFoundException.class);
-    
+
         verify(productRepository).findById(inactiveProduct.getId());
         verifyNoMoreInteractions(productRepository);
     }

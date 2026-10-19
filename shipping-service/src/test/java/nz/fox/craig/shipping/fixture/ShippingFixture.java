@@ -1,29 +1,22 @@
 package nz.fox.craig.shipping.fixture;
 
-import nz.fox.craig.shipping.model.ShippingAddress;
-import nz.fox.craig.shipping.model.ShippingQuote;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.shipping.dto.ShippingAddressRequest;
 import nz.fox.craig.shipping.mapper.ShippingMapper;
 import nz.fox.craig.shipping.model.Shipment;
 import nz.fox.craig.shipping.model.ShipmentStatus;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import nz.fox.craig.shipping.model.ShippingAddress;
+import nz.fox.craig.shipping.model.ShippingQuote;
 
 public final class ShippingFixture {
 
-    private ShippingFixture() {
-    }
+    private ShippingFixture() {}
 
     public static ShippingAddress shippingAddress() {
-        return new ShippingAddress(
-                "123 Test Street",
-                "Auckland",
-                "1010",
-                "NZ"
-        );
+        return new ShippingAddress("123 Test Street", "Auckland", "1010", "NZ");
     }
 
     public static ShippingAddressRequest toAddressRequest(ShippingAddress address) {
@@ -69,9 +62,7 @@ public final class ShippingFixture {
                 .build();
     }
 
-    public static ShippingQuote shippingQuote(
-        UUID orderId,
-        ShippingMethod shippingMethod) {
+    public static ShippingQuote shippingQuote(UUID orderId, ShippingMethod shippingMethod) {
 
         LocalDateTime now = LocalDateTime.now();
 

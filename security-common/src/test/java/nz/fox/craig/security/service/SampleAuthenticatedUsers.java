@@ -2,7 +2,6 @@ package nz.fox.craig.security.service;
 
 import java.util.Set;
 import java.util.UUID;
-
 import nz.fox.craig.security.dto.AuthenticatedUser;
 import nz.fox.craig.security.dto.Role;
 

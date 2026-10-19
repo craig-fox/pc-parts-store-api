@@ -1,14 +1,12 @@
 package nz.fox.craig.customer.fixture;
 
+import java.util.UUID;
 import nz.fox.craig.customer.model.Customer;
 import nz.fox.craig.customer.model.CustomerStatus;
 
-import java.util.UUID;
-
 public final class CustomerFixtures {
 
-    private CustomerFixtures() {
-    }
+    private CustomerFixtures() {}
 
     public static Customer aCustomer() {
         return Customer.builder()

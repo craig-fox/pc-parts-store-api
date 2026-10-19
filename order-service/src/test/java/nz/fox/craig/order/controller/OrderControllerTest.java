@@ -1,9 +1,9 @@
 package nz.fox.craig.order.controller;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -14,7 +14,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 import java.util.UUID;
-
 import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
@@ -31,8 +30,6 @@ import nz.fox.craig.order.service.OrderCreationResult;
 import nz.fox.craig.order.service.OrderService;
 import nz.fox.craig.security.service.JwtAuthenticationFilter;
 import nz.fox.craig.security.service.TokenService;
-import tools.jackson.databind.json.JsonMapper;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -43,7 +40,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
+import tools.jackson.databind.json.JsonMapper;
 
 @WebMvcTest(OrderController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -70,19 +67,21 @@ class OrderControllerTest {
         void returnsCreatedOrder() throws Exception {
             OrderRequest request = OrderFixture.anOrderRequest();
             OrderResponse response = OrderFixture.anOrderResponse();
-            
-            when(orderService.createOrder(anyString(), any(OrderRequest.class))).thenReturn(new OrderCreationResult(response, true));
-            
-            ArgumentCaptor<OrderRequest> requestCaptor = ArgumentCaptor.forClass(OrderRequest.class);
+
+            when(orderService.createOrder(anyString(), any(OrderRequest.class)))
+                    .thenReturn(new OrderCreationResult(response, true));
+
+            ArgumentCaptor<OrderRequest> requestCaptor =
+                    ArgumentCaptor.forClass(OrderRequest.class);
             mockMvc.perform(
-                post("/api/orders")
-                        .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(response.id().toString()))
-                .andExpect(jsonPath("$.items").isArray());
-                
+                            post("/api/orders")
+                                    .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.id").value(response.id().toString()))
+                    .andExpect(jsonPath("$.items").isArray());
+
             verify(orderService).createOrder(eq(IDEMPOTENCY_VALUE), requestCaptor.capture());
             assertThat(requestCaptor.getValue().items()).hasSize(request.items().size());
         }
@@ -91,17 +90,17 @@ class OrderControllerTest {
         void returnsExistingOrderForIdempotencyKey() throws Exception {
             OrderRequest request = OrderFixture.anOrderRequest();
             OrderResponse response = OrderFixture.anOrderResponse();
-                
+
             when(orderService.createOrder(anyString(), any(OrderRequest.class)))
-                .thenReturn(new OrderCreationResult(response, false));
-                
+                    .thenReturn(new OrderCreationResult(response, false));
+
             mockMvc.perform(
-                post("/api/orders")
-                        .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(response.id().toString()));
+                            post("/api/orders")
+                                    .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(response.id().toString()));
         }
 
         @Test
@@ -110,9 +109,9 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                                    .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value("items: Items must not be empty"));
         }
@@ -120,16 +119,16 @@ class OrderControllerTest {
         @Test
         void customerNotFoundReturns404() throws Exception {
             var missingCustomerID = UUID.randomUUID();
-            OrderRequest request =  OrderFixture.anOrderRequest();
+            OrderRequest request = OrderFixture.anOrderRequest();
 
             when(orderService.createOrder(anyString(), any(OrderRequest.class)))
                     .thenThrow(new CustomerNotFoundException(missingCustomerID));
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                                    .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isNotFound())
                     .andExpect(
                             jsonPath("$.message")
@@ -138,36 +137,36 @@ class OrderControllerTest {
 
         @Test
         void insufficientStockReturns409() throws Exception {
-            OrderRequest request =  OrderFixture.anOrderRequest();
+            OrderRequest request = OrderFixture.anOrderRequest();
 
             when(orderService.createOrder(anyString(), any(OrderRequest.class)))
                     .thenThrow(new InsufficientStockException(PRODUCT_ID));
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
-                                .contentType(MediaType.APPLICATION_JSON)
+                                    .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
+                                    .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict())
                     .andExpect(
                             jsonPath("$.message")
                                     .value("Insufficient stock for product " + PRODUCT_ID));
 
-            verify(orderService).createOrder(anyString(),any(OrderRequest.class));
+            verify(orderService).createOrder(anyString(), any(OrderRequest.class));
         }
 
         @Test
         void productNotFoundReturns404() throws Exception {
-            OrderRequest request =  OrderFixture.anOrderRequest();
+            OrderRequest request = OrderFixture.anOrderRequest();
 
             when(orderService.createOrder(anyString(), any(OrderRequest.class)))
                     .thenThrow(new ProductNotFoundException(PRODUCT_ID));
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                                    .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("Product " + PRODUCT_ID + " not found"));
 
@@ -178,13 +177,14 @@ class OrderControllerTest {
         void nullProductIdReturnsBadRequest() throws Exception {
             OrderItemRequest item = OrderItemRequest.builder().productId(null).quantity(1).build();
 
-            OrderRequest request =  OrderFixture.anOrderRequest(ShippingMethod.STANDARD, List.of(item));
+            OrderRequest request =
+                    OrderFixture.anOrderRequest(ShippingMethod.STANDARD, List.of(item));
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                                    .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value("items[0].productId: must not be null"));
 
@@ -196,12 +196,13 @@ class OrderControllerTest {
             OrderItemRequest item =
                     OrderItemRequest.builder().productId(PRODUCT_ID).quantity(null).build();
 
-            OrderRequest request =  OrderFixture.anOrderRequest(ShippingMethod.STANDARD, List.of(item));
+            OrderRequest request =
+                    OrderFixture.anOrderRequest(ShippingMethod.STANDARD, List.of(item));
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
-                                .contentType(MediaType.APPLICATION_JSON)
+                                    .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
+                                    .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value("items[0].quantity: must not be null"));
@@ -214,13 +215,14 @@ class OrderControllerTest {
             OrderItemRequest item =
                     OrderItemRequest.builder().productId(PRODUCT_ID).quantity(0).build();
 
-            OrderRequest request = OrderFixture.anOrderRequest(ShippingMethod.STANDARD, List.of(item));
+            OrderRequest request =
+                    OrderFixture.anOrderRequest(ShippingMethod.STANDARD, List.of(item));
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                                    .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(
                             jsonPath("$.message")
@@ -249,9 +251,9 @@ class OrderControllerTest {
 
             mockMvc.perform(
                             post("/api/orders")
-                                .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                                    .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(
                             jsonPath("$.message")
@@ -263,32 +265,28 @@ class OrderControllerTest {
         @Test
         void missingShippingMethodReturnsBadRequest() throws Exception {
 
-        OrderRequest request =
-                OrderRequest.builder()
-                        .items(OrderFixture.orderItems())
-                        .shippingAddress(
-                                ShippingAddressRequest.builder()
-                                        .addressLine1("123 Main Street")
-                                        .city("Auckland")
-                                        .postcode("1010")
-                                        .country("NZ")
-                                        .build())
-                        .shippingMethod(null)
-                        .build();
+            OrderRequest request =
+                    OrderRequest.builder()
+                            .items(OrderFixture.orderItems())
+                            .shippingAddress(
+                                    ShippingAddressRequest.builder()
+                                            .addressLine1("123 Main Street")
+                                            .city("Auckland")
+                                            .postcode("1010")
+                                            .country("NZ")
+                                            .build())
+                            .shippingMethod(null)
+                            .build();
 
-        mockMvc.perform(
-                        post("/api/orders")
-                                .header(
-                                        IDEMPOTENCY_KEY,
-                                        IDEMPOTENCY_VALUE)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(
-                        jsonPath("$.message")
-                                .value(
-                                        "shippingMethod: Must choose a shipping method"));
+            mockMvc.perform(
+                            post("/api/orders")
+                                    .header(IDEMPOTENCY_KEY, IDEMPOTENCY_VALUE)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(
+                            jsonPath("$.message")
+                                    .value("shippingMethod: Must choose a shipping method"));
 
             verifyNoInteractions(orderService);
         }
@@ -298,21 +296,21 @@ class OrderControllerTest {
             OrderRequest request = OrderFixture.anOrderRequest();
 
             mockMvc.perform(
-                post("/api/orders")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                            post("/api/orders")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
 
             verifyNoInteractions(orderService);
         }
-
     }
 
     @Nested
     class GetOrder {
         @Test
         void returnsOrder() throws Exception {
-            when(orderService.getOrder(ORDER_ID)).thenReturn(OrderFixture.anOrderResponse(ORDER_ID));
+            when(orderService.getOrder(ORDER_ID))
+                    .thenReturn(OrderFixture.anOrderResponse(ORDER_ID));
 
             mockMvc.perform(get("/api/orders/{id}", ORDER_ID))
                     .andExpect(status().isOk())
@@ -337,7 +335,7 @@ class OrderControllerTest {
 
         @Test
         void returnsOrders() throws Exception {
-            OrderResponse first =  OrderFixture.anOrderResponse();
+            OrderResponse first = OrderFixture.anOrderResponse();
             OrderResponse second = OrderFixture.anOrderResponse("CANCELLED");
 
             when(orderService.getOrdersForAuthenticatedCustomer())
@@ -406,5 +404,4 @@ class OrderControllerTest {
             verify(orderService).cancelOrder(ORDER_ID);
         }
     }
-
 }

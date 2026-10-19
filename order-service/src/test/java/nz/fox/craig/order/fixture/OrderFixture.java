@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.order.dto.request.OrderItemRequest;
 import nz.fox.craig.order.dto.request.OrderRequest;
@@ -47,7 +46,8 @@ public final class OrderFixture {
         return anOrderRequest(shippingMethod, orderItems());
     }
 
-    public static OrderRequest anOrderRequest(ShippingMethod shippingMethod, List<OrderItemRequest> items) {
+    public static OrderRequest anOrderRequest(
+            ShippingMethod shippingMethod, List<OrderItemRequest> items) {
         return OrderRequest.builder()
                 .items(items)
                 .shippingAddress(shippingAddress())
@@ -124,7 +124,6 @@ public final class OrderFixture {
                 .lineTotal(new BigDecimal("1000.00"))
                 .build();
     }
-
 
     private static OrderItem anOrderItem() {
         return OrderItem.builder()

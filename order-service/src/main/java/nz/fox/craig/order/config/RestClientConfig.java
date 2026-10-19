@@ -1,11 +1,9 @@
 package nz.fox.craig.order.config;
 
+import java.net.http.HttpClient;
 import nz.fox.craig.observability.CorrelationIdInterceptor;
 import nz.fox.craig.observability.RestClientLoggingInterceptor;
 import nz.fox.craig.security.service.JwtPropagationInterceptor;
-
-import java.net.http.HttpClient;
-
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,15 +21,12 @@ public class RestClientConfig {
     }
 
     @Bean
-    ClientHttpRequestFactory downstreamRequestFactory(
-                HttpClientProperties properties) {
+    ClientHttpRequestFactory downstreamRequestFactory(HttpClientProperties properties) {
 
-        HttpClient httpClient = HttpClient.newBuilder()
-                .connectTimeout(properties.connectTimeout())
-                .build();
+        HttpClient httpClient =
+                HttpClient.newBuilder().connectTimeout(properties.connectTimeout()).build();
 
-        JdkClientHttpRequestFactory factory =
-                new JdkClientHttpRequestFactory(httpClient);
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
 
         factory.setReadTimeout(properties.readTimeout());
 
@@ -47,17 +42,17 @@ public class RestClientConfig {
             RestClientLoggingInterceptor loggingInterceptor,
             ClientHttpRequestFactory requestFactory) {
 
-    return createRestClient(
-            builder,
-            properties.baseUrl(),
-            jwtInterceptor,
-            correlationIdInterceptor,
-            loggingInterceptor,
-            requestFactory);
-}
+        return createRestClient(
+                builder,
+                properties.baseUrl(),
+                jwtInterceptor,
+                correlationIdInterceptor,
+                loggingInterceptor,
+                requestFactory);
+    }
 
     @Bean(name = "productRestClient")
-        RestClient productRestClient(
+    RestClient productRestClient(
             RestClient.Builder builder,
             ProductServiceProperties properties,
             JwtPropagationInterceptor jwtInterceptor,
@@ -75,7 +70,7 @@ public class RestClientConfig {
     }
 
     @Bean(name = "inventoryRestClient")
-        RestClient inventoryRestClient(
+    RestClient inventoryRestClient(
             RestClient.Builder builder,
             InventoryServiceProperties properties,
             JwtPropagationInterceptor jwtInterceptor,
@@ -100,7 +95,7 @@ public class RestClientConfig {
             CorrelationIdInterceptor correlationIdInterceptor,
             RestClientLoggingInterceptor loggingInterceptor,
             ClientHttpRequestFactory requestFactory) {
-    
+
         return createRestClient(
                 builder,
                 properties.baseUrl(),
@@ -111,7 +106,7 @@ public class RestClientConfig {
     }
 
     @Bean(name = "shippingRestClient")
-        RestClient shippingRestClient(
+    RestClient shippingRestClient(
             RestClient.Builder builder,
             ShippingServiceProperties properties,
             JwtPropagationInterceptor jwtInterceptor,
@@ -129,20 +124,18 @@ public class RestClientConfig {
     }
 
     private RestClient createRestClient(
-        RestClient.Builder builder,
-        String baseUrl,
-        JwtPropagationInterceptor jwtInterceptor,
-        CorrelationIdInterceptor correlationIdInterceptor,
-        RestClientLoggingInterceptor loggingInterceptor,
-        ClientHttpRequestFactory requestFactory) {
+            RestClient.Builder builder,
+            String baseUrl,
+            JwtPropagationInterceptor jwtInterceptor,
+            CorrelationIdInterceptor correlationIdInterceptor,
+            RestClientLoggingInterceptor loggingInterceptor,
+            ClientHttpRequestFactory requestFactory) {
 
-        return builder
-                .baseUrl(baseUrl)
+        return builder.baseUrl(baseUrl)
                 .requestInterceptor(jwtInterceptor)
                 .requestInterceptor(correlationIdInterceptor)
                 .requestInterceptor(loggingInterceptor)
                 .requestFactory(requestFactory)
                 .build();
     }
-
 }

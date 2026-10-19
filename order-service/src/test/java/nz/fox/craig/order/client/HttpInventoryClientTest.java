@@ -8,7 +8,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.UUID;
-
 import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.order.dto.request.InventoryReservationRequest;
 import nz.fox.craig.order.exception.InsufficientStockException;
@@ -46,32 +45,25 @@ class HttpInventoryClientTest {
 
         when(restClient.post()).thenReturn(requestBodyUriSpec);
 
-        when(requestBodyUriSpec.uri(
-                eq("/api/inventory/{productId}/release"),
-                eq(PRODUCT_ID)))
+        when(requestBodyUriSpec.uri(eq("/api/inventory/{productId}/release"), eq(PRODUCT_ID)))
                 .thenReturn(requestBodySpec);
 
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON))
-                .thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
 
         when(requestBodySpec.body(any(InventoryReservationRequest.class)))
                 .thenReturn(requestBodySpec);
 
-        when(requestBodySpec.retrieve())
-                .thenReturn(responseSpec);
+        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
 
         client.releaseStock(PRODUCT_ID, QUANTITY);
 
         verify(restClient).post();
 
-        verify(requestBodyUriSpec)
-                .uri("/api/inventory/{productId}/release", PRODUCT_ID);
+        verify(requestBodyUriSpec).uri("/api/inventory/{productId}/release", PRODUCT_ID);
 
-        verify(requestBodySpec)
-                .contentType(MediaType.APPLICATION_JSON);
+        verify(requestBodySpec).contentType(MediaType.APPLICATION_JSON);
 
-        verify(requestBodySpec)
-                .body(new InventoryReservationRequest(QUANTITY));
+        verify(requestBodySpec).body(new InventoryReservationRequest(QUANTITY));
 
         verify(requestBodySpec).retrieve();
 
@@ -83,28 +75,21 @@ class HttpInventoryClientTest {
 
         when(restClient.post()).thenReturn(requestBodyUriSpec);
 
-        when(requestBodyUriSpec.uri(
-                eq("/api/inventory/{productId}/reserve"),
-                eq(PRODUCT_ID)))
+        when(requestBodyUriSpec.uri(eq("/api/inventory/{productId}/reserve"), eq(PRODUCT_ID)))
                 .thenReturn(requestBodySpec);
 
         when(requestBodySpec.body(any(InventoryReservationRequest.class)))
                 .thenReturn(requestBodySpec);
 
-        when(requestBodySpec.retrieve())
-                .thenReturn(responseSpec);
+        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
 
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON))
-                .thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
 
-        HttpClientErrorException.Conflict conflict =
-                mock(HttpClientErrorException.Conflict.class);
+        HttpClientErrorException.Conflict conflict = mock(HttpClientErrorException.Conflict.class);
 
-        when(responseSpec.toBodilessEntity())
-                .thenThrow(conflict);
+        when(responseSpec.toBodilessEntity()).thenThrow(conflict);
 
-        assertThatThrownBy(() ->
-                client.reserveStock(PRODUCT_ID, QUANTITY))
+        assertThatThrownBy(() -> client.reserveStock(PRODUCT_ID, QUANTITY))
                 .isInstanceOf(InsufficientStockException.class);
     }
 
@@ -113,57 +98,46 @@ class HttpInventoryClientTest {
 
         when(restClient.post()).thenReturn(requestBodyUriSpec);
 
-        when(requestBodyUriSpec.uri(
-            eq("/api/inventory/{productId}/reserve"),
-            eq(PRODUCT_ID)))
-            .thenReturn(requestBodySpec);
+        when(requestBodyUriSpec.uri(eq("/api/inventory/{productId}/reserve"), eq(PRODUCT_ID)))
+                .thenReturn(requestBodySpec);
 
         when(requestBodySpec.body(any(InventoryReservationRequest.class)))
-            .thenReturn(requestBodySpec);
+                .thenReturn(requestBodySpec);
 
-        when(requestBodySpec.retrieve())
-            .thenReturn(responseSpec);
+        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
 
         HttpServerErrorException serverError = mock(HttpServerErrorException.class);
 
-        when(responseSpec.toBodilessEntity())
-            .thenThrow(serverError);
+        when(responseSpec.toBodilessEntity()).thenThrow(serverError);
 
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON))
-            .thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
 
-        assertThatThrownBy(() ->
-                client.reserveStock(PRODUCT_ID, QUANTITY))
+        assertThatThrownBy(() -> client.reserveStock(PRODUCT_ID, QUANTITY))
                 .isInstanceOf(DownstreamServiceUnavailableException.class)
                 .hasMessage("Inventory service is unavailable");
     }
 
     @Test
     void shouldThrowDownstreamServiceUnavailableWhenReleaseReturnsServerError() {
-    
+
         when(restClient.post()).thenReturn(requestBodyUriSpec);
-    
-        when(requestBodyUriSpec
-                .uri(eq("/api/inventory/{productId}/release"), eq(PRODUCT_ID)))
+
+        when(requestBodyUriSpec.uri(eq("/api/inventory/{productId}/release"), eq(PRODUCT_ID)))
                 .thenReturn(requestBodySpec);
-    
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON))
-                .thenReturn(requestBodySpec);
-    
+
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
+
         when(requestBodySpec.body(any(InventoryReservationRequest.class)))
                 .thenReturn(requestBodySpec);
-    
-        when(requestBodySpec.retrieve())
-                .thenReturn(responseSpec);
-    
+
+        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
+
         HttpServerErrorException.InternalServerError serverError =
                 mock(HttpServerErrorException.InternalServerError.class);
-    
-        when(responseSpec.toBodilessEntity())
-                .thenThrow(serverError);
-    
-        assertThatThrownBy(
-                () -> client.releaseStock(PRODUCT_ID, QUANTITY))
+
+        when(responseSpec.toBodilessEntity()).thenThrow(serverError);
+
+        assertThatThrownBy(() -> client.releaseStock(PRODUCT_ID, QUANTITY))
                 .isInstanceOf(DownstreamServiceUnavailableException.class)
                 .hasMessage("Inventory service is unavailable")
                 .hasCause(serverError);
@@ -174,28 +148,22 @@ class HttpInventoryClientTest {
 
         when(restClient.post()).thenReturn(requestBodyUriSpec);
 
-        when(requestBodyUriSpec.uri(
-                eq("/api/inventory/{productId}/reserve"),
-                eq(PRODUCT_ID)))
+        when(requestBodyUriSpec.uri(eq("/api/inventory/{productId}/reserve"), eq(PRODUCT_ID)))
                 .thenReturn(requestBodySpec);
 
         when(requestBodySpec.body(any(InventoryReservationRequest.class)))
                 .thenReturn(requestBodySpec);
 
-        when(requestBodySpec.retrieve())
-                .thenReturn(responseSpec);
+        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
 
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON))
-            .thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
 
         ResourceAccessException resourceAccessException =
                 new ResourceAccessException("Connection refused");
 
-        when(responseSpec.toBodilessEntity())
-                .thenThrow(resourceAccessException);
+        when(responseSpec.toBodilessEntity()).thenThrow(resourceAccessException);
 
-        assertThatThrownBy(() ->
-                client.reserveStock(PRODUCT_ID, QUANTITY))
+        assertThatThrownBy(() -> client.reserveStock(PRODUCT_ID, QUANTITY))
                 .isInstanceOf(DownstreamServiceUnavailableException.class)
                 .hasMessage("Inventory service is unavailable");
     }

@@ -31,20 +31,15 @@ class JwtAuthenticationFilterTest {
     private static final UUID CUSTOMER_ID = UUID.randomUUID();
     private static final String EMAIL = "jane@example.com";
 
-    @Mock
-    private TokenService tokenService;
+    @Mock private TokenService tokenService;
 
-    @Mock
-    private HttpServletRequest request;
+    @Mock private HttpServletRequest request;
 
-    @Mock
-    private HttpServletResponse response;
+    @Mock private HttpServletResponse response;
 
-    @Mock
-    private FilterChain filterChain;
+    @Mock private FilterChain filterChain;
 
-    @InjectMocks
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    @InjectMocks private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @BeforeEach
     void setUp() {
@@ -61,18 +56,14 @@ class JwtAuthenticationFilterTest {
         String jwt = "jwt-token";
 
         AuthenticatedUser user =
-                new AuthenticatedUser(
-                        CUSTOMER_ID,
-                        EMAIL,
-                        Set.of(Role.ROLE_CUSTOMER));
+                new AuthenticatedUser(CUSTOMER_ID, EMAIL, Set.of(Role.ROLE_CUSTOMER));
 
         when(request.getHeader("Authorization")).thenReturn("Bearer " + jwt);
         when(tokenService.parseUser(jwt)).thenReturn(user);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         assertThat(authentication).isNotNull();
         assertThat(authentication.getPrincipal()).isEqualTo(user);
@@ -90,23 +81,18 @@ class JwtAuthenticationFilterTest {
 
         AuthenticatedUser user =
                 new AuthenticatedUser(
-                        CUSTOMER_ID,
-                        EMAIL,
-                        Set.of(Role.ROLE_CUSTOMER, Role.ROLE_ADMIN));
+                        CUSTOMER_ID, EMAIL, Set.of(Role.ROLE_CUSTOMER, Role.ROLE_ADMIN));
 
         when(request.getHeader("Authorization")).thenReturn("Bearer " + jwt);
         when(tokenService.parseUser(jwt)).thenReturn(user);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         assertThat(authentication.getAuthorities())
                 .extracting("authority")
-                .containsExactlyInAnyOrder(
-                        "ROLE_CUSTOMER",
-                        "ROLE_ADMIN");
+                .containsExactlyInAnyOrder("ROLE_CUSTOMER", "ROLE_ADMIN");
 
         verify(tokenService).parseUser(jwt);
         verify(filterChain).doFilter(request, response);
@@ -120,8 +106,7 @@ class JwtAuthenticationFilterTest {
 
         verify(filterChain).doFilter(request, response);
 
-        assertThat(SecurityContextHolder.getContext().getAuthentication())
-                .isNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
 
         verify(tokenService, never()).parseUser(org.mockito.ArgumentMatchers.any());
     }
@@ -134,8 +119,7 @@ class JwtAuthenticationFilterTest {
 
         verify(filterChain).doFilter(request, response);
 
-        assertThat(SecurityContextHolder.getContext().getAuthentication())
-                .isNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
 
         verify(tokenService, never()).parseUser(org.mockito.ArgumentMatchers.any());
     }
@@ -145,13 +129,11 @@ class JwtAuthenticationFilterTest {
         String jwt = "invalid-jwt";
 
         when(request.getHeader("Authorization")).thenReturn("Bearer " + jwt);
-        when(tokenService.parseUser(jwt))
-                .thenThrow(new IllegalArgumentException("Invalid JWT"));
+        when(tokenService.parseUser(jwt)).thenThrow(new IllegalArgumentException("Invalid JWT"));
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        assertThat(SecurityContextHolder.getContext().getAuthentication())
-                .isNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
 
         verify(tokenService).parseUser(jwt);
         verify(filterChain).doFilter(request, response);
@@ -163,18 +145,13 @@ class JwtAuthenticationFilterTest {
 
         AuthenticatedUser existingUser =
                 new AuthenticatedUser(
-                        UUID.randomUUID(),
-                        "existing@example.com",
-                        Set.of(Role.ROLE_CUSTOMER));
+                        UUID.randomUUID(), "existing@example.com", Set.of(Role.ROLE_CUSTOMER));
 
         UsernamePasswordAuthenticationToken existingAuthentication =
                 new UsernamePasswordAuthenticationToken(
-                        existingUser,
-                        jwt,
-                        List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+                        existingUser, jwt, List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
 
-        SecurityContextHolder.getContext()
-                .setAuthentication(existingAuthentication);
+        SecurityContextHolder.getContext().setAuthentication(existingAuthentication);
 
         when(request.getHeader("Authorization")).thenReturn("Bearer " + jwt);
 

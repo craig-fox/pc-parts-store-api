@@ -35,31 +35,18 @@ public class CustomerController {
 
     @Operation(summary = "Register a new customer")
     @ApiResponses({
-        @ApiResponse(
-            responseCode = "201",
-            description = "Customer created successfully"
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Validation failed"
-        ),
-        @ApiResponse(
-            responseCode = "409",
-            description = "Customer already exists"
-        )
+        @ApiResponse(responseCode = "201", description = "Customer created successfully"),
+        @ApiResponse(responseCode = "400", description = "Validation failed"),
+        @ApiResponse(responseCode = "409", description = "Customer already exists")
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CustomerResponse createCustomer(
-            @Valid @RequestBody CustomerRequest request) {
+    public CustomerResponse createCustomer(@Valid @RequestBody CustomerRequest request) {
         return customerService.registerCustomer(request);
     }
 
     @Operation(summary = "Get customers of a given status, or all customers")
-    @ApiResponse(
-        responseCode = "200",
-        description = "Customers retrieved successfully"
-    )
+    @ApiResponse(responseCode = "200", description = "Customers retrieved successfully")
     @GetMapping
     public List<CustomerResponse> getCustomers(
             @RequestParam(required = false) CustomerStatus status) {
@@ -68,14 +55,8 @@ public class CustomerController {
 
     @Operation(summary = "Retrieve details of a customer by ID")
     @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "Customer retrieved successfully"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Customer not found"
-        )
+        @ApiResponse(responseCode = "200", description = "Customer retrieved successfully"),
+        @ApiResponse(responseCode = "404", description = "Customer not found")
     })
     @GetMapping("/{id}")
     public CustomerResponse getCustomer(@PathVariable UUID id) {
@@ -84,53 +65,30 @@ public class CustomerController {
 
     @Operation(summary = "Retrieve details of a customer by email")
     @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "Customer retrieved successfully"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Customer not found"
-        )
+        @ApiResponse(responseCode = "200", description = "Customer retrieved successfully"),
+        @ApiResponse(responseCode = "404", description = "Customer not found")
     })
     @GetMapping("/email/{email}")
-    public CustomerAuthenticationResponse getCustomerByEmail(
-            @PathVariable String email) {
+    public CustomerAuthenticationResponse getCustomerByEmail(@PathVariable String email) {
         return customerService.getCustomerByEmail(email);
     }
 
     @Operation(summary = "Update details of a customer by ID")
     @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "Customer updated successfully"
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Validation failed"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Customer not found"
-        )
+        @ApiResponse(responseCode = "200", description = "Customer updated successfully"),
+        @ApiResponse(responseCode = "400", description = "Validation failed"),
+        @ApiResponse(responseCode = "404", description = "Customer not found")
     })
     @PutMapping("/{id}")
     public CustomerResponse updateCustomer(
-            @PathVariable UUID id,
-            @Valid @RequestBody CustomerRequest request) {
+            @PathVariable UUID id, @Valid @RequestBody CustomerRequest request) {
         return customerService.updateCustomer(id, request);
     }
 
     @Operation(summary = "Deactivate customer")
     @ApiResponses({
-        @ApiResponse(
-            responseCode = "204",
-            description = "Customer deactivated successfully"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Customer not found"
-        )
+        @ApiResponse(responseCode = "204", description = "Customer deactivated successfully"),
+        @ApiResponse(responseCode = "404", description = "Customer not found")
     })
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -140,14 +98,8 @@ public class CustomerController {
 
     @Operation(summary = "Reactivate an inactive customer")
     @ApiResponses({
-        @ApiResponse(
-            responseCode = "204",
-            description = "Customer activated successfully"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Customer not found"
-        )
+        @ApiResponse(responseCode = "204", description = "Customer activated successfully"),
+        @ApiResponse(responseCode = "404", description = "Customer not found")
     })
     @PutMapping("/{id}/activate")
     @ResponseStatus(HttpStatus.NO_CONTENT)

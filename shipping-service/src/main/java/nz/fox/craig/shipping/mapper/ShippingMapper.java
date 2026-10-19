@@ -1,9 +1,8 @@
 package nz.fox.craig.shipping.mapper;
 
-import org.springframework.stereotype.Component;
-
 import nz.fox.craig.shipping.dto.ShippingAddressRequest;
 import nz.fox.craig.shipping.model.ShippingAddress;
+import org.springframework.stereotype.Component;
 
 @Component
 public class ShippingMapper {
@@ -13,7 +12,10 @@ public class ShippingMapper {
     }
 
     public ShippingAddressRequest toAddressDto(ShippingAddress address) {
-        return new ShippingAddressRequest(address.getAddressLine1(), address.getCity(), address.getPostcode(), address.getCountry());
+        return new ShippingAddressRequest(
+                address.getAddressLine1(),
+                address.getCity(),
+                address.getPostcode(),
+                address.getCountry());
     }
-
 }

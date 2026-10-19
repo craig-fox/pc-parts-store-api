@@ -138,13 +138,13 @@ class CustomerServiceTest {
     class GetCustomer {
         @Test
         void getsAllCustomers() {
-        Customer customer1 = CustomerFixtures.aCustomer();
-        customer1.setId(CUSTOMER_ID);
-        customer1.setFirstName("Jane");
-        
-        Customer customer2 = CustomerFixtures.aCustomer();
-        customer2.setId(CUSTOMER_ID_2);
-        customer2.setFirstName("John");
+            Customer customer1 = CustomerFixtures.aCustomer();
+            customer1.setId(CUSTOMER_ID);
+            customer1.setFirstName("Jane");
+
+            Customer customer2 = CustomerFixtures.aCustomer();
+            customer2.setId(CUSTOMER_ID_2);
+            customer2.setFirstName("John");
 
             when(customerRepository.findAll()).thenReturn(List.of(customer1, customer2));
 
@@ -312,7 +312,7 @@ class CustomerServiceTest {
             Customer customer = CustomerFixtures.aCustomer();
             customer.setId(CUSTOMER_ID);
             customer.setEmail("jane@example.com");
-            
+
             when(customerRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(customer));
 
             assertThatThrownBy(() -> customerService.activateCustomer(CUSTOMER_ID))
@@ -320,7 +320,6 @@ class CustomerServiceTest {
                     .hasMessage("Customer with email jane@example.com is already active.");
 
             verify(customerRepository, never()).save(any(Customer.class));
-     
         }
     }
 

@@ -2,7 +2,6 @@ package nz.fox.craig.inventory.config;
 
 import nz.fox.craig.security.service.JwtAuthenticationFilter;
 import nz.fox.craig.security.service.TokenService;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -37,16 +36,17 @@ public class SecurityConfig {
                                 auth.requestMatchers(
                                                 "/v3/api-docs/**",
                                                 "/swagger-ui/**",
-                                                "/swagger-ui.html").permitAll()
-                                    .requestMatchers(
-                                        "/actuator/health",
-                                        "/actuator/health/**",
-                                        "/actuator/info",
-                                        "/actuator/metrics",
-                                        "/actuator/metrics/**")
-                                    .permitAll()
-                                    .anyRequest()
-                                    .authenticated())
+                                                "/swagger-ui.html")
+                                        .permitAll()
+                                        .requestMatchers(
+                                                "/actuator/health",
+                                                "/actuator/health/**",
+                                                "/actuator/info",
+                                                "/actuator/metrics",
+                                                "/actuator/metrics/**")
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated())
                 .addFilterBefore(
                         jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
