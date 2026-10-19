@@ -60,9 +60,6 @@ jobs:
       - name: Build and verify
         run: mvn --batch-mode clean verify
 
-      - name: Build and verify
-        run: mvn --batch-mode clean verify
-
   e2e:
     name: End-to-End Tests
     needs: build
