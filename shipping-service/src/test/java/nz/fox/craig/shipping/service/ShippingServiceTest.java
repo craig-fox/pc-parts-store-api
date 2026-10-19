@@ -9,6 +9,7 @@ import nz.fox.craig.shipping.fixture.ShippingFixture;
 import nz.fox.craig.shipping.mapper.ShippingMapper;
 import nz.fox.craig.shipping.model.ShippingQuote;
 import nz.fox.craig.shipping.model.Shipment;
+import nz.fox.craig.shipping.model.ShipmentStatus;
 import nz.fox.craig.shipping.repository.ShippingQuoteRepository;
 import nz.fox.craig.shipping.repository.ShipmentRepository;
 import org.junit.jupiter.api.Test;
@@ -209,6 +210,10 @@ class ShippingServiceTest {
         assertThat(shipment.getCurrency())
                 .isEqualTo(quote.getCurrency());
 
+        assertThat(shipment.getStatus()).isEqualTo(ShipmentStatus.CREATED);
+        assertThat(shipment.getCreatedAt()).isNotNull();
+        assertThat(shipment.getUpdatedAt()).isNotNull();
+
         verify(shippingQuoteRepository).findById(quoteId);
         verify(shipmentRepository).save(any(Shipment.class));
     }
@@ -284,5 +289,19 @@ class ShippingServiceTest {
 
         assertThat(result).containsExactlyElementsOf(shipments);
         verify(shipmentRepository).findByOrderId(orderId);
+    }
+
+    @Test
+    void shouldThrowWhenCreatingShipmentFromMissingQuote() {
+        UUID quoteId = UUID.randomUUID();
+
+        when(shippingQuoteRepository.findById(quoteId))
+                .thenReturn(java.util.Optional.empty());
+
+        assertThatThrownBy(() -> shippingService.createShipment(quoteId))
+                .isInstanceOf(ShippingQuoteNotFoundException.class)
+                .hasMessage("Shipping quote not found: " + quoteId);
+
+        verify(shipmentRepository, never()).save(any());
     }
 }
