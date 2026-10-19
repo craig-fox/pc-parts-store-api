@@ -12,6 +12,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
+
 import nz.fox.craig.payment.dto.CreatePaymentRequest;
 import nz.fox.craig.payment.dto.PaymentResponse;
 import nz.fox.craig.payment.model.PaymentStatus;
@@ -19,6 +21,8 @@ import nz.fox.craig.payment.service.PaymentService;
 import tools.jackson.databind.json.JsonMapper;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -203,4 +207,38 @@ class PaymentControllerTest {
                                 .content(request))
                 .andExpect(status().isBadRequest());
     }
+
+    @ParameterizedTest
+    @MethodSource("invalidCurrencies")
+    void shouldRejectPaymentWhenCurrencyFormatIsInvalid(String currency)
+                throws Exception {
+        String request =
+                """
+                {
+                        "orderId": "%s",
+                        "customerId": "%s",
+                        "amount": 149.99,
+                        "currency": "%s"
+                }
+                """
+                        .formatted(
+                                UUID.randomUUID(),
+                                UUID.randomUUID(),
+                                currency);
+
+        mockMvc.perform(
+                        post("/api/payments")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request))
+                .andExpect(status().isBadRequest());
+        }
+
+        private static Stream<String> invalidCurrencies() {
+                return Stream.of(
+                        "NZ",       // Too short
+                        "NZDD",     // Too long
+                        "12D",      // Contains digits
+                        "N D",      // Contains whitespace
+                        "");        // Empty
+        }
 }

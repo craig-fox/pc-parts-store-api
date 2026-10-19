@@ -24,10 +24,10 @@ public class Payment {
     @Column(nullable = false)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(name = "order_id", nullable = false)
     private UUID orderId;
-
-    @Column(nullable = false)
+    
+    @Column(name = "customer_id", nullable = false)
     private UUID customerId;
 
 
@@ -41,17 +41,18 @@ public class Payment {
     @Column(nullable = false)
     private PaymentStatus status;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
-
-    @Column(nullable = false)
+    
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     @PrePersist
     void prePersist() {
         id = UUID.randomUUID();
-        createdAt = Instant.now();
-        updatedAt = Instant.now();
+        Instant now = Instant.now();
+        createdAt = now;
+        updatedAt = now;
     }
 
     @PreUpdate

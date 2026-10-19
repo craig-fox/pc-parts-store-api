@@ -67,6 +67,8 @@ class PaymentServiceTest {
         assertThat(response.status()).isEqualTo(PaymentStatus.COMPLETED);
         assertThat(response.createdAt()).isEqualTo(savedPayment.getCreatedAt());
         assertThat(response.updatedAt()).isEqualTo(savedPayment.getUpdatedAt());
+
+        verify(paymentRepository).save(any(Payment.class));
        
     }
 
@@ -80,6 +82,7 @@ class PaymentServiceTest {
 
         Payment savedPayment = createPayment();
 
+        when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
         when(paymentRepository.save(any(Payment.class))).thenReturn(savedPayment);
 
         paymentService.createPayment(request);
@@ -167,8 +170,9 @@ class PaymentServiceTest {
         payment.setAmount(new BigDecimal("149.99"));
         payment.setCurrency("NZD");
         payment.setStatus(PaymentStatus.COMPLETED);
-        payment.setCreatedAt(Instant.now());
-        payment.setUpdatedAt(Instant.now());
+        Instant now = Instant.now();
+        payment.setCreatedAt(now);
+        payment.setUpdatedAt(now);
         return payment;
     }
 }
