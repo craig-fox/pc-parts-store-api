@@ -26,6 +26,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -54,7 +55,7 @@ class InventoryControllerTest {
         SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
             return http.csrf(csrf -> csrf.disable())
                     .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-                    .httpBasic(basic -> { })
+                    .httpBasic(Customizer.withDefaults())
                     .build();
         }
     }
