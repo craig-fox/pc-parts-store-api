@@ -14,6 +14,7 @@ import nz.fox.craig.shipping.model.ShipmentStatus;
 import nz.fox.craig.shipping.repository.ShippingQuoteRepository;
 import nz.fox.craig.shipping.repository.ShipmentRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -31,6 +32,7 @@ public class ShippingService {
     private final ShippingRateCalculator shippingRateCalculator;
     private final ShippingMapper shippingMapper;
 
+    @Transactional
     public ShippingQuote calculateQuote(
             UUID orderId,
             ShippingAddressRequest destinationRequest,
@@ -62,23 +64,25 @@ public class ShippingService {
         return shippingQuoteRepository.save(quote);
     }
 
+    @Transactional(readOnly = true)
     public ShippingQuote getQuote(UUID id) {
         return shippingQuoteRepository.findById(id)
                 .orElseThrow(() -> new ShippingQuoteNotFoundException(id));
     }
 
+    @Transactional(readOnly = true)
     public List<ShippingQuote> getQuotesForOrder(UUID orderId) {
         return shippingQuoteRepository.findByOrderId(orderId);
     }
 
+    @Transactional
     public Shipment createShipment(UUID quoteId) {
         ShippingQuote quote = getQuote(quoteId);
+        LocalDateTime now = LocalDateTime.now();
 
-        if (!quote.getExpiresAt().isAfter(LocalDateTime.now())) {
+        if (!quote.getExpiresAt().isAfter(now)) {
             throw new ShippingQuoteExpiredException(quoteId);
         }
-
-        LocalDateTime now = LocalDateTime.now();
 
         Shipment shipment = Shipment.builder()
                 .orderId(quote.getOrderId())
@@ -95,11 +99,13 @@ public class ShippingService {
         return shipmentRepository.save(shipment);
     }
 
+    @Transactional(readOnly = true)
     public Shipment getShipment(UUID id) {
         return shipmentRepository.findById(id)
                 .orElseThrow(() -> new ShipmentNotFoundException(id));
     }
 
+    @Transactional(readOnly = true)
     public List<Shipment> getShipmentsForOrder(UUID orderId) {
         return shipmentRepository.findByOrderId(orderId);
     }

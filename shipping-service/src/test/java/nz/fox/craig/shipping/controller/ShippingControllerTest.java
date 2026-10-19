@@ -4,7 +4,10 @@ import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.shipping.dto.CreateShipmentRequest;
 import nz.fox.craig.shipping.dto.ShippingAddressRequest;
 import nz.fox.craig.shipping.dto.ShippingQuoteRequest;
+import nz.fox.craig.shipping.exception.ShipmentNotFoundException;
 import nz.fox.craig.shipping.exception.ShippingExceptionHandler;
+import nz.fox.craig.shipping.exception.ShippingQuoteExpiredException;
+import nz.fox.craig.shipping.exception.ShippingQuoteNotFoundException;
 import nz.fox.craig.shipping.model.ShippingAddress;
 import nz.fox.craig.shipping.model.ShippingQuote;
 import nz.fox.craig.shipping.model.Shipment;
@@ -254,6 +257,61 @@ class ShippingControllerTest {
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(shippingService);
+    }
+
+    @Test
+    void shouldRejectInvalidCreateShipmentRequest() throws Exception {
+        CreateShipmentRequest request = new CreateShipmentRequest(null);
+
+        mockMvc.perform(post("/api/shipping/shipments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(shippingService);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenShippingQuoteDoesNotExist() throws Exception {
+        UUID quoteId = UUID.randomUUID();
+
+        when(shippingService.getQuote(quoteId))
+                .thenThrow(new ShippingQuoteNotFoundException(quoteId));
+
+        mockMvc.perform(get("/api/shipping/quotes/{id}", quoteId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message")
+                        .value("Shipping quote not found: " + quoteId));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenShipmentDoesNotExist() throws Exception {
+        UUID shipmentId = UUID.randomUUID();
+
+        when(shippingService.getShipment(shipmentId))
+                .thenThrow(new ShipmentNotFoundException(shipmentId));
+
+        mockMvc.perform(get("/api/shipping/shipments/{id}", shipmentId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message")
+                        .value("Shipment not found: " + shipmentId));
+    }
+
+    @Test
+    void shouldReturnConflictWhenShippingQuoteHasExpired() throws Exception {
+        UUID quoteId = UUID.randomUUID();
+
+        when(shippingService.createShipment(quoteId))
+                .thenThrow(new ShippingQuoteExpiredException(quoteId));
+
+        mockMvc.perform(post("/api/shipping/shipments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new CreateShipmentRequest(quoteId))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
     }
 
     private ShippingQuote shippingQuote(UUID orderId) {

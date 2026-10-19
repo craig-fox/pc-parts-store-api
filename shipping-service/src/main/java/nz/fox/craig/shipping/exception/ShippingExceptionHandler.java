@@ -92,9 +92,25 @@ public class ShippingExceptionHandler {
                 .body(new ApiError(Instant.now(),
                         HttpStatus.INTERNAL_SERVER_ERROR.value(),
                         HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                        exception.getMessage(),
+                        "Unexpected error",
                         Map.of(),
                         request.getRequestURI()               
+                ));
+    }
+
+    @ExceptionHandler(ShippingQuoteExpiredException.class)
+    public ResponseEntity<ApiError> handleShippingQuoteExpiredException(
+                ShippingQuoteExpiredException exception,
+                HttpServletRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiError(
+                        Instant.now(),
+                        HttpStatus.CONFLICT.value(),
+                        HttpStatus.CONFLICT.getReasonPhrase(),
+                        exception.getMessage(),
+                        Map.of(),
+                        request.getRequestURI()
                 ));
     }
 }
