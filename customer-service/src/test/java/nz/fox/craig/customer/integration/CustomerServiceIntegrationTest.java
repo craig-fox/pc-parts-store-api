@@ -13,8 +13,6 @@ import nz.fox.craig.security.dto.AuthenticatedUser;
 import nz.fox.craig.security.dto.Role;
 import nz.fox.craig.security.service.TokenService;
 import nz.fox.craig.test.AbstractPostgresTest;
-import tools.jackson.databind.json.JsonMapper;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -31,8 +30,7 @@ import org.springframework.test.web.servlet.MvcResult;
 class CustomerServiceIntegrationTest extends AbstractPostgresTest {
     @Autowired private MockMvc mockMvc;
 
-    @Autowired 
-    private JsonMapper objectMapper;
+    @Autowired private JsonMapper objectMapper;
 
     @Autowired private TokenService tokenService;
 

@@ -4,8 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
-@SpringBootApplication(
-    scanBasePackages = {"nz.fox.craig.order", "nz.fox.craig.security"})
+@SpringBootApplication(scanBasePackages = {"nz.fox.craig.order", "nz.fox.craig.security"})
 @ConfigurationPropertiesScan("nz.fox.craig")
 public class OrderServiceApplication {
 

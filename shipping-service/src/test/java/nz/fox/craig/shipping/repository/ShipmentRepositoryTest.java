@@ -1,5 +1,11 @@
 package nz.fox.craig.shipping.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.shipping.fixture.ShippingFixture;
 import nz.fox.craig.shipping.model.Shipment;
@@ -12,20 +18,12 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.test.annotation.DirtiesContext;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class ShipmentRepositoryTest extends AbstractPostgresTest {
 
-    @Autowired
-    private ShipmentRepository shipmentRepository;
+    @Autowired private ShipmentRepository shipmentRepository;
 
     @Test
     void shouldSaveAndRetrieveShipment() {
@@ -33,38 +31,26 @@ class ShipmentRepositoryTest extends AbstractPostgresTest {
 
         Shipment shipment = ShippingFixture.shipment(orderId);
         Shipment savedShipment = shipmentRepository.save(shipment);
-        Shipment retrievedShipment = shipmentRepository
-                .findById(savedShipment.getId())
-                .orElseThrow();
+        Shipment retrievedShipment =
+                shipmentRepository.findById(savedShipment.getId()).orElseThrow();
 
         assertThat(retrievedShipment.getId()).isEqualTo(savedShipment.getId());
         assertThat(retrievedShipment.getOrderId()).isEqualTo(orderId);
 
         assertThat(retrievedShipment.getDestination().getAddressLine1())
                 .isEqualTo("123 Test Street");
-        assertThat(retrievedShipment.getDestination().getCity())
-                .isEqualTo("Auckland");
-        assertThat(retrievedShipment.getDestination().getPostcode())
-                .isEqualTo("1010");
-        assertThat(retrievedShipment.getDestination().getCountry())
-                .isEqualTo("NZ");
+        assertThat(retrievedShipment.getDestination().getCity()).isEqualTo("Auckland");
+        assertThat(retrievedShipment.getDestination().getPostcode()).isEqualTo("1010");
+        assertThat(retrievedShipment.getDestination().getCountry()).isEqualTo("NZ");
 
-        assertThat(retrievedShipment.getWeightKg())
-                .isEqualByComparingTo("2.500");
-        assertThat(retrievedShipment.getShippingMethod())
-                .isEqualTo(ShippingMethod.STANDARD);
-        assertThat(retrievedShipment.getShippingCost())
-                .isEqualByComparingTo("25.00");
-        assertThat(retrievedShipment.getCurrency())
-                .isEqualTo("NZD");
-        assertThat(retrievedShipment.getStatus())
-                .isEqualTo(ShipmentStatus.CREATED);
-        assertThat(retrievedShipment.getTrackingNumber())
-                .isEqualTo("TEST123456");
-        assertThat(retrievedShipment.getCreatedAt())
-                .isEqualTo(shipment.getCreatedAt());
-        assertThat(retrievedShipment.getUpdatedAt())
-                .isEqualTo(shipment.getUpdatedAt());
+        assertThat(retrievedShipment.getWeightKg()).isEqualByComparingTo("2.500");
+        assertThat(retrievedShipment.getShippingMethod()).isEqualTo(ShippingMethod.STANDARD);
+        assertThat(retrievedShipment.getShippingCost()).isEqualByComparingTo("25.00");
+        assertThat(retrievedShipment.getCurrency()).isEqualTo("NZD");
+        assertThat(retrievedShipment.getStatus()).isEqualTo(ShipmentStatus.CREATED);
+        assertThat(retrievedShipment.getTrackingNumber()).isEqualTo("TEST123456");
+        assertThat(retrievedShipment.getCreatedAt()).isEqualTo(shipment.getCreatedAt());
+        assertThat(retrievedShipment.getUpdatedAt()).isEqualTo(shipment.getUpdatedAt());
     }
 
     @Test
@@ -72,69 +58,39 @@ class ShipmentRepositoryTest extends AbstractPostgresTest {
         UUID orderId = UUID.randomUUID();
         UUID anotherOrderId = UUID.randomUUID();
 
-        Shipment firstShipment = createShipment(
-                orderId,
-                ShipmentStatus.CREATED,
-                "TEST123456"
-        );
+        Shipment firstShipment = createShipment(orderId, ShipmentStatus.CREATED, "TEST123456");
 
-        Shipment secondShipment = createShipment(
-                orderId,
-                ShipmentStatus.IN_TRANSIT,
-                "TEST789012"
-        );
+        Shipment secondShipment = createShipment(orderId, ShipmentStatus.IN_TRANSIT, "TEST789012");
 
-        Shipment otherOrderShipment = createShipment(
-                anotherOrderId,
-                ShipmentStatus.CREATED,
-                "TEST345678"
-        );
+        Shipment otherOrderShipment =
+                createShipment(anotherOrderId, ShipmentStatus.CREATED, "TEST345678");
 
-        shipmentRepository.saveAll(
-                List.of(firstShipment, secondShipment, otherOrderShipment)
-        );
+        shipmentRepository.saveAll(List.of(firstShipment, secondShipment, otherOrderShipment));
 
-        List<Shipment> shipments =
-                shipmentRepository.findByOrderId(orderId);
+        List<Shipment> shipments = shipmentRepository.findByOrderId(orderId);
 
-        assertThat(shipments)
-                .hasSize(2)
-                .extracting(Shipment::getOrderId)
-                .containsOnly(orderId);
+        assertThat(shipments).hasSize(2).extracting(Shipment::getOrderId).containsOnly(orderId);
     }
 
     @Test
     void shouldSaveShipmentWithoutTrackingNumber() {
-        Shipment shipment = createShipment(
-                UUID.randomUUID(),
-                ShipmentStatus.CREATED,
-                null
-        );
+        Shipment shipment = createShipment(UUID.randomUUID(), ShipmentStatus.CREATED, null);
 
         Shipment savedShipment = shipmentRepository.save(shipment);
 
-        Shipment retrievedShipment = shipmentRepository
-                .findById(savedShipment.getId())
-                .orElseThrow();
+        Shipment retrievedShipment =
+                shipmentRepository.findById(savedShipment.getId()).orElseThrow();
 
         assertThat(retrievedShipment.getTrackingNumber()).isNull();
     }
 
-    private Shipment createShipment(
-            UUID orderId,
-            ShipmentStatus status,
-            String trackingNumber) {
+    private Shipment createShipment(UUID orderId, ShipmentStatus status, String trackingNumber) {
 
         LocalDateTime now = LocalDateTime.now();
 
         return Shipment.builder()
                 .orderId(orderId)
-                .destination(new ShippingAddress(
-                        "123 Test Street",
-                        "Auckland",
-                        "1010",
-                        "NZ"
-                ))
+                .destination(new ShippingAddress("123 Test Street", "Auckland", "1010", "NZ"))
                 .weightKg(new BigDecimal("1.500"))
                 .shippingMethod(ShippingMethod.STANDARD)
                 .shippingCost(new BigDecimal("15.00"))

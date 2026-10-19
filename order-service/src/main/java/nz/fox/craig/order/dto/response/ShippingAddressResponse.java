@@ -4,8 +4,4 @@ import lombok.Builder;
 
 @Builder
 public record ShippingAddressResponse(
-    String addressLine1,
-    String city,
-    String postcode,
-    String country) {
-}
+        String addressLine1, String city, String postcode, String country) {}

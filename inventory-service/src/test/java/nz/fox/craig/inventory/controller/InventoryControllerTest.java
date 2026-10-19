@@ -4,6 +4,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -17,8 +18,6 @@ import nz.fox.craig.inventory.exception.InventoryExceptionHandler;
 import nz.fox.craig.inventory.exception.InventoryNotFoundException;
 import nz.fox.craig.inventory.model.InventoryStatus;
 import nz.fox.craig.inventory.service.InventoryService;
-import tools.jackson.databind.json.JsonMapper;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,19 +25,16 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
 @WebMvcTest(InventoryController.class)
-@Import({
-    InventoryExceptionHandler.class,
-    InventoryControllerTest.TestSecurityConfiguration.class
-})
+@Import({InventoryExceptionHandler.class, InventoryControllerTest.TestSecurityConfiguration.class})
 class InventoryControllerTest {
 
     @Autowired private MockMvc mockMvc;
@@ -47,21 +43,17 @@ class InventoryControllerTest {
 
     @MockitoBean private InventoryService inventoryService;
 
-
     private UUID productId;
     private InventoryResponse response;
 
     @TestConfiguration
     @EnableWebSecurity
     static class TestSecurityConfiguration {
-    
+
         @Bean
-        SecurityFilterChain testSecurityFilterChain(HttpSecurity http)
-                throws Exception {
-            return http
-                    .csrf(csrf -> csrf.disable())
-                    .authorizeHttpRequests(auth -> auth
-                            .anyRequest().authenticated())
+        SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
+            return http.csrf(csrf -> csrf.disable())
+                    .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                     .httpBasic(basic -> { })
                     .build();
         }
@@ -81,43 +73,34 @@ class InventoryControllerTest {
                         LocalDateTime.of(2026, 7, 30, 10, 0));
     }
 
-
     @Test
     void shouldReturnInventory() throws Exception {
         when(inventoryService.getInventory(productId)).thenReturn(response);
 
-        mockMvc.perform(
-                get("/api/inventory/{productId}", productId)
-                    .with(user("test-user")))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.productId").value(productId.toString()));
+        mockMvc.perform(get("/api/inventory/{productId}", productId).with(user("test-user")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productId").value(productId.toString()));
 
         verify(inventoryService).getInventory(productId);
     }
 
     @Test
-  //  @WithMockUser
     void shouldReturnNotFoundWhenInventoryMissing() throws Exception {
 
         when(inventoryService.getInventory(productId))
                 .thenThrow(new InventoryNotFoundException(productId));
 
-        mockMvc.perform(
-            get("/api/inventory/{productId}", productId)
-                .with(user("test-user")))
+        mockMvc.perform(get("/api/inventory/{productId}", productId).with(user("test-user")))
                 .andExpect(status().isNotFound());
 
         verify(inventoryService).getInventory(productId);
     }
 
-
     @Test
     void shouldReserveStock() throws Exception {
-        InventoryReservationRequest request =
-                new InventoryReservationRequest(3);
+        InventoryReservationRequest request = new InventoryReservationRequest(3);
 
-        when(inventoryService.reserveStock(productId, 3))
-                .thenReturn(response);
+        when(inventoryService.reserveStock(productId, 3)).thenReturn(response);
 
         mockMvc.perform(
                         post("/api/inventory/{productId}/reserve", productId)
@@ -137,7 +120,7 @@ class InventoryControllerTest {
         InventoryReservationRequest request = new InventoryReservationRequest(0);
 
         mockMvc.perform(
-                        post("/api/inventory/{productId}/reserve", productId) 
+                        post("/api/inventory/{productId}/reserve", productId)
                                 .with(user("test-user"))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
@@ -155,9 +138,9 @@ class InventoryControllerTest {
 
         mockMvc.perform(
                         post("/api/inventory/{productId}/release", productId)
-                            .with(user("test-user"))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+                                .with(user("test-user"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.availableQuantity").value(15));
 
@@ -172,9 +155,9 @@ class InventoryControllerTest {
 
         mockMvc.perform(
                         post("/api/inventory/{productId}/release", productId)
-                            .with(user("test-user"))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+                                .with(user("test-user"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(inventoryService);
@@ -189,9 +172,9 @@ class InventoryControllerTest {
 
         mockMvc.perform(
                         post("/api/inventory/{productId}/confirm", productId)
-                            .with(user("test-user"))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+                                .with(user("test-user"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.availableQuantity").value(15));
 
@@ -206,9 +189,9 @@ class InventoryControllerTest {
 
         mockMvc.perform(
                         post("/api/inventory/{productId}/confirm", productId)
-                            .with(user("test-user"))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+                                .with(user("test-user"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(inventoryService);
@@ -230,8 +213,8 @@ class InventoryControllerTest {
 
         mockMvc.perform(
                         post("/api/inventory/{productId}/reserve", productId)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(inventoryService);

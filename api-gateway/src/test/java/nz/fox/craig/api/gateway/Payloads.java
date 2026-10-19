@@ -2,7 +2,8 @@ package nz.fox.craig.api.gateway;
 
 public class Payloads {
 
-    public static final String ORDER_REQUEST = """
+    public static final String ORDER_REQUEST =
+            """
     {
         "customerId": "550e8400-e29b-41d4-a716-446655440000",
         "items": [
@@ -14,7 +15,8 @@ public class Payloads {
     }
     """;
 
-    public static final String ORDER_RESPONSE = """
+    public static final String ORDER_RESPONSE =
+            """
     {
         "id": "650e8400-e29b-41d4-a716-446655440000",
         "customerId": "550e8400-e29b-41d4-a716-446655440000",
@@ -35,7 +37,8 @@ public class Payloads {
     }
     """;
 
-    public static final String CUSTOMER_REQUEST = """
+    public static final String CUSTOMER_REQUEST =
+            """
     {
         "id": "550e8400-e29b-41d4-a716-446655440000",
         "firstName": "John",
@@ -47,7 +50,8 @@ public class Payloads {
     }
     """;
 
-    public static final String CUSTOMER_RESPONSE = """ 
+    public static final String CUSTOMER_RESPONSE =
+            """
     {
         "firstName": "John",
         "lastName": "Smith",
@@ -56,7 +60,8 @@ public class Payloads {
     }
     """;
 
-    public static final String ORDERS_RETURNED = """
+    public static final String ORDERS_RETURNED =
+            """
     [
         {
             "id": "650e8400-e29b-41d4-a716-446655440000",
@@ -78,5 +83,4 @@ public class Payloads {
         }
     ]
     """;
-
 }

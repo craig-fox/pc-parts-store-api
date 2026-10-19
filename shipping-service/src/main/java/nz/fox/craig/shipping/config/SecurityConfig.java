@@ -2,7 +2,6 @@ package nz.fox.craig.shipping.config;
 
 import nz.fox.craig.security.service.JwtAuthenticationFilter;
 import nz.fox.craig.security.service.TokenService;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -20,47 +19,40 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(
-            HttpSecurity http,
-            JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+            HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
 
-            http
-                .csrf(AbstractHttpConfigurer::disable)
+        http.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .sessionManagement(
-                        session -> session.sessionCreationPolicy(
-                                SessionCreationPolicy.STATELESS))
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(
-                        exception -> exception
-                                .authenticationEntryPoint(
-                                        new HttpStatusEntryPoint(
-                                                HttpStatus.UNAUTHORIZED))
-                                .accessDeniedHandler(
-                                        new AccessDeniedHandlerImpl()))
+                        exception ->
+                                exception
+                                        .authenticationEntryPoint(
+                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                                        .accessDeniedHandler(new AccessDeniedHandlerImpl()))
                 .authorizeHttpRequests(
-                        auth -> auth
-                                .requestMatchers(
-                                        "/v3/api-docs/**",
-                                        "/swagger-ui/**",
-                                        "/swagger-ui.html")
-                                .permitAll()
-                                .requestMatchers("/actuator/health",
-                                                        "/actuator/health/**").permitAll()
-                                .requestMatchers("/api/shipping/**")
-                                .authenticated()
-                                .anyRequest()
-                                .authenticated())
+                        auth ->
+                                auth.requestMatchers(
+                                                "/v3/api-docs/**",
+                                                "/swagger-ui/**",
+                                                "/swagger-ui.html")
+                                        .permitAll()
+                                        .requestMatchers("/actuator/health", "/actuator/health/**")
+                                        .permitAll()
+                                        .requestMatchers("/api/shipping/**")
+                                        .authenticated()
+                                        .anyRequest()
+                                        .authenticated())
                 .addFilterBefore(
-                        jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+                        jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
-    JwtAuthenticationFilter jwtAuthenticationFilter(
-            TokenService tokenService) {
+    JwtAuthenticationFilter jwtAuthenticationFilter(TokenService tokenService) {
 
         return new JwtAuthenticationFilter(tokenService);
     }
-
 }

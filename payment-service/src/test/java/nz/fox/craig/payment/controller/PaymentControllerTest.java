@@ -13,13 +13,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
-
 import nz.fox.craig.payment.dto.CreatePaymentRequest;
 import nz.fox.craig.payment.dto.PaymentResponse;
 import nz.fox.craig.payment.model.PaymentStatus;
 import nz.fox.craig.payment.service.PaymentService;
-import tools.jackson.databind.json.JsonMapper;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -29,19 +26,17 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
 @WebMvcTest(PaymentController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class PaymentControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Autowired private MockMvc mockMvc;
 
-    @Autowired
-    private JsonMapper objectMapper;
+    @Autowired private JsonMapper objectMapper;
 
-    @MockitoBean
-    private PaymentService paymentService;
+    @MockitoBean private PaymentService paymentService;
 
     @Test
     void shouldCreatePayment() throws Exception {
@@ -50,11 +45,7 @@ class PaymentControllerTest {
         UUID paymentId = UUID.randomUUID();
 
         CreatePaymentRequest request =
-                new CreatePaymentRequest(
-                        orderId,
-                        customerId,
-                        new BigDecimal("149.99"),
-                        "NZD");
+                new CreatePaymentRequest(orderId, customerId, new BigDecimal("149.99"), "NZD");
 
         PaymentResponse response =
                 new PaymentResponse(
@@ -67,8 +58,7 @@ class PaymentControllerTest {
                         Instant.now(),
                         Instant.now());
 
-        when(paymentService.createPayment(any(CreatePaymentRequest.class)))
-                .thenReturn(response);
+        when(paymentService.createPayment(any(CreatePaymentRequest.class))).thenReturn(response);
 
         mockMvc.perform(
                         post("/api/payments")
@@ -102,8 +92,7 @@ class PaymentControllerTest {
                         Instant.now(),
                         Instant.now());
 
-        when(paymentService.getPaymentsByCustomer(customerId))
-                .thenReturn(List.of(response));
+        when(paymentService.getPaymentsByCustomer(customerId)).thenReturn(List.of(response));
 
         mockMvc.perform(get("/api/payments/customer/{customerId}", customerId))
                 .andExpect(status().isOk())
@@ -121,8 +110,7 @@ class PaymentControllerTest {
     void shouldReturnEmptyListWhenCustomerHasNoPayments() throws Exception {
         UUID customerId = UUID.randomUUID();
 
-        when(paymentService.getPaymentsByCustomer(customerId))
-                .thenReturn(List.of());
+        when(paymentService.getPaymentsByCustomer(customerId)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/payments/customer/{customerId}", customerId))
                 .andExpect(status().isOk())
@@ -210,8 +198,7 @@ class PaymentControllerTest {
 
     @ParameterizedTest
     @MethodSource("invalidCurrencies")
-    void shouldRejectPaymentWhenCurrencyFormatIsInvalid(String currency)
-                throws Exception {
+    void shouldRejectPaymentWhenCurrencyFormatIsInvalid(String currency) throws Exception {
         String request =
                 """
                 {
@@ -221,24 +208,21 @@ class PaymentControllerTest {
                         "currency": "%s"
                 }
                 """
-                        .formatted(
-                                UUID.randomUUID(),
-                                UUID.randomUUID(),
-                                currency);
+                        .formatted(UUID.randomUUID(), UUID.randomUUID(), currency);
 
         mockMvc.perform(
                         post("/api/payments")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(request))
                 .andExpect(status().isBadRequest());
-        }
+    }
 
-        private static Stream<String> invalidCurrencies() {
-                return Stream.of(
-                        "NZ",       // Too short
-                        "NZDD",     // Too long
-                        "12D",      // Contains digits
-                        "N D",      // Contains whitespace
-                        "");        // Empty
-        }
+    private static Stream<String> invalidCurrencies() {
+        return Stream.of(
+                "NZ", // Too short
+                "NZDD", // Too long
+                "12D", // Contains digits
+                "N D", // Contains whitespace
+                ""); // Empty
+    }
 }

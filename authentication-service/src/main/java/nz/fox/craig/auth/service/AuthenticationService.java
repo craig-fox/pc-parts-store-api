@@ -11,7 +11,6 @@ import nz.fox.craig.auth.exception.InvalidCredentialsException;
 import nz.fox.craig.security.dto.AuthenticatedUser;
 import nz.fox.craig.security.dto.Role;
 import nz.fox.craig.security.service.TokenService;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 

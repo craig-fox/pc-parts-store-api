@@ -20,8 +20,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 class PaymentRepositoryTest extends AbstractPostgresTest {
 
-    @Autowired
-    private PaymentRepository paymentRepository;
+    @Autowired private PaymentRepository paymentRepository;
 
     @Test
     void shouldFindPaymentsByCustomerId() {
@@ -41,8 +40,7 @@ class PaymentRepositoryTest extends AbstractPostgresTest {
 
     @Test
     void shouldReturnEmptyListWhenCustomerHasNoPayments() {
-        List<Payment> payments =
-                paymentRepository.findByCustomerId(UUID.randomUUID());
+        List<Payment> payments = paymentRepository.findByCustomerId(UUID.randomUUID());
 
         assertThat(payments).isEmpty();
     }

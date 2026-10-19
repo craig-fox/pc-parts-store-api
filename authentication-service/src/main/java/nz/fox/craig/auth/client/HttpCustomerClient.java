@@ -3,7 +3,6 @@ package nz.fox.craig.auth.client;
 import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.auth.dto.AuthenticatedCustomer;
 import nz.fox.craig.auth.exception.InvalidCredentialsException;
-
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -16,8 +15,7 @@ public class HttpCustomerClient implements CustomerClient {
 
     private final RestClient restClient;
 
-    public HttpCustomerClient(
-            @Qualifier("customerRestClient") RestClient restClient) {
+    public HttpCustomerClient(@Qualifier("customerRestClient") RestClient restClient) {
         this.restClient = restClient;
     }
 

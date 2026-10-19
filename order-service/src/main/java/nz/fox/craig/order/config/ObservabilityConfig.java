@@ -1,12 +1,11 @@
 package nz.fox.craig.order.config;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
 import nz.fox.craig.observability.CorrelationIdFilter;
 import nz.fox.craig.observability.CorrelationIdInterceptor;
 import nz.fox.craig.observability.HttpRequestLoggingFilter;
 import nz.fox.craig.observability.RestClientLoggingInterceptor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class ObservabilityConfig {

@@ -6,12 +6,11 @@ import java.util.UUID;
 import nz.fox.craig.payment.model.PaymentStatus;
 
 public record PaymentResponse(
-    UUID id,
-    UUID orderId,
-    UUID customerId,
-    BigDecimal amount,
-    String currency,
-    PaymentStatus status,
-    Instant createdAt,
-    Instant updatedAt) {
-}
+        UUID id,
+        UUID orderId,
+        UUID customerId,
+        BigDecimal amount,
+        String currency,
+        PaymentStatus status,
+        Instant createdAt,
+        Instant updatedAt) {}

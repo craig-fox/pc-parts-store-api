@@ -219,7 +219,6 @@ class InventoryApiIntegrationTest extends AbstractPostgresTest {
                 .andExpect(status().isBadRequest());
     }
 
-
     @Test
     void shouldReturnBadRequestWhenConfirmQuantityIsInvalid() throws Exception {
 

@@ -1,14 +1,20 @@
 package nz.fox.craig.payment.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Stream;
+import nz.fox.craig.payment.model.Payment;
+import nz.fox.craig.payment.model.PaymentStatus;
 import nz.fox.craig.payment.repository.PaymentRepository;
 import nz.fox.craig.test.AbstractPostgresTest;
 import nz.fox.craig.test.JwtTestFactory;
-import tools.jackson.databind.json.JsonMapper;
-
-import java.time.Duration;
-import java.util.UUID;
-import java.util.stream.Stream;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -17,19 +23,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.test.web.servlet.MockMvc;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-
-import java.util.List;
-import nz.fox.craig.payment.model.Payment;
-import nz.fox.craig.payment.model.PaymentStatus;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -38,14 +35,11 @@ class PaymentApiIntegrationTest extends AbstractPostgresTest {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Autowired private MockMvc mockMvc;
 
-    @Autowired
-    private PaymentRepository paymentRepository;
+    @Autowired private PaymentRepository paymentRepository;
 
-    @Autowired 
-    private JsonMapper objectMapper;
+    @Autowired private JsonMapper objectMapper;
 
     @BeforeEach
     void setUp() {
@@ -56,11 +50,11 @@ class PaymentApiIntegrationTest extends AbstractPostgresTest {
     void shouldCreatePayment() throws Exception {
         UUID orderId = UUID.randomUUID();
         UUID customerId = UUID.randomUUID();
-    
+
         String token =
                 JwtTestFactory.createToken(
                         customerId, "test@example.com", jwtSecret, Duration.ofHours(1));
-    
+
         String request =
                 """
                 {
@@ -71,7 +65,7 @@ class PaymentApiIntegrationTest extends AbstractPostgresTest {
                 }
                 """
                         .formatted(orderId, customerId);
-    
+
         mockMvc.perform(
                         post("/api/payments")
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -86,11 +80,11 @@ class PaymentApiIntegrationTest extends AbstractPostgresTest {
                 .andExpect(jsonPath("$.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.createdAt").isNotEmpty())
                 .andExpect(jsonPath("$.updatedAt").isNotEmpty());
-    
+
         List<Payment> payments = paymentRepository.findByCustomerId(customerId);
-    
+
         assertThat(payments).hasSize(1);
-    
+
         Payment payment = payments.getFirst();
         assertThat(payment.getOrderId()).isEqualTo(orderId);
         assertThat(payment.getCustomerId()).isEqualTo(customerId);
@@ -146,10 +140,10 @@ class PaymentApiIntegrationTest extends AbstractPostgresTest {
                         .getContentAsString();
 
         UUID firstPaymentId =
-            UUID.fromString(objectMapper.readTree(firstResponse).get("id").asText());
-                
+                UUID.fromString(objectMapper.readTree(firstResponse).get("id").asText());
+
         UUID secondPaymentId =
-            UUID.fromString(objectMapper.readTree(secondResponse).get("id").asText());
+                UUID.fromString(objectMapper.readTree(secondResponse).get("id").asText());
 
         assertThat(secondPaymentId).isEqualTo(firstPaymentId);
 
@@ -186,8 +180,7 @@ class PaymentApiIntegrationTest extends AbstractPostgresTest {
 
     @Test
     void shouldRequireAuthenticationWhenGettingPayments() throws Exception {
-        mockMvc.perform(
-                        get("/api/payments/customer/{customerId}", UUID.randomUUID()))
+        mockMvc.perform(get("/api/payments/customer/{customerId}", UUID.randomUUID()))
                 .andExpect(status().isUnauthorized());
     }
 

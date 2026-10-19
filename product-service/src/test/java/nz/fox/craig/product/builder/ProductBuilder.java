@@ -82,7 +82,7 @@ public class ProductBuilder {
 
     public Product build() {
         Product product = new Product();
-    
+
         product.setId(id);
         product.setSku(sku);
         product.setName(name);
@@ -94,7 +94,7 @@ public class ProductBuilder {
         product.setWeightKg(weightKg);
         product.setImageUrl(imageUrl);
         product.setActive(active);
-    
+
         return product;
     }
 }

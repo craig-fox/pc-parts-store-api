@@ -2,7 +2,6 @@ package nz.fox.craig.customer.config;
 
 import nz.fox.craig.security.service.JwtAuthenticationFilter;
 import nz.fox.craig.security.service.TokenService;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -47,14 +46,17 @@ public class SecurityConfig {
                                         .accessDeniedHandler(new AccessDeniedHandlerImpl()))
                 .authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers("/api/auth/**").permitAll()
-                                        .requestMatchers(HttpMethod.POST, "/api/customers").permitAll()
-                                        .requestMatchers(HttpMethod.GET, "/api/customers/email/**").permitAll()
+                                auth.requestMatchers("/api/auth/**")
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.POST, "/api/customers")
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/api/customers/email/**")
+                                        .permitAll()
                                         .requestMatchers(
                                                 "/v3/api-docs/**",
                                                 "/swagger-ui/**",
-                                                "/swagger-ui.html"
-                                        ).permitAll()
+                                                "/swagger-ui.html")
+                                        .permitAll()
                                         .requestMatchers(
                                                 "/actuator/health",
                                                 "/actuator/health/**",

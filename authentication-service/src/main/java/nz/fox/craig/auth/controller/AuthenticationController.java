@@ -1,5 +1,9 @@
 package nz.fox.craig.auth.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import nz.fox.craig.auth.dto.LoginRequest;
@@ -12,11 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -25,7 +24,6 @@ public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
 
-  
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Authenticate a customer")

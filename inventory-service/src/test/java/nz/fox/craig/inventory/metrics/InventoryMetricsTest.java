@@ -21,16 +21,14 @@ class InventoryMetricsTest {
     void incrementsReservationsCounter() {
         inventoryMetrics.reservationMade();
 
-        assertThat(meterRegistry.counter("inventory.reservations").count())
-                .isEqualTo(1.0);
+        assertThat(meterRegistry.counter("inventory.reservations").count()).isEqualTo(1.0);
     }
 
     @Test
     void incrementsReleasesCounter() {
         inventoryMetrics.releaseMade();
 
-        assertThat(meterRegistry.counter("inventory.releases").count())
-                .isEqualTo(1.0);
+        assertThat(meterRegistry.counter("inventory.releases").count()).isEqualTo(1.0);
     }
 
     @Test
@@ -38,8 +36,7 @@ class InventoryMetricsTest {
         inventoryMetrics.reservationMade();
         inventoryMetrics.reservationMade();
 
-        assertThat(meterRegistry.counter("inventory.reservations").count())
-                .isEqualTo(2.0);
+        assertThat(meterRegistry.counter("inventory.reservations").count()).isEqualTo(2.0);
     }
 
     @Test
@@ -47,7 +44,6 @@ class InventoryMetricsTest {
         inventoryMetrics.releaseMade();
         inventoryMetrics.releaseMade();
 
-        assertThat(meterRegistry.counter("inventory.releases").count())
-                .isEqualTo(2.0);
+        assertThat(meterRegistry.counter("inventory.releases").count()).isEqualTo(2.0);
     }
 }

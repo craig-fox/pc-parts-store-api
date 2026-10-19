@@ -24,8 +24,6 @@ import nz.fox.craig.customer.exception.CustomerNotFoundException;
 import nz.fox.craig.customer.model.CustomerStatus;
 import nz.fox.craig.customer.service.CustomerService;
 import nz.fox.craig.security.service.JwtAuthenticationFilter;
-import tools.jackson.databind.json.JsonMapper;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +33,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
 @WebMvcTest(CustomerController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -43,8 +42,7 @@ class CustomerControllerTest {
 
     @Autowired private MockMvc mockMvc;
 
-    @Autowired
-    private JsonMapper jsonMapper;
+    @Autowired private JsonMapper jsonMapper;
 
     @MockitoBean private CustomerService customerService;
 

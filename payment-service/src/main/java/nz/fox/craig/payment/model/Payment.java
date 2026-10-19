@@ -26,10 +26,9 @@ public class Payment {
 
     @Column(name = "order_id", nullable = false)
     private UUID orderId;
-    
+
     @Column(name = "customer_id", nullable = false)
     private UUID customerId;
-
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
@@ -43,7 +42,7 @@ public class Payment {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
-    
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 

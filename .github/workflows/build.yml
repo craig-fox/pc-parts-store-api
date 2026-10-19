@@ -53,6 +53,13 @@ jobs:
             exit 1
           fi
 
+      
+      - name: Check code formatting
+        run: mvn --batch-mode spotless:check
+
+      - name: Build and verify
+        run: mvn --batch-mode clean verify
+
       - name: Build and verify
         run: mvn --batch-mode clean verify
 

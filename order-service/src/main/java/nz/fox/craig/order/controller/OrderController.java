@@ -1,5 +1,9 @@
 package nz.fox.craig.order.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -8,8 +12,6 @@ import nz.fox.craig.order.dto.request.OrderRequest;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.service.OrderCreationResult;
 import nz.fox.craig.order.service.OrderService;
-
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,13 +20,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -38,7 +35,9 @@ public class OrderController {
     @Operation(summary = "Create an order")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Order created"),
-        @ApiResponse(responseCode = "200", description = "Existing order returned for idempotency key"),
+        @ApiResponse(
+                responseCode = "200",
+                description = "Existing order returned for idempotency key"),
         @ApiResponse(responseCode = "400", description = "Invalid order request"),
         @ApiResponse(responseCode = "401", description = "Unauthenticated")
     })
@@ -46,11 +45,9 @@ public class OrderController {
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @Valid @RequestBody OrderRequest request) {
 
-        OrderCreationResult result =
-                orderService.createOrder(idempotencyKey, request);
+        OrderCreationResult result = orderService.createOrder(idempotencyKey, request);
 
-        HttpStatus status =
-                result.created() ? HttpStatus.CREATED : HttpStatus.OK;
+        HttpStatus status = result.created() ? HttpStatus.CREATED : HttpStatus.OK;
 
         return ResponseEntity.status(status).body(result.order());
     }

@@ -8,10 +8,10 @@ import lombok.Builder;
 public record ProductSnapshot(
         UUID id, String name, BigDecimal price, BigDecimal weightKg, Boolean active) {
 
-        public Boolean active() {
-            if (active == null) {
-                return false;
-            }
-            return active;
+    public Boolean active() {
+        if (active == null) {
+            return false;
         }
+        return active;
+    }
 }

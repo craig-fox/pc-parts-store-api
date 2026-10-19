@@ -59,59 +59,50 @@ public class OrderService {
 
     @Transactional
     public OrderCreationResult createOrder(String idempotencyKey, OrderRequest request) {
-       
+
         UUID customerId = currentUser.customerId();
         String requestHash = hashOrderRequest(request);
         log.info("Creating order for customer {}", customerId);
-        Optional<Order> existingOrder = orderRepository.findByCustomerIdAndIdempotencyKey(
-                                                        customerId, idempotencyKey);
-    
+        Optional<Order> existingOrder =
+                orderRepository.findByCustomerIdAndIdempotencyKey(customerId, idempotencyKey);
+
         if (existingOrder.isPresent()) {
             log.info(
-                "Returning existing order {} for duplicate request",
-                existingOrder.get().getId());
+                    "Returning existing order {} for duplicate request",
+                    existingOrder.get().getId());
             return new OrderCreationResult(
-                    handleExistingOrder(existingOrder.get(), requestHash),false);
+                    handleExistingOrder(existingOrder.get(), requestHash), false);
         }
-    
+
         validateCustomer(customerId);
         List<OrderItemRequest> reservedItems = new ArrayList<>();
-    
+
         try {
             for (OrderItemRequest item : request.items()) {
                 inventoryClient.reserveStock(item.productId(), item.quantity());
                 reservedItems.add(item);
             }
-        
+
             UUID orderId = UUID.randomUUID();
             Order order = assembleOrder(orderId, request, customerId, idempotencyKey, requestHash);
             Order savedOrder = orderPersistenceService.save(order);
-        
+
             paymentClient.processPayment(
-                    savedOrder.getId(),
-                    customerId,
-                    savedOrder.getTotal(),
-                    "NZD");
-        
+                    savedOrder.getId(), customerId, savedOrder.getTotal(), "NZD");
+
             savedOrder.setStatus(OrderStatus.PAID);
             Order paidOrder = orderPersistenceService.save(savedOrder);
             log.info(
-                "Order {} created successfully with total {} {}",
-                paidOrder.getId(),
-                paidOrder.getTotal(),
-                "NZD");
+                    "Order {} created successfully with total {} {}",
+                    paidOrder.getId(),
+                    paidOrder.getTotal(),
+                    "NZD");
             orderMetrics.orderCreated();
-            return new OrderCreationResult(
-                    orderMapper.toResponse(paidOrder),
-                    true);
+            return new OrderCreationResult(orderMapper.toResponse(paidOrder), true);
 
         } catch (DataIntegrityViolationException ex) {
             releaseReservedStock(reservedItems);
-            return handleConcurrentOrder(
-                    customerId,
-                    idempotencyKey,
-                    requestHash,
-                    ex);
+            return handleConcurrentOrder(customerId, idempotencyKey, requestHash, ex);
         } catch (RuntimeException ex) {
             releaseReservedStock(reservedItems);
             throw ex;
@@ -119,86 +110,81 @@ public class OrderService {
     }
 
     private Order assembleOrder(
-        UUID orderId,
-        OrderRequest request,
-        UUID customerId,
-        String idempotencyKey,
-        String idempotencyHash) {
+            UUID orderId,
+            OrderRequest request,
+            UUID customerId,
+            String idempotencyKey,
+            String idempotencyHash) {
 
-    List<OrderItem> items = buildOrderItems(request);
+        List<OrderItem> items = buildOrderItems(request);
 
-    BigDecimal subtotal = calculateSubtotal(items);
-    BigDecimal totalWeight = calculateTotalWeight(items);
+        BigDecimal subtotal = calculateSubtotal(items);
+        BigDecimal totalWeight = calculateTotalWeight(items);
 
-    ShippingQuoteResponse shippingQuote =
-            shippingClient.calculateQuote(
-                    new ShippingQuoteRequest(
-                            orderId,
-                            request.shippingAddress(),
-                            totalWeight,
-                            request.shippingMethod()));
+        ShippingQuoteResponse shippingQuote =
+                shippingClient.calculateQuote(
+                        new ShippingQuoteRequest(
+                                orderId,
+                                request.shippingAddress(),
+                                totalWeight,
+                                request.shippingMethod()));
 
-    BigDecimal shipping = shippingQuote.price();
+        BigDecimal shipping = shippingQuote.price();
 
-    Order order =
-        Order.builder()
-                .id(orderId)
-                .customerId(customerId)
-                .idempotencyKey(idempotencyKey)
-                .idempotencyRequestHash(idempotencyHash)
-                .orderDate(LocalDateTime.now())
-                .status(OrderStatus.PLACED)
-                .subtotal(subtotal)
-                .shipping(shipping)
-                .total(calculateTotal(subtotal, shipping))
-                .shippingAddress(
-                        new ShippingAddress(
-                                request.shippingAddress().addressLine1(),
-                                request.shippingAddress().city(),
-                                request.shippingAddress().postcode(),
-                                request.shippingAddress().country()))
-                .build();
+        Order order =
+                Order.builder()
+                        .id(orderId)
+                        .customerId(customerId)
+                        .idempotencyKey(idempotencyKey)
+                        .idempotencyRequestHash(idempotencyHash)
+                        .orderDate(LocalDateTime.now())
+                        .status(OrderStatus.PLACED)
+                        .subtotal(subtotal)
+                        .shipping(shipping)
+                        .total(calculateTotal(subtotal, shipping))
+                        .shippingAddress(
+                                new ShippingAddress(
+                                        request.shippingAddress().addressLine1(),
+                                        request.shippingAddress().city(),
+                                        request.shippingAddress().postcode(),
+                                        request.shippingAddress().country()))
+                        .build();
 
-    items.forEach(order::addItem);
+        items.forEach(order::addItem);
 
-    return order;
-}
+        return order;
+    }
 
     private OrderCreationResult handleConcurrentOrder(
-        UUID customerId,
-        String idempotencyKey,
-        String requestHash,
-        DataIntegrityViolationException ex) {
+            UUID customerId,
+            String idempotencyKey,
+            String requestHash,
+            DataIntegrityViolationException ex) {
 
         Optional<Order> existingOrder =
-                orderRepository.findByCustomerIdAndIdempotencyKey(
-                        customerId, idempotencyKey);
+                orderRepository.findByCustomerIdAndIdempotencyKey(customerId, idempotencyKey);
 
         if (existingOrder.isEmpty()) {
             throw ex;
         }
 
         return new OrderCreationResult(
-                handleExistingOrder(existingOrder.get(), requestHash),
-                false);
+                handleExistingOrder(existingOrder.get(), requestHash), false);
     }
 
-    private void releaseReservedStock(
-        List<OrderItemRequest> reservedItems) {
+    private void releaseReservedStock(List<OrderItemRequest> reservedItems) {
 
         for (OrderItemRequest item : reservedItems) {
 
             try {
-                inventoryClient.releaseStock(
-                        item.productId(),
-                        item.quantity());
+                inventoryClient.releaseStock(item.productId(), item.quantity());
 
             } catch (DownstreamServiceUnavailableException ex) {
 
                 log.warn(
-                    "Failed to release reserved inventory for product {}",
-                    item.productId(),
-                    ex);
+                        "Failed to release reserved inventory for product {}",
+                        item.productId(),
+                        ex);
             }
         }
     }
@@ -231,7 +217,6 @@ public class OrderService {
         return items.stream().map(OrderItem::getLineTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-
     private BigDecimal calculateTotalWeight(List<OrderItem> items) {
         return items.stream()
                 .map(OrderItem::getLineWeight)
@@ -246,34 +231,27 @@ public class OrderService {
     private String hashOrderRequest(OrderRequest request) {
 
         String canonicalRequest =
-                request.items().stream()
-                        .map(this::canonicalItem)
-                        .collect(Collectors.joining("|"))
+                request.items().stream().map(this::canonicalItem).collect(Collectors.joining("|"))
                         + "|"
                         + canonicalAddress(request.shippingAddress());
-    
+
         return sha256(canonicalRequest);
     }
-    
+
     private String canonicalItem(OrderItemRequest item) {
         return item.productId() + ":" + item.quantity();
     }
-    
+
     private String canonicalAddress(ShippingAddressRequest address) {
         return String.join(
-                ":",
-                address.addressLine1(),
-                address.city(),
-                address.postcode(),
-                address.country());
+                ":", address.addressLine1(), address.city(), address.postcode(), address.country());
     }
-    
+
     private String sha256(String value) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-    
-            return HexFormat.of()
-                    .formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+
+            return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException ex) {
             throw new IllegalStateException("SHA-256 algorithm unavailable", ex);
         }
@@ -286,7 +264,7 @@ public class OrderService {
                 requestHash.getBytes(StandardCharsets.UTF_8))) {
             throw new IdempotencyKeyReuseException(order.getIdempotencyKey());
         }
-    
+
         return orderMapper.toResponse(order);
     }
 
@@ -294,24 +272,27 @@ public class OrderService {
     public OrderResponse getOrder(UUID id) {
         UUID customerId = currentUser.customerId();
 
-        Order order = orderRepository.findByIdAndCustomerId(id, customerId)
-                .orElseThrow(() -> new OrderNotFoundException(id));
+        Order order =
+                orderRepository
+                        .findByIdAndCustomerId(id, customerId)
+                        .orElseThrow(() -> new OrderNotFoundException(id));
 
         return orderMapper.toResponse(order);
     }
 
-
     @Transactional
     public OrderResponse cancelOrder(UUID id) {
         UUID customerId = currentUser.customerId();
-        Order order = orderRepository.findByIdAndCustomerId(id, customerId)
-                .orElseThrow(() -> new OrderNotFoundException(id));
+        Order order =
+                orderRepository
+                        .findByIdAndCustomerId(id, customerId)
+                        .orElseThrow(() -> new OrderNotFoundException(id));
         validateOrderCanBeCancelled(order);
         order.setStatus(OrderStatus.CANCELLED);
-    
+
         log.info("Order {} cancelled", order.getId());
         orderMetrics.orderCancelled();
-    
+
         return orderMapper.toResponse(order);
     }
 
@@ -330,6 +311,4 @@ public class OrderService {
                 .map(orderMapper::toResponse)
                 .toList();
     }
-
-    
 }

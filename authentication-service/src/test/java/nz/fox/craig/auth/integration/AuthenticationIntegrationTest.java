@@ -19,8 +19,6 @@ import nz.fox.craig.auth.exception.InvalidCredentialsException;
 import nz.fox.craig.security.dto.AuthenticatedUser;
 import nz.fox.craig.security.dto.Role;
 import nz.fox.craig.security.service.TokenService;
-import tools.jackson.databind.json.JsonMapper;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -31,6 +29,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc

@@ -15,36 +15,24 @@ public final class JwtTestFactory {
     private JwtTestFactory() {}
 
     public static String createToken(
-        UUID customerId,
-        String email,
-        String secret,
-        Duration expiration,
-        Set<String> roles) {
-    
-    Instant now = Instant.now();
+            UUID customerId, String email, String secret, Duration expiration, Set<String> roles) {
 
-    return Jwts.builder()
-            .subject(customerId.toString())
-            .claim("email", email)
-            .claim("roles", roles)
-            .issuedAt(Date.from(now))
-            .expiration(Date.from(now.plus(expiration)))
-            .signWith(getSigningKey(secret))
-            .compact();
+        Instant now = Instant.now();
+
+        return Jwts.builder()
+                .subject(customerId.toString())
+                .claim("email", email)
+                .claim("roles", roles)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plus(expiration)))
+                .signWith(getSigningKey(secret))
+                .compact();
     }
 
     public static String createToken(
-        UUID customerId,
-        String email,
-        String secret,
-        Duration expiration) {
+            UUID customerId, String email, String secret, Duration expiration) {
 
-    return createToken(
-            customerId,
-            email,
-            secret,
-            expiration,
-            Set.of("ROLE_CUSTOMER"));
+        return createToken(customerId, email, secret, expiration, Set.of("ROLE_CUSTOMER"));
     }
 
     private static SecretKey getSigningKey(String secret) {

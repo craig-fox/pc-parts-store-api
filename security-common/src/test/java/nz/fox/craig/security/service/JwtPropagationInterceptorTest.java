@@ -86,7 +86,7 @@ class JwtPropagationInterceptorTest {
         jwtInterceptor.intercept(request, body, execution);
 
         assertThat(headers.getFirst(HttpHeaders.AUTHORIZATION)).isNull();
-        
+
         verify(execution).execute(request, body);
     }
 }
