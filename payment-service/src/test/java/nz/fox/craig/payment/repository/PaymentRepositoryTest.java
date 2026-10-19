@@ -72,4 +72,19 @@ class PaymentRepositoryTest extends AbstractPostgresTest {
         assertThatThrownBy(() -> paymentRepository.saveAndFlush(secondPayment))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
+
+    @Test
+    void shouldFindPaymentByOrderId() {
+        UUID orderId = UUID.randomUUID();
+
+        Payment payment = createPayment(UUID.randomUUID());
+        payment.setOrderId(orderId);
+        paymentRepository.saveAndFlush(payment);
+
+        assertThat(paymentRepository.findByOrderId(orderId))
+                .isPresent()
+                .get()
+                .extracting(Payment::getOrderId)
+                .isEqualTo(orderId);
+    }
 }
