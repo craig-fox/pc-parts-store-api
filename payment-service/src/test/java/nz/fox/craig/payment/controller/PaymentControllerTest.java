@@ -18,7 +18,6 @@ import nz.fox.craig.payment.dto.PaymentResponse;
 import nz.fox.craig.payment.model.PaymentStatus;
 import nz.fox.craig.payment.service.PaymentService;
 import nz.fox.craig.security.service.CurrentUser;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -40,9 +39,7 @@ class PaymentControllerTest {
 
     @MockitoBean private PaymentService paymentService;
 
-
-    @MockitoBean
-    private CurrentUser currentUser;
+    @MockitoBean private CurrentUser currentUser;
 
     @Test
     void shouldCreatePayment() throws Exception {
