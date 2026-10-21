@@ -86,6 +86,8 @@ public class OrderService {
             UUID orderId = UUID.randomUUID();
             Order order = assembleOrder(orderId, request, customerId, idempotencyKey, requestHash);
             Order savedOrder = orderPersistenceService.save(order);
+           
+            
 
             paymentClient.processPayment(
                     savedOrder.getId(), customerId, savedOrder.getTotal(), "NZD");

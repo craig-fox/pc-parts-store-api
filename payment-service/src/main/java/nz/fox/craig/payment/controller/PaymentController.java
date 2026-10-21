@@ -10,7 +10,10 @@ import lombok.RequiredArgsConstructor;
 import nz.fox.craig.payment.dto.CreatePaymentRequest;
 import nz.fox.craig.payment.dto.PaymentResponse;
 import nz.fox.craig.payment.service.PaymentService;
+import nz.fox.craig.security.service.CurrentUser;
+
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final CurrentUser currentUser;
 
     @Operation(summary = "Create a payment")
     @ApiResponses({
@@ -44,7 +48,14 @@ public class PaymentController {
         @ApiResponse(responseCode = "403", description = "Access denied")
     })
     @GetMapping("/customer/{customerId}")
-    public List<PaymentResponse> getPaymentsByCustomer(@PathVariable UUID customerId) {
+    public List<PaymentResponse> getPaymentsByCustomer(
+            @PathVariable UUID customerId) {
+
+        if (!currentUser.customerId().equals(customerId)) {
+            throw new AccessDeniedException(
+                    "You cannot access another customer's payments");
+        }
+
         return paymentService.getPaymentsByCustomer(customerId);
     }
 }
