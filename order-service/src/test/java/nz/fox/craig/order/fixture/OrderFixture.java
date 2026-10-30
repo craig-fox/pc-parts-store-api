@@ -18,8 +18,6 @@ import nz.fox.craig.order.model.ShippingAddress;
 
 public final class OrderFixture {
 
-
-
     public static final UUID FIXTURE_PRODUCT_ID =
             UUID.fromString("1b0d0fa6-52e1-4acd-8286-892bc29f8b3a");
 
@@ -155,18 +153,18 @@ public final class OrderFixture {
     }
 
     private static List<OrderItem> twoOrderItems() {
-        return List.of(OrderItem.builder()
-                    .productId(FIXTURE_PRODUCT_ID)
-                    .productName("Test Product")
-                    .quantity(1)
-                    .unitPrice(new BigDecimal("1000.00"))
-                    .build(),
+        return List.of(
                 OrderItem.builder()
-                    .productId(FIXTURE_PRODUCT_ID_2)
-                    .productName("Test Product 2")
-                    .quantity(1)
-                    .unitPrice(new BigDecimal("500.00"))
-                    .build()
-            );
+                        .productId(FIXTURE_PRODUCT_ID)
+                        .productName("Test Product")
+                        .quantity(1)
+                        .unitPrice(new BigDecimal("1000.00"))
+                        .build(),
+                OrderItem.builder()
+                        .productId(FIXTURE_PRODUCT_ID_2)
+                        .productName("Test Product 2")
+                        .quantity(1)
+                        .unitPrice(new BigDecimal("500.00"))
+                        .build());
     }
 }

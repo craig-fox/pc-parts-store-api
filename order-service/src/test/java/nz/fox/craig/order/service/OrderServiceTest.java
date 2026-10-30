@@ -17,7 +17,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
 import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.order.client.CustomerClient;
@@ -384,7 +383,7 @@ class OrderServiceTest {
                     .thenReturn(Optional.of(existingOrder));
             when(orderMapper.toResponse(existingOrder)).thenReturn(expectedResponse);
             when(orderPersistenceService.save(any(Order.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                    .thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
             OrderResponse response = orderService.cancelOrder(ORDER_ID);
@@ -397,9 +396,7 @@ class OrderServiceTest {
 
             verify(repository).findByIdAndCustomerId(ORDER_ID, CUSTOMER_ID);
             verify(orderMapper).toResponse(existingOrder);
-            verify(inventoryClient).releaseStock(
-                item.getProductId(),
-                item.getQuantity());
+            verify(inventoryClient).releaseStock(item.getProductId(), item.getQuantity());
 
             verifyNoMoreInteractions(repository, orderMapper);
             verify(orderMetrics).orderCancelled();
@@ -431,19 +428,18 @@ class OrderServiceTest {
             var item = existingOrder.getItems().get(0);
 
             when(repository.findByIdAndCustomerId(ORDER_ID, CUSTOMER_ID))
-                .thenReturn(Optional.of(existingOrder));
+                    .thenReturn(Optional.of(existingOrder));
 
-            doThrow(new DownstreamServiceUnavailableException(
-                    "Inventory",
-                    new RuntimeException("Inventory unavailable")))
-                .when(inventoryClient)
-                .releaseStock(item.getProductId(), item.getQuantity());
+            doThrow(
+                            new DownstreamServiceUnavailableException(
+                                    "Inventory", new RuntimeException("Inventory unavailable")))
+                    .when(inventoryClient)
+                    .releaseStock(item.getProductId(), item.getQuantity());
 
             assertThatThrownBy(() -> orderService.cancelOrder(ORDER_ID))
-                .isInstanceOf(DownstreamServiceUnavailableException.class);
+                    .isInstanceOf(DownstreamServiceUnavailableException.class);
 
-            assertThat(existingOrder.getStatus())
-                .isNotEqualTo(OrderStatus.CANCELLED);
+            assertThat(existingOrder.getStatus()).isNotEqualTo(OrderStatus.CANCELLED);
 
             verify(orderPersistenceService, never()).save(any(Order.class));
             verify(orderMetrics, never()).orderCancelled();
@@ -456,34 +452,29 @@ class OrderServiceTest {
             var succeedingItem = existingOrder.getItems().get(0);
             var failingItem = existingOrder.getItems().get(1);
             when(repository.findByIdAndCustomerId(ORDER_ID, CUSTOMER_ID))
-                .thenReturn(Optional.of(existingOrder));
+                    .thenReturn(Optional.of(existingOrder));
 
             doNothing()
-                .when(inventoryClient)
-                .releaseStock(succeedingItem.getProductId(), succeedingItem.getQuantity());
+                    .when(inventoryClient)
+                    .releaseStock(succeedingItem.getProductId(), succeedingItem.getQuantity());
 
-            doThrow(new DownstreamServiceUnavailableException(
-                "Inventory",
-                new RuntimeException("Inventory unavailable")))
-                .when(inventoryClient)
-                .releaseStock(failingItem.getProductId(), failingItem.getQuantity());
+            doThrow(
+                            new DownstreamServiceUnavailableException(
+                                    "Inventory", new RuntimeException("Inventory unavailable")))
+                    .when(inventoryClient)
+                    .releaseStock(failingItem.getProductId(), failingItem.getQuantity());
 
             assertThatThrownBy(() -> orderService.cancelOrder(ORDER_ID))
-                .isInstanceOf(DownstreamServiceUnavailableException.class);
+                    .isInstanceOf(DownstreamServiceUnavailableException.class);
 
-            assertThat(existingOrder.getStatus())
-                .isEqualTo(OrderStatus.PAID);
-            verify(inventoryClient).releaseStock(
-                succeedingItem.getProductId(),
-                succeedingItem.getQuantity());
-            verify(inventoryClient).releaseStock(
-                failingItem.getProductId(),
-                failingItem.getQuantity());
+            assertThat(existingOrder.getStatus()).isEqualTo(OrderStatus.PAID);
+            verify(inventoryClient)
+                    .releaseStock(succeedingItem.getProductId(), succeedingItem.getQuantity());
+            verify(inventoryClient)
+                    .releaseStock(failingItem.getProductId(), failingItem.getQuantity());
             verify(orderPersistenceService, never()).save(any(Order.class));
             verify(orderMetrics, never()).orderCancelled();
         }
-
-
     }
 
     private OrderRequest orderRequest() {

@@ -284,16 +284,15 @@ public class OrderService {
     public OrderResponse cancelOrder(UUID id) {
         UUID customerId = currentUser.customerId();
 
-        Order order = orderRepository
-                .findByIdAndCustomerId(id, customerId)
-                .orElseThrow(() -> new OrderNotFoundException(id));
+        Order order =
+                orderRepository
+                        .findByIdAndCustomerId(id, customerId)
+                        .orElseThrow(() -> new OrderNotFoundException(id));
 
         validateOrderCanBeCancelled(order);
 
         for (OrderItem item : order.getItems()) {
-            inventoryClient.releaseStock(
-                    item.getProductId(),
-                    item.getQuantity());
+            inventoryClient.releaseStock(item.getProductId(), item.getQuantity());
         }
 
         order.setStatus(OrderStatus.CANCELLED);
