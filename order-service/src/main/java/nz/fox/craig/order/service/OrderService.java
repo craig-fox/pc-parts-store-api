@@ -283,17 +283,26 @@ public class OrderService {
     @Transactional
     public OrderResponse cancelOrder(UUID id) {
         UUID customerId = currentUser.customerId();
-        Order order =
-                orderRepository
-                        .findByIdAndCustomerId(id, customerId)
-                        .orElseThrow(() -> new OrderNotFoundException(id));
-        validateOrderCanBeCancelled(order);
-        order.setStatus(OrderStatus.CANCELLED);
 
-        log.info("Order {} cancelled", order.getId());
+        Order order = orderRepository
+                .findByIdAndCustomerId(id, customerId)
+                .orElseThrow(() -> new OrderNotFoundException(id));
+
+        validateOrderCanBeCancelled(order);
+
+        for (OrderItem item : order.getItems()) {
+            inventoryClient.releaseStock(
+                    item.getProductId(),
+                    item.getQuantity());
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        Order cancelledOrder = orderPersistenceService.save(order);
+
+        log.info("Order {} cancelled", cancelledOrder.getId());
         orderMetrics.orderCancelled();
 
-        return orderMapper.toResponse(order);
+        return orderMapper.toResponse(cancelledOrder);
     }
 
     private void validateOrderCanBeCancelled(Order order) {

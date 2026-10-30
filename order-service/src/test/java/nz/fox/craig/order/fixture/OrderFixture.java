@@ -18,8 +18,13 @@ import nz.fox.craig.order.model.ShippingAddress;
 
 public final class OrderFixture {
 
+
+
     public static final UUID FIXTURE_PRODUCT_ID =
             UUID.fromString("1b0d0fa6-52e1-4acd-8286-892bc29f8b3a");
+
+    public static final UUID FIXTURE_PRODUCT_ID_2 =
+            UUID.fromString("1b0d0fa6-52e1-4acd-8286-892bc29f8b3b");
 
     private OrderFixture() {}
 
@@ -35,6 +40,21 @@ public final class OrderFixture {
                 .total(new BigDecimal("1025.00"))
                 .shippingAddress(new ShippingAddress("1 Main St", "Auckland", "1010", "NZ"))
                 .items(new ArrayList<>(List.of(anOrderItem())))
+                .build();
+    }
+
+    public static Order anOrderWithTwoItems() {
+        return Order.builder()
+                .customerId(UUID.randomUUID())
+                .idempotencyKey(UUID.randomUUID().toString())
+                .idempotencyRequestHash("test-request-hash")
+                .orderDate(LocalDateTime.now())
+                .status(OrderStatus.PLACED)
+                .subtotal(new BigDecimal("1500.00"))
+                .shipping(new BigDecimal("25.00"))
+                .total(new BigDecimal("1525.00"))
+                .shippingAddress(new ShippingAddress("1 Main St", "Auckland", "1010", "NZ"))
+                .items(new ArrayList<>(twoOrderItems()))
                 .build();
     }
 
@@ -132,5 +152,21 @@ public final class OrderFixture {
                 .quantity(1)
                 .unitPrice(new BigDecimal("1000.00"))
                 .build();
+    }
+
+    private static List<OrderItem> twoOrderItems() {
+        return List.of(OrderItem.builder()
+                    .productId(FIXTURE_PRODUCT_ID)
+                    .productName("Test Product")
+                    .quantity(1)
+                    .unitPrice(new BigDecimal("1000.00"))
+                    .build(),
+                OrderItem.builder()
+                    .productId(FIXTURE_PRODUCT_ID_2)
+                    .productName("Test Product 2")
+                    .quantity(1)
+                    .unitPrice(new BigDecimal("500.00"))
+                    .build()
+            );
     }
 }
