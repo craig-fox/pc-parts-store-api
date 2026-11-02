@@ -3,9 +3,9 @@ package nz.fox.craig.order.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
 import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.order.client.CustomerClient;
@@ -289,23 +288,20 @@ class OrderServiceTest {
             Order order = OrderFixture.anOrder();
             order.setIdempotencyKey(IDEMPOTENCY_KEY);
             order.setIdempotencyRequestHash("test-request-hash");
-        
+
             when(repository.findByCustomerIdAndIdempotencyKey(CUSTOMER_ID, IDEMPOTENCY_KEY))
                     .thenReturn(Optional.of(order));
-        
+
             OrderRequest request = OrderFixture.anOrderRequest(ShippingMethod.STANDARD);
-        
+
             assertThatThrownBy(() -> orderService.createOrder(IDEMPOTENCY_KEY, request))
                     .isInstanceOf(IdempotencyKeyReuseException.class);
-        
+
             verify(orderPersistenceService, never()).save(any(Order.class));
             verify(inventoryClient, never()).reserveStock(any(UUID.class), anyInt());
             verify(paymentClient, never())
                     .processPayment(
-                            any(UUID.class),
-                            any(UUID.class),
-                            any(BigDecimal.class),
-                            anyString());
+                            any(UUID.class), any(UUID.class), any(BigDecimal.class), anyString());
             verify(orderMapper, never()).toResponse(any(Order.class));
         }
 
@@ -313,30 +309,26 @@ class OrderServiceTest {
         void shouldReturnExistingOrderForIdenticalRequest() {
             Order existingOrder = OrderFixture.anOrder();
             existingOrder.setIdempotencyKey(IDEMPOTENCY_KEY);
-        
+
             OrderRequest request = OrderFixture.anOrderRequest(ShippingMethod.STANDARD);
             existingOrder.setIdempotencyRequestHash(requestHash(request));
-        
+
             OrderResponse expectedResponse = OrderFixture.anOrderResponse();
-        
+
             when(repository.findByCustomerIdAndIdempotencyKey(CUSTOMER_ID, IDEMPOTENCY_KEY))
                     .thenReturn(Optional.of(existingOrder));
             when(orderMapper.toResponse(existingOrder)).thenReturn(expectedResponse);
-        
-            OrderCreationResult result =
-                    orderService.createOrder(IDEMPOTENCY_KEY, request);
-        
+
+            OrderCreationResult result = orderService.createOrder(IDEMPOTENCY_KEY, request);
+
             assertThat(result.created()).isFalse();
             assertThat(result.order()).isSameAs(expectedResponse);
-        
+
             verify(orderPersistenceService, never()).save(any(Order.class));
             verify(inventoryClient, never()).reserveStock(any(UUID.class), anyInt());
             verify(paymentClient, never())
                     .processPayment(
-                            any(UUID.class),
-                            any(UUID.class),
-                            any(BigDecimal.class),
-                            anyString());
+                            any(UUID.class), any(UUID.class), any(BigDecimal.class), anyString());
         }
     }
 
@@ -363,8 +355,6 @@ class OrderServiceTest {
             verify(orderMapper).toResponse(order);
             verifyNoMoreInteractions(repository, orderMapper);
         }
-
-       
 
         @Test
         void shouldThrowWhenOrderNotFound() {
@@ -662,8 +652,8 @@ class OrderServiceTest {
     private String requestHash(OrderRequest request) {
         String canonicalRequest =
                 request.items().stream()
-                        .map(item -> item.productId() + ":" + item.quantity())
-                        .collect(Collectors.joining("|"))
+                                .map(item -> item.productId() + ":" + item.quantity())
+                                .collect(Collectors.joining("|"))
                         + "|"
                         + String.join(
                                 ":",
@@ -671,7 +661,7 @@ class OrderServiceTest {
                                 request.shippingAddress().city(),
                                 request.shippingAddress().postcode(),
                                 request.shippingAddress().country());
-    
+
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of()

@@ -98,7 +98,7 @@ public class OrderService {
                     paidOrder.getTotal(),
                     "NZD");
             orderMetrics.orderCreated();
-           return new OrderCreationResult(orderMapper.toResponse(paidOrder), true); 
+            return new OrderCreationResult(orderMapper.toResponse(paidOrder), true);
 
         } catch (DataIntegrityViolationException ex) {
             releaseReservedStock(reservedItems);
