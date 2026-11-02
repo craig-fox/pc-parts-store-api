@@ -17,6 +17,7 @@ import nz.fox.craig.payment.dto.CreatePaymentRequest;
 import nz.fox.craig.payment.dto.PaymentResponse;
 import nz.fox.craig.payment.model.PaymentStatus;
 import nz.fox.craig.payment.service.PaymentService;
+import nz.fox.craig.security.service.CurrentUser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -38,11 +39,15 @@ class PaymentControllerTest {
 
     @MockitoBean private PaymentService paymentService;
 
+    @MockitoBean private CurrentUser currentUser;
+
     @Test
     void shouldCreatePayment() throws Exception {
         UUID orderId = UUID.randomUUID();
         UUID customerId = UUID.randomUUID();
         UUID paymentId = UUID.randomUUID();
+
+        when(currentUser.customerId()).thenReturn(customerId);
 
         CreatePaymentRequest request =
                 new CreatePaymentRequest(orderId, customerId, new BigDecimal("149.99"), "NZD");
@@ -81,6 +86,8 @@ class PaymentControllerTest {
         UUID paymentId = UUID.randomUUID();
         UUID orderId = UUID.randomUUID();
 
+        when(currentUser.customerId()).thenReturn(customerId);
+
         PaymentResponse response =
                 new PaymentResponse(
                         paymentId,
@@ -110,6 +117,7 @@ class PaymentControllerTest {
     void shouldReturnEmptyListWhenCustomerHasNoPayments() throws Exception {
         UUID customerId = UUID.randomUUID();
 
+        when(currentUser.customerId()).thenReturn(customerId);
         when(paymentService.getPaymentsByCustomer(customerId)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/payments/customer/{customerId}", customerId))
