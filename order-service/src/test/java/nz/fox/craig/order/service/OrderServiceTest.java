@@ -3,6 +3,8 @@ package nz.fox.craig.order.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -14,9 +16,14 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import nz.fox.craig.api.DownstreamServiceUnavailableException;
 import nz.fox.craig.api.ShippingMethod;
 import nz.fox.craig.order.client.CustomerClient;
@@ -32,6 +39,7 @@ import nz.fox.craig.order.dto.request.ShippingQuoteRequest;
 import nz.fox.craig.order.dto.response.OrderItemResponse;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.exception.CustomerNotFoundException;
+import nz.fox.craig.order.exception.IdempotencyKeyReuseException;
 import nz.fox.craig.order.exception.InsufficientStockException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
@@ -273,6 +281,54 @@ class OrderServiceTest {
                     .isSameAs(exception);
 
             verify(paymentClient, never()).processPayment(any(), any(), any(), any());
+        }
+
+        @Test
+        void shouldRejectReuseOfIdempotencyKeyWithDifferentRequest() {
+            Order order = OrderFixture.anOrder();
+            order.setIdempotencyKey(IDEMPOTENCY_KEY);
+            order.setIdempotencyRequestHash("test-request-hash");
+
+            when(repository.findByCustomerIdAndIdempotencyKey(CUSTOMER_ID, IDEMPOTENCY_KEY))
+                    .thenReturn(Optional.of(order));
+
+            OrderRequest request = OrderFixture.anOrderRequest(ShippingMethod.STANDARD);
+
+            assertThatThrownBy(() -> orderService.createOrder(IDEMPOTENCY_KEY, request))
+                    .isInstanceOf(IdempotencyKeyReuseException.class);
+
+            verify(orderPersistenceService, never()).save(any(Order.class));
+            verify(inventoryClient, never()).reserveStock(any(UUID.class), anyInt());
+            verify(paymentClient, never())
+                    .processPayment(
+                            any(UUID.class), any(UUID.class), any(BigDecimal.class), anyString());
+            verify(orderMapper, never()).toResponse(any(Order.class));
+        }
+
+        @Test
+        void shouldReturnExistingOrderForIdenticalRequest() {
+            Order existingOrder = OrderFixture.anOrder();
+            existingOrder.setIdempotencyKey(IDEMPOTENCY_KEY);
+
+            OrderRequest request = OrderFixture.anOrderRequest(ShippingMethod.STANDARD);
+            existingOrder.setIdempotencyRequestHash(requestHash(request));
+
+            OrderResponse expectedResponse = OrderFixture.anOrderResponse();
+
+            when(repository.findByCustomerIdAndIdempotencyKey(CUSTOMER_ID, IDEMPOTENCY_KEY))
+                    .thenReturn(Optional.of(existingOrder));
+            when(orderMapper.toResponse(existingOrder)).thenReturn(expectedResponse);
+
+            OrderCreationResult result = orderService.createOrder(IDEMPOTENCY_KEY, request);
+
+            assertThat(result.created()).isFalse();
+            assertThat(result.order()).isSameAs(expectedResponse);
+
+            verify(orderPersistenceService, never()).save(any(Order.class));
+            verify(inventoryClient, never()).reserveStock(any(UUID.class), anyInt());
+            verify(paymentClient, never())
+                    .processPayment(
+                            any(UUID.class), any(UUID.class), any(BigDecimal.class), anyString());
         }
     }
 
@@ -591,5 +647,27 @@ class OrderServiceTest {
                 .postcode("1010")
                 .country("NZ")
                 .build();
+    }
+
+    private String requestHash(OrderRequest request) {
+        String canonicalRequest =
+                request.items().stream()
+                                .map(item -> item.productId() + ":" + item.quantity())
+                                .collect(Collectors.joining("|"))
+                        + "|"
+                        + String.join(
+                                ":",
+                                request.shippingAddress().addressLine1(),
+                                request.shippingAddress().city(),
+                                request.shippingAddress().postcode(),
+                                request.shippingAddress().country());
+
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of()
+                    .formatHex(digest.digest(canonicalRequest.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }
