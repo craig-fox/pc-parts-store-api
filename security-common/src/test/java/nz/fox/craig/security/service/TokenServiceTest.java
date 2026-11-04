@@ -11,6 +11,11 @@ import nz.fox.craig.security.dto.AuthenticatedUser;
 import nz.fox.craig.security.dto.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import java.util.Date;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import javax.crypto.SecretKey;
 
 class TokenServiceTest {
 
@@ -101,5 +106,27 @@ class TokenServiceTest {
                         SampleAuthenticatedUsers.authenticatedCustomerUser());
 
         assertThatThrownBy(() -> tokenService.parseUser(token)).isInstanceOf(JwtException.class);
+    }
+
+    @Test
+    void shouldParseTokenWithoutRolesAsEmptyRoleSet() {
+        SecretKey signingKey =
+                Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET));
+
+        Date now = new Date();
+
+        String token =
+                Jwts.builder()
+                        .subject(UUID.randomUUID().toString())
+                        .claim("email", "test@example.com")
+                        .issuedAt(now)
+                        .expiration(Date.from(now.toInstant().plus(EXPIRATION)))
+                        .signWith(signingKey)
+                        .compact();
+
+        AuthenticatedUser user = tokenService.parseUser(token);
+
+        assertThat(user.email()).isEqualTo("test@example.com");
+        assertThat(user.roles()).isEmpty();
     }
 }
