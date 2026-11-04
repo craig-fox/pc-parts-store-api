@@ -26,6 +26,7 @@
         <module>shipping-service</module>
         <module>test-support</module>
         <module>observability-common</module>
+        <module>messaging-common</module>
     </modules>
 
     <properties>
