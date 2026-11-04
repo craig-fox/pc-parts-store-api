@@ -10,8 +10,7 @@ public record EventEnvelope<T>(
         int eventVersion,
         Instant occurredAt,
         String correlationId,
-        T payload
-) {
+        T payload) {
 
     public EventEnvelope {
         Objects.requireNonNull(eventId, "eventId must not be null");
@@ -20,22 +19,15 @@ public record EventEnvelope<T>(
         Objects.requireNonNull(payload, "payload must not be null");
 
         if (eventType.isBlank()) {
-            throw new IllegalArgumentException(
-                    "eventType must not be blank"
-            );
+            throw new IllegalArgumentException("eventType must not be blank");
         }
 
         if (eventVersion < 1) {
-            throw new IllegalArgumentException(
-                    "eventVersion must be greater than zero"
-            );
+            throw new IllegalArgumentException("eventVersion must be greater than zero");
         }
     }
 
-    public static <T extends DomainEvent> EventEnvelope<T> of(
-            T event,
-            String correlationId
-    ) {
+    public static <T extends DomainEvent> EventEnvelope<T> of(T event, String correlationId) {
         Objects.requireNonNull(event, "event must not be null");
 
         return new EventEnvelope<>(
@@ -44,7 +36,6 @@ public record EventEnvelope<T>(
                 event.eventVersion(),
                 Instant.now(),
                 correlationId,
-                event
-        );
+                event);
     }
 }

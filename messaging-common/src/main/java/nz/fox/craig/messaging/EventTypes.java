@@ -12,6 +12,5 @@ public final class EventTypes {
 
     public static final String SHIPMENT_DELIVERED = "ShipmentDelivered";
 
-    private EventTypes() {
-    }
+    private EventTypes() {}
 }
