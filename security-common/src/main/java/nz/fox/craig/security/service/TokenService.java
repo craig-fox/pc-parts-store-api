@@ -46,11 +46,11 @@ public class TokenService {
         List<String> roleNames = claims.get("roles", List.class);
 
         Set<Role> roles =
-            roleNames == null
-                ? Set.of()
-                : roleNames.stream()
-                    .map(Role::valueOf)
-                    .collect(Collectors.toUnmodifiableSet());
+                roleNames == null
+                        ? Set.of()
+                        : roleNames.stream()
+                                .map(Role::valueOf)
+                                .collect(Collectors.toUnmodifiableSet());
 
         return new AuthenticatedUser(customerId, email, roles);
     }

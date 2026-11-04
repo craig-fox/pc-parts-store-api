@@ -4,18 +4,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import java.time.Duration;
+import java.util.Date;
 import java.util.UUID;
+import javax.crypto.SecretKey;
 import nz.fox.craig.security.config.JwtProperties;
 import nz.fox.craig.security.dto.AuthenticatedUser;
 import nz.fox.craig.security.dto.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.util.Date;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
-import javax.crypto.SecretKey;
 
 class TokenServiceTest {
 
@@ -110,8 +110,7 @@ class TokenServiceTest {
 
     @Test
     void shouldParseTokenWithoutRolesAsEmptyRoleSet() {
-        SecretKey signingKey =
-                Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET));
+        SecretKey signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET));
 
         Date now = new Date();
 
