@@ -57,7 +57,9 @@ import tools.jackson.databind.json.JsonMapper;
 @AutoConfigureMockMvc
 class OrderIntegrationTest extends AbstractPostgresTest {
 
-    private static final int SUCCESSFUL_ORDER_DOWNSTREAM_REQUEST_COUNT = 5;
+    private static final int SUCCESSFUL_ORDER_DOWNSTREAM_REQUEST_COUNT = 6;
+    private static final int CONCURRENT_ORDER_DOWNSTREAM_REQUEST_COUNT =
+            SUCCESSFUL_ORDER_DOWNSTREAM_REQUEST_COUNT * 2 - 1;
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String IDEMPOTENCY_HEADER = "Idempotency-Key";
 
@@ -414,7 +416,8 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
         int requestCountAfterFirstRequest = mockWebServer.getRequestCount();
 
-        assertThat(requestCountAfterFirstRequest - requestCountBefore).isEqualTo(5);
+        assertThat(requestCountAfterFirstRequest - requestCountBefore)
+                .isEqualTo(SUCCESSFUL_ORDER_DOWNSTREAM_REQUEST_COUNT);
 
         mockMvc.perform(
                         post("/api/orders")
@@ -737,6 +740,10 @@ class OrderIntegrationTest extends AbstractPostgresTest {
             return new MockResponse().setResponseCode(200);
         }
 
+        if ("POST".equals(request.getMethod()) && path.endsWith("/confirm")) {
+            return new MockResponse().setResponseCode(200);
+        }
+
         return null;
     }
 
@@ -826,14 +833,11 @@ class OrderIntegrationTest extends AbstractPostgresTest {
     }
 
     private void assertConcurrentDownstreamRequests() throws InterruptedException {
-
         int reserveRequests = 0;
 
-        for (int i = 0; i < SUCCESSFUL_ORDER_DOWNSTREAM_REQUEST_COUNT * 2; i++) {
+        for (int i = 0; i < CONCURRENT_ORDER_DOWNSTREAM_REQUEST_COUNT; i++) {
             RecordedRequest request = mockWebServer.takeRequest(5, TimeUnit.SECONDS);
-
             assertThat(request).isNotNull();
-
             if ("POST".equals(request.getMethod()) && request.getPath().endsWith("/reserve")) {
                 reserveRequests++;
             }
@@ -847,11 +851,9 @@ class OrderIntegrationTest extends AbstractPostgresTest {
             throws InterruptedException {
 
         assertThat(statuses).contains(HttpStatus.CREATED.value()).contains(HttpStatus.OK.value());
-
         assertThat(orderRepository.count()).isEqualTo(initialOrderCount + 1);
-
         assertThat(mockWebServer.getRequestCount())
-                .isEqualTo(initialRequestCount + (SUCCESSFUL_ORDER_DOWNSTREAM_REQUEST_COUNT * 2));
+                .isEqualTo(initialRequestCount + CONCURRENT_ORDER_DOWNSTREAM_REQUEST_COUNT);
     }
 
     private int getStatus(Future<Integer> result) {
@@ -938,19 +940,20 @@ class OrderIntegrationTest extends AbstractPostgresTest {
         // Payment
         mockWebServer.enqueue(
                 new MockResponse().setResponseCode(201).addHeader("Content-Length", "0"));
+
+        // Inventory confirmation
+        mockWebServer.enqueue(
+                new MockResponse().setResponseCode(200).addHeader("Content-Length", "0"));
     }
 
     private void verifySuccessfulDownstreamRequests() throws InterruptedException {
 
         RecordedRequest customerRequest = mockWebServer.takeRequest();
-
         RecordedRequest inventoryRequest = mockWebServer.takeRequest();
-
         RecordedRequest productRequest = mockWebServer.takeRequest();
-
         RecordedRequest shippingRequest = mockWebServer.takeRequest();
-
         RecordedRequest paymentRequest = mockWebServer.takeRequest();
+        RecordedRequest confirmationRequest = mockWebServer.takeRequest();
 
         assertThat(customerRequest.getMethod()).isEqualTo("HEAD");
         assertThat(customerRequest.getPath()).startsWith("/api/customers/");
@@ -967,6 +970,10 @@ class OrderIntegrationTest extends AbstractPostgresTest {
 
         assertThat(paymentRequest.getMethod()).isEqualTo("POST");
         assertThat(paymentRequest.getPath()).isEqualTo("/api/payments");
+
+        assertThat(confirmationRequest.getMethod()).isEqualTo("POST");
+        assertThat(confirmationRequest.getPath()).startsWith("/api/inventory/");
+        assertThat(confirmationRequest.getPath()).endsWith("/confirm");
     }
 
     private String shippingQuoteResponseJson(

@@ -2,6 +2,7 @@ package nz.fox.craig.auth.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -21,7 +22,7 @@ public class SecurityConfig {
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers("/api/auth/login")
+                                auth.requestMatchers(HttpMethod.POST, "/api/auth/login")
                                         .permitAll()
                                         .requestMatchers("/actuator/health", "/actuator/health/**")
                                         .permitAll()

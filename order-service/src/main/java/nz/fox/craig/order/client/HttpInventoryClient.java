@@ -55,4 +55,20 @@ public class HttpInventoryClient implements InventoryClient {
             throw new DownstreamServiceUnavailableException("Inventory", ex);
         }
     }
+
+    @Override
+    public void confirmReservation(UUID productId, int quantity) {
+        try {
+            restClient
+                    .post()
+                    .uri("/api/inventory/{productId}/confirm", productId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new InventoryReservationRequest(quantity))
+                    .retrieve()
+                    .toBodilessEntity();
+
+        } catch (HttpServerErrorException | ResourceAccessException ex) {
+            throw new DownstreamServiceUnavailableException("Inventory", ex);
+        }
+    }
 }
