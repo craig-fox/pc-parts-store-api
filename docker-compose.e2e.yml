@@ -1,5 +1,20 @@
 services:
 
+  rabbitmq:
+      image: rabbitmq:4-management
+      container_name: rabbitmq
+      environment:
+        RABBITMQ_DEFAULT_USER: guest
+        RABBITMQ_DEFAULT_PASS: guest
+      healthcheck:
+        test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+        interval: 10s
+        timeout: 5s
+        retries: 10
+        start_period: 10s
+      networks:
+        - backend
+
   customer-postgres:
     volumes:
       - customer-e2e-data:/var/lib/postgresql/data
@@ -23,6 +38,16 @@ services:
   shipping-postgres:
     volumes:
       - shipping-e2e-data:/var/lib/postgresql/data
+
+  order-service:
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   customer-e2e-data:

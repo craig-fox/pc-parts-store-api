@@ -6,4 +6,6 @@ public interface InventoryClient {
     void reserveStock(UUID productId, int quantity);
 
     void releaseStock(UUID productId, int quantity);
+
+    void confirmReservation(UUID productId, int quantity);
 }

@@ -26,6 +26,7 @@ import nz.fox.craig.order.dto.request.ShippingAddressRequest;
 import nz.fox.craig.order.dto.request.ShippingQuoteRequest;
 import nz.fox.craig.order.dto.response.OrderResponse;
 import nz.fox.craig.order.dto.response.ShippingQuoteResponse;
+import nz.fox.craig.order.event.OrderPlacedEvent;
 import nz.fox.craig.order.exception.IdempotencyKeyReuseException;
 import nz.fox.craig.order.exception.OrderAlreadyCancelledException;
 import nz.fox.craig.order.exception.OrderNotFoundException;
@@ -37,6 +38,7 @@ import nz.fox.craig.order.model.OrderStatus;
 import nz.fox.craig.order.model.ShippingAddress;
 import nz.fox.craig.order.repository.OrderRepository;
 import nz.fox.craig.security.service.CurrentUser;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,48 +58,40 @@ public class OrderService {
     private final OrderPersistenceService orderPersistenceService;
     private final OrderMetrics orderMetrics;
     private final CurrentUser currentUser;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public OrderCreationResult createOrder(String idempotencyKey, OrderRequest request) {
-
         UUID customerId = currentUser.customerId();
         String requestHash = hashOrderRequest(request);
+
         log.info("Creating order for customer {}", customerId);
+
         Optional<Order> existingOrder =
                 orderRepository.findByCustomerIdAndIdempotencyKey(customerId, idempotencyKey);
 
         if (existingOrder.isPresent()) {
-            log.info(
-                    "Returning existing order {} for duplicate request",
-                    existingOrder.get().getId());
-            return new OrderCreationResult(
-                    handleExistingOrder(existingOrder.get(), requestHash), false);
+            return handleIdempotentRequest(existingOrder.get(), requestHash);
         }
 
         validateCustomer(customerId);
+
         List<OrderItemRequest> reservedItems = new ArrayList<>();
 
         try {
-            for (OrderItemRequest item : request.items()) {
-                inventoryClient.reserveStock(item.productId(), item.quantity());
-                reservedItems.add(item);
-            }
+            reserveInventory(request.items(), reservedItems);
 
-            UUID orderId = UUID.randomUUID();
-            Order order = assembleOrder(orderId, request, customerId, idempotencyKey, requestHash);
-            Order savedOrder = orderPersistenceService.save(order);
+            Order order = createAndSaveOrder(request, customerId, idempotencyKey, requestHash);
 
-            paymentClient.processPayment(
-                    savedOrder.getId(), customerId, savedOrder.getTotal(), "NZD");
+            paymentClient.processPayment(order.getId(), customerId, order.getTotal(), "NZD");
 
-            savedOrder.setStatus(OrderStatus.PAID);
-            Order paidOrder = orderPersistenceService.save(savedOrder);
-            log.info(
-                    "Order {} created successfully with total {} {}",
-                    paidOrder.getId(),
-                    paidOrder.getTotal(),
-                    "NZD");
+            confirmInventory(order);
+
+            Order paidOrder = markOrderAsPaid(order);
+            publishOrderPlacedEvent(paidOrder, customerId);
+
             orderMetrics.orderCreated();
+
             return new OrderCreationResult(orderMapper.toResponse(paidOrder), true);
 
         } catch (DataIntegrityViolationException ex) {
@@ -170,6 +164,54 @@ public class OrderService {
 
         return new OrderCreationResult(
                 handleExistingOrder(existingOrder.get(), requestHash), false);
+    }
+
+    private OrderCreationResult handleIdempotentRequest(Order existingOrder, String requestHash) {
+
+        log.info("Returning existing order {} for duplicate request", existingOrder.getId());
+
+        return new OrderCreationResult(handleExistingOrder(existingOrder, requestHash), false);
+    }
+
+    private void reserveInventory(
+            List<OrderItemRequest> items, List<OrderItemRequest> reservedItems) {
+
+        for (OrderItemRequest item : items) {
+            inventoryClient.reserveStock(item.productId(), item.quantity());
+            reservedItems.add(item);
+        }
+    }
+
+    private Order createAndSaveOrder(
+            OrderRequest request, UUID customerId, String idempotencyKey, String requestHash) {
+
+        UUID orderId = UUID.randomUUID();
+
+        Order order = assembleOrder(orderId, request, customerId, idempotencyKey, requestHash);
+
+        return orderPersistenceService.save(order);
+    }
+
+    private void confirmInventory(Order order) {
+        for (OrderItem item : order.getItems()) {
+            inventoryClient.confirmReservation(item.getProductId(), item.getQuantity());
+        }
+    }
+
+    private Order markOrderAsPaid(Order order) {
+        order.setStatus(OrderStatus.PAID);
+        return orderPersistenceService.save(order);
+    }
+
+    private void publishOrderPlacedEvent(Order order, UUID customerId) {
+        log.info(
+                "Order {} created successfully with total {} {}",
+                order.getId(),
+                order.getTotal(),
+                "NZD");
+
+        applicationEventPublisher.publishEvent(
+                new OrderPlacedEvent(order.getId(), customerId, order.getTotal(), "NZD"));
     }
 
     private void releaseReservedStock(List<OrderItemRequest> reservedItems) {

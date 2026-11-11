@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -58,9 +59,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
@@ -93,6 +96,8 @@ class OrderServiceTest {
 
     @Mock private CurrentUser currentUser;
 
+    @Mock private ApplicationEventPublisher applicationEventPublisher;
+
     @InjectMocks private OrderService orderService;
 
     @BeforeEach
@@ -115,21 +120,32 @@ class OrderServiceTest {
                                     ShippingMethod.STANDARD, BigDecimal.valueOf(15.00)));
 
             OrderResponse expectedResponse = OrderFixture.anOrderResponse();
-
             when(orderMapper.toResponse(any(Order.class))).thenReturn(expectedResponse);
 
             // Act
             OrderCreationResult result = orderService.createOrder(IDEMPOTENCY_KEY, orderRequest());
-
             OrderResponse response = result.order();
 
             // Assert
             SavedOrders savedOrders = verifyCreateOrderInteractions();
 
+            // Verify the sequence of the important operations.
+            InOrder inOrder = inOrder(inventoryClient, orderPersistenceService, paymentClient);
+
+            inOrder.verify(inventoryClient).reserveStock(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
+            inOrder.verify(orderPersistenceService).save(any(Order.class));
+            inOrder.verify(paymentClient)
+                    .processPayment(
+                            any(UUID.class),
+                            eq(CUSTOMER_ID),
+                            eq(new BigDecimal("104.99")),
+                            eq("NZD"));
+
+            inOrder.verify(inventoryClient).confirmReservation(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
+
+            inOrder.verify(orderPersistenceService).save(any(Order.class));
             assertSavedOrder(savedOrders.paid());
-
             assertThat(savedOrders.paid().getId()).isEqualTo(savedOrders.placed().getId());
-
             assertThat(response).isSameAs(expectedResponse);
 
             verify(paymentClient)
@@ -598,6 +614,7 @@ class OrderServiceTest {
 
         verify(customerClient).validateCustomerExists(CUSTOMER_ID);
         verify(inventoryClient).reserveStock(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
+        verify(inventoryClient).confirmReservation(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
         verify(productClient).getProduct(PRODUCT_ID);
 
         verify(orderPersistenceService, times(2)).save(captor.capture());
