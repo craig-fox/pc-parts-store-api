@@ -1,8 +1,7 @@
-
 package nz.fox.craig.order.concurrency;
 
-import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 
 public class UnsafeInventory {
 
@@ -14,8 +13,7 @@ public class UnsafeInventory {
         this.barrier = barrier;
     }
 
-    public boolean reserve(int quantity)
-            throws InterruptedException, BrokenBarrierException {
+    public boolean reserve(int quantity) throws InterruptedException, BrokenBarrierException {
 
         // Both threads read the stock before either updates it.
         int observedStock = availableStock;
@@ -37,4 +35,3 @@ public class UnsafeInventory {
         return availableStock;
     }
 }
-

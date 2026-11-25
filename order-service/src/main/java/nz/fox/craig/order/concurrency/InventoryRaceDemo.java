@@ -1,4 +1,3 @@
-
 package nz.fox.craig.order.concurrency;
 
 import java.util.concurrent.CyclicBarrier;
@@ -13,29 +12,21 @@ public class InventoryRaceDemo {
         var barrier = new CyclicBarrier(2);
         var inventory = new UnsafeInventory(barrier);
 
-        ExecutorService executor =
-                Executors.newFixedThreadPool(2);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
 
         try {
-            Future<Boolean> requestA =
-                    executor.submit(() -> inventory.reserve(7));
+            Future<Boolean> requestA = executor.submit(() -> inventory.reserve(7));
 
-            Future<Boolean> requestB =
-                    executor.submit(() -> inventory.reserve(7));
+            Future<Boolean> requestB = executor.submit(() -> inventory.reserve(7));
 
-            System.out.println(
-                    "Request A succeeded: " + requestA.get());
+            System.out.println("Request A succeeded: " + requestA.get());
 
-            System.out.println(
-                    "Request B succeeded: " + requestB.get());
+            System.out.println("Request B succeeded: " + requestB.get());
 
-            System.out.println(
-                    "Remaining stock: "
-                            + inventory.getAvailableStock());
+            System.out.println("Remaining stock: " + inventory.getAvailableStock());
 
         } finally {
             executor.shutdown();
         }
     }
 }
-

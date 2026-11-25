@@ -1,4 +1,3 @@
-
 package nz.fox.craig.order.concurrency;
 
 public class SynchronizedInventory {
@@ -19,4 +18,3 @@ public class SynchronizedInventory {
         return availableStock;
     }
 }
-
