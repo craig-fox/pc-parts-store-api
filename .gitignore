@@ -26,3 +26,5 @@ target/
 # Temporary files
 *.tmp
 *.swp
+
+**/gc.log.*

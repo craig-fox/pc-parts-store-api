@@ -36,6 +36,8 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
+          cache-dependency-path: |
+            **/pom.xml
 
       - name: Check JWT secrets
         run: |
@@ -89,8 +91,7 @@ jobs:
           java-version: '25'
           cache: maven
           cache-dependency-path: |
-            pc-parts-store-api/pom.xml
-            pc-parts-store-e2e/pom.xml
+            **/pom.xml
 
       - name: Run E2E tests
         working-directory: pc-parts-store-e2e
