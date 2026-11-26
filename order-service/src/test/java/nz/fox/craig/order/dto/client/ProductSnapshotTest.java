@@ -8,27 +8,21 @@ class ProductSnapshotTest {
 
     @Test
     void shouldReturnFalseWhenActiveIsNull() {
-        ProductSnapshot snapshot = ProductSnapshot.builder()
-                .active(null)
-                .build();
+        ProductSnapshot snapshot = ProductSnapshot.builder().active(null).build();
 
         assertThat(snapshot.active()).isFalse();
     }
 
     @Test
     void shouldReturnTrueWhenActiveIsTrue() {
-        ProductSnapshot snapshot = ProductSnapshot.builder()
-                .active(true)
-                .build();
+        ProductSnapshot snapshot = ProductSnapshot.builder().active(true).build();
 
         assertThat(snapshot.active()).isTrue();
     }
 
     @Test
     void shouldReturnFalseWhenActiveIsFalse() {
-        ProductSnapshot snapshot = ProductSnapshot.builder()
-                .active(false)
-                .build();
+        ProductSnapshot snapshot = ProductSnapshot.builder().active(false).build();
 
         assertThat(snapshot.active()).isFalse();
     }
