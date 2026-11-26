@@ -11,6 +11,10 @@
 	<groupId>nz.fox.craig</groupId>
 	<artifactId>order-service</artifactId>
 	<name>order-service</name>
+	<properties>
+		<jacoco.version>0.8.14</jacoco.version>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -147,6 +151,29 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<executions>
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<configuration>
+							<excludes>
+								<exclude>nz/fox/craig/order/concurrency/InventoryRaceDemo.class</exclude>
+								<exclude>nz/fox/craig/order/concurrency/UnsafeInventory.class</exclude>
+								<exclude>nz/fox/craig/order/concurrency/SynchronizedInventory.class</exclude>
+								<exclude>nz/fox/craig/order/shipping/ShippingPolicy.class</exclude>
+								<exclude>nz/fox/craig/order/OrderServiceApplication.class</exclude>
+							</excludes>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

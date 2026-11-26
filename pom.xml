@@ -126,6 +126,12 @@
                 <configuration>
                     <excludes>
                         <exclude>**/ApiGatewayApplication.class</exclude>
+                        <exclude>**/ApiGatewayApplication.class</exclude>
+                        <exclude>**/OrderServiceApplication.class</exclude>
+                        <exclude>**/InventoryRaceDemo.class</exclude>
+                        <exclude>**/UnsafeInventory.class</exclude>
+                        <exclude>**/SynchronizedInventory.class</exclude>
+                        <exclude>**/ShippingPolicy.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>
