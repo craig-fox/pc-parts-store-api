@@ -61,6 +61,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
@@ -329,6 +330,80 @@ class OrderServiceTest {
             verify(paymentClient, never())
                     .processPayment(
                             any(UUID.class), any(UUID.class), any(BigDecimal.class), anyString());
+        }
+
+        @Test
+        void shouldReturnExistingOrderWhenConcurrentCreationOccurs() {
+            // Arrange
+            OrderRequest request = orderRequest();
+            Order existingOrder = OrderFixture.anOrder();
+            existingOrder.setIdempotencyKey(IDEMPOTENCY_KEY);
+            existingOrder.setIdempotencyRequestHash(requestHash(request));
+
+            OrderResponse expectedResponse = OrderFixture.anOrderResponse();
+
+            DataIntegrityViolationException exception =
+                    new DataIntegrityViolationException("Duplicate idempotency key");
+
+            when(repository.findByCustomerIdAndIdempotencyKey(CUSTOMER_ID, IDEMPOTENCY_KEY))
+                    .thenReturn(Optional.empty(), Optional.of(existingOrder));
+
+            when(productClient.getProduct(PRODUCT_ID)).thenReturn(productSnapshot());
+
+            when(shippingClient.calculateQuote(any(ShippingQuoteRequest.class)))
+                    .thenReturn(
+                            ShippingFixture.shippingQuoteResponse(
+                                    ShippingMethod.STANDARD, new BigDecimal("15.00")));
+
+            when(orderMapper.toResponse(existingOrder)).thenReturn(expectedResponse);
+
+            doThrow(exception).when(orderPersistenceService).save(any(Order.class));
+
+            // Act
+            OrderCreationResult result = orderService.createOrder(IDEMPOTENCY_KEY, request);
+
+            // Assert
+            assertThat(result.created()).isFalse();
+            assertThat(result.order()).isSameAs(expectedResponse);
+
+            verify(repository, times(2))
+                    .findByCustomerIdAndIdempotencyKey(CUSTOMER_ID, IDEMPOTENCY_KEY);
+
+            verify(inventoryClient).reserveStock(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
+            verify(inventoryClient).releaseStock(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
+
+            verify(paymentClient, never()).processPayment(any(), any(), any(), any());
+        }
+
+        @Test
+        void shouldRethrowWhenConcurrentOrderCannotBeFound() {
+            // Arrange
+            DataIntegrityViolationException exception =
+                    new DataIntegrityViolationException("Database constraint violation");
+
+            when(repository.findByCustomerIdAndIdempotencyKey(CUSTOMER_ID, IDEMPOTENCY_KEY))
+                    .thenReturn(Optional.empty(), Optional.empty());
+
+            when(productClient.getProduct(PRODUCT_ID)).thenReturn(productSnapshot());
+
+            when(shippingClient.calculateQuote(any(ShippingQuoteRequest.class)))
+                    .thenReturn(
+                            ShippingFixture.shippingQuoteResponse(
+                                    ShippingMethod.STANDARD, new BigDecimal("15.00")));
+
+            doThrow(exception).when(orderPersistenceService).save(any(Order.class));
+
+            // Act / Assert
+            assertThatThrownBy(() -> orderService.createOrder(IDEMPOTENCY_KEY, orderRequest()))
+                    .isSameAs(exception);
+
+            verify(repository, times(2))
+                    .findByCustomerIdAndIdempotencyKey(CUSTOMER_ID, IDEMPOTENCY_KEY);
+
+            verify(inventoryClient).reserveStock(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
+            verify(inventoryClient).releaseStock(PRODUCT_ID, DEFAULT_ORDER_QUANTITY);
+
+            verify(paymentClient, never()).processPayment(any(), any(), any(), any());
         }
     }
 
